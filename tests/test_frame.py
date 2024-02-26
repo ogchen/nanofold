@@ -1,5 +1,14 @@
 from nanofold.frame import Frame
+import pytest
 import torch
+
+
+def test_frame_init():
+    with pytest.raises(ValueError):
+        Frame(torch.stack([torch.eye(3), torch.eye(3)]), torch.stack([torch.zeros(3)]))
+    with pytest.raises(ValueError):
+        Frame(torch.stack([torch.ones(3)]), torch.stack([torch.zeros(3)]))
+    Frame(torch.stack([torch.eye(3)]), torch.stack([torch.zeros(3)]))
 
 
 def test_frame_inverse():

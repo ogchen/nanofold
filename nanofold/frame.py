@@ -5,8 +5,10 @@ class Frame:
     def __init__(self, rotations, translations):
         i, a, b = rotations.shape
         j, c = translations.shape
-        assert i == j
-        assert (a, b, c) == (3, 3, 3)
+        if i != j or (a, b, c) != (3, 3, 3):
+            raise ValueError(
+                f"Expected rotations to have shape (n, 3, 3) and translations to have shape (n, 3), got {rotations.shape} and {translations.shape}"
+            )
         self.rotations = rotations
         self.translations = translations
 
