@@ -19,7 +19,9 @@ class Frame:
         return Frame(inverse_rotations, inverse_translations.squeeze(-1))
 
     @staticmethod
-    def allclose(a, b):
-        return torch.allclose(a.rotations, b.rotations) and torch.allclose(
-            a.translations, b.translations
-        )
+    def compose(a, b):
+        rotations = a.rotations @ b.rotations
+        translations = a.rotations @ b.translations.unsqueeze(
+            -1
+        ) + a.translations.unsqueeze(-1)
+        return Frame(rotations, translations.squeeze(-1))
