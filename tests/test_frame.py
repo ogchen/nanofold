@@ -83,3 +83,18 @@ def test_frame_compose():
     assert torch.allclose(
         res.translations, expected.translations
     ), f"{res.translations} != {expected.translations}"
+
+def test_frame_apply():
+    rotations = torch.stack(
+        [
+            torch.eye(3),
+            torch.diag(torch.tensor([2, 0.5, 1])),
+            torch.diag(torch.tensor([4, 2, 2])),
+        ]
+    )
+    translations = torch.stack([torch.zeros(3), torch.ones(3), torch.tensor([1, 2, 3])])
+    frames = Frame(rotations, translations)
+    vectors = torch.stack([torch.ones(3), torch.ones(3), -torch.ones(3)])
+    expected = torch.stack([torch.ones(3), torch.tensor([3, 1.5, 2]), torch.tensor([-3, 0, 1])])
+    res = Frame.apply(frames, vectors)
+    assert torch.allclose(res, expected), f"{res} != {expected}"
