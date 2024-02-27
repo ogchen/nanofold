@@ -23,6 +23,10 @@ class Frame:
 
     @staticmethod
     def compose(a, b):
+        if a.rotations.shape[0] != b.rotations.shape[0]:
+            raise ValueError(
+                f"Expected a and b to have the same number of frames, got {a.rotations.shape[0]} and {b.rotations.shape[0]}"
+            )
         rotations = a.rotations @ b.rotations
         translations = a.rotations @ b.translations.unsqueeze(
             -1
