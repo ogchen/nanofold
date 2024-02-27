@@ -28,5 +28,6 @@ class Frame:
 
     @staticmethod
     def apply(frames, vectors):
-        result = frames.rotations @ vectors.unsqueeze(-1) + frames.translations.unsqueeze(-1)
-        return result.squeeze(-1)
+        result = vectors @ frames.rotations.transpose(-2, -1)
+        result = result.transpose(-2, -3) + frames.translations
+        return result.transpose(-2, -3)
