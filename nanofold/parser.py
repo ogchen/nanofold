@@ -1,8 +1,11 @@
 import glob
+import numpy as np
 import os
+import torch
 from Bio import SeqIO
 from Bio.PDB import MMCIFParser
 from pathlib import Path
+from nanofold.frame import Frame
 
 
 def list_available_mmcif(mmcif_dir):
@@ -12,10 +15,15 @@ def list_available_mmcif(mmcif_dir):
     return identifiers
 
 
-def load_structure(id, filepath):
+def load_model(id, filepath):
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure(id, filepath)
-    return structure
+    try:
+        model = next(structure.get_models())
+        model.header = structure.header
+    except StopIteration:
+        raise RuntimeError(f"No models found in {filepath}")
+    return model
 
 
 def get_c_alphas(chain):
@@ -27,6 +35,18 @@ def get_c_alphas(chain):
                     "id": residue.get_id(),
                     "coord": atom.get_coord(),
                 }
+
+
+def get_c_alpha_coords(chain):
+    return torch.from_numpy(
+        np.stack([record["coord"] for record in get_c_alphas(chain)])
+    )
+
+
+def get_frames(chain):
+    translations = get_c_alpha_coords(chain)
+    rotations = torch.stack([torch.eye(3) for _ in range(len(translations))])
+    return Frame(rotations, translations)
 
 
 class FastaParser:
