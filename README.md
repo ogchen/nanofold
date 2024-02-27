@@ -30,7 +30,8 @@ a file containing all PDB protein sequences in FASTA format.
 2) Run `python scripts/process_pdb_seqres.py $SEQRES_FILE` to process the file.
 
 ### MSA
-Download small BFD (9.5GB) with
+Download and unzip small BFD (9.5GB) with
 ```bash
 wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_non_consensus_sequences.fasta.gz
+gzip -d bfd-first_non_consensus_sequences.fasta.gz
 ```
