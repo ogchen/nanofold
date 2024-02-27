@@ -12,6 +12,9 @@ class Frame:
         self.rotations = rotations
         self.translations = translations
 
+    def __repr__(self):
+        return f"Frame(rotations={self.rotations},\n translations={self.translations})"
+
     @staticmethod
     def inverse(frame):
         inverse_rotations = torch.inverse(frame.rotations)
