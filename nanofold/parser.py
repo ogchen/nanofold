@@ -6,6 +6,8 @@ from Bio import SeqIO
 from Bio.PDB import MMCIFParser
 from pathlib import Path
 from nanofold.frame import Frame
+from nanofold.residue import RESIDUE_LIST
+from nanofold.residue import compute_residue_rotation
 
 
 def list_available_mmcif(mmcif_dir):
@@ -15,38 +17,19 @@ def list_available_mmcif(mmcif_dir):
     return identifiers
 
 
-def load_model(id, filepath):
-    parser = MMCIFParser(QUIET=True)
-    structure = parser.get_structure(id, filepath)
-    try:
-        model = next(structure.get_models())
-        model.header = structure.header
-    except StopIteration:
-        raise RuntimeError(f"No models found in {filepath}")
-    return model
-
-
-def get_c_alphas(chain):
-    for residue in chain.get_residues():
-        for atom in residue.get_atoms():
-            if atom.get_name() == "CA":
-                yield {
-                    "resname": residue.get_resname(),
-                    "id": residue.get_id(),
-                    "coord": atom.get_coord(),
-                }
-
-
-def get_c_alpha_coords(chain):
-    return torch.from_numpy(
-        np.stack([record["coord"] for record in get_c_alphas(chain)])
-    )
-
-
-def get_frames(chain):
-    translations = get_c_alpha_coords(chain)
-    rotations = torch.stack([torch.eye(3) for _ in range(len(translations))])
-    return Frame(rotations, translations)
+def load(id, filepath, fasta_parser):
+    model = load_model(id, filepath)
+    chains = list(model.get_chains())
+    return [
+        {
+            "chain": chain,
+            "frames": get_frames(chain),
+            "fasta": fasta_parser.get_fasta(
+                chain.get_full_id()[0], chain.get_full_id()[2]
+            ),
+        }
+        for chain in chains
+    ]
 
 
 class FastaParser:
@@ -60,3 +43,48 @@ class FastaParser:
                 if record.id == fasta_id:
                     return record
         raise RuntimeError(f"Could not find fasta sequence for {fasta_id}")
+
+
+def load_model(id, filepath):
+    parser = MMCIFParser(QUIET=True)
+    structure = parser.get_structure(id, filepath)
+    try:
+        model = next(structure.get_models())
+        model.header = structure.header
+    except StopIteration:
+        raise RuntimeError(f"No models found in {filepath}")
+    return model
+
+
+def get_residues(chain):
+    valid_residues = [res[1] for res in RESIDUE_LIST]
+    for residue in chain.get_residues():
+        if residue.get_resname() not in valid_residues:
+            continue
+        ca = None
+        c = None
+        n = None
+        for atom in residue.get_atoms():
+            ca = atom if atom.get_name() == "CA" else ca
+            c = atom if atom.get_name() == "C" else c
+            n = atom if atom.get_name() == "N" else n
+            if all((x is not None for x in [ca, c, n])):
+                break
+        ca_coords = torch.from_numpy(ca.get_coord())
+        yield {
+            "resname": residue.get_resname(),
+            "id": residue.get_id(),
+            "rotation": compute_residue_rotation(
+                n_coords=torch.from_numpy(n.get_coord()),
+                ca_coords=ca_coords,
+                c_coords=torch.from_numpy(c.get_coord()),
+            ),
+            "translation": ca_coords,
+        }
+
+
+def get_frames(chain):
+    residues = list(get_residues(chain))
+    translations = torch.stack([r["translation"] for r in residues])
+    rotations = torch.stack([r["rotation"] for r in residues])
+    return Frame(rotations, translations)

@@ -1,4 +1,5 @@
 import pytest
+import torch
 from pathlib import Path
 from nanofold import parser
 
@@ -20,8 +21,11 @@ def test_load_model(model):
     assert model.header["idcode"] == "1A00"
     chains = list(model.get_chains())
     assert len(chains) == 4
-    c_alphas = list(parser.get_c_alphas(chains[0]))
-    assert len(c_alphas) == 141
+    residues = list(parser.get_residues(chains[0]))
+    for r in residues:
+        result = r["rotation"] @ r["rotation"].transpose(-2, -1)
+        assert torch.allclose(result, torch.eye(3), atol=1e-5)
+    assert len(residues) == 141
 
 
 def test_get_fasta(data_dir, model):
