@@ -15,21 +15,6 @@ def list_available_mmcif(mmcif_dir):
     return identifiers
 
 
-def load(id, filepath, fasta_parser):
-    model = load_model(id, filepath)
-    chains = list(model.get_chains())
-    return [
-        {
-            "chain": chain,
-            "frames": get_frames(chain),
-            "fasta": fasta_parser.get_fasta(
-                chain.get_full_id()[0], chain.get_full_id()[2]
-            ),
-        }
-        for chain in chains
-    ]
-
-
 def load_model(id, filepath):
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure(id, filepath)
@@ -43,6 +28,7 @@ def load_model(id, filepath):
 
 def get_residues(chain):
     valid_residues = [res[1] for res in RESIDUE_LIST]
+    result = []
     for residue in chain.get_residues():
         if residue.get_resname() not in valid_residues:
             continue
@@ -56,20 +42,22 @@ def get_residues(chain):
             if all((x is not None for x in [ca, c, n])):
                 break
         ca_coords = torch.from_numpy(ca.get_coord())
-        yield {
-            "resname": residue.get_resname(),
-            "id": residue.get_id(),
-            "rotation": compute_residue_rotation(
-                n_coords=torch.from_numpy(n.get_coord()),
-                ca_coords=ca_coords,
-                c_coords=torch.from_numpy(c.get_coord()),
-            ),
-            "translation": ca_coords,
-        }
+        result.append(
+            {
+                "resname": residue.get_resname(),
+                "id": residue.get_id(),
+                "rotation": compute_residue_rotation(
+                    n_coords=torch.from_numpy(n.get_coord()),
+                    ca_coords=ca_coords,
+                    c_coords=torch.from_numpy(c.get_coord()),
+                ),
+                "translation": ca_coords,
+            }
+        )
+    return result
 
 
-def get_frames(chain):
-    residues = list(get_residues(chain))
+def get_frames(residues):
     translations = torch.stack([r["translation"] for r in residues])
     rotations = torch.stack([r["rotation"] for r in residues])
     return Frame(rotations, translations)

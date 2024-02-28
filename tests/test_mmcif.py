@@ -30,6 +30,7 @@ def test_load_model(model):
 
 def test_get_frames(model):
     chain = next(model.get_chains())
-    frames = mmcif.get_frames(chain)
+    residues = mmcif.get_residues(chain)
+    frames = mmcif.get_frames(residues)
     assert frames.translations.shape == (141, 3)
     assert frames.rotations.shape == (141, 3, 3)
