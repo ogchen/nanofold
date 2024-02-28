@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu20.04
+FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y \
@@ -31,7 +31,9 @@ RUN conda install -y -c conda-forge -c pytorch -c nvidia \
         pip \
     && conda clean -afy
 
+COPY requirements.txt /app/requirements.txt
+RUN pip3 install --no-cache-dir --default-timeout=1500 -r /app/requirements.txt
+
 COPY . /app
 WORKDIR /app
 
-RUN pip3 install --no-cache-dir --default-timeout=1500 -r requirements.txt

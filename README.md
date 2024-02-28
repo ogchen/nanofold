@@ -26,7 +26,10 @@ gzip -d bfd-first_non_consensus_sequences.fasta.gz
 ```
 
 ### Docker
+Requires [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+for GPU support within containers. Set `$DATA_DIR` to the directory containing the downloaded data.
 ```bash
 docker build -t nanofold .
-docker run -it nanofold /bin/bash
+export DATA_DIR=~/data
+docker run -v $DATA_DIR:/app/data -it nanofold /bin/bash
 ```
