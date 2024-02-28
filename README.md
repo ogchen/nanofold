@@ -5,17 +5,7 @@ paper as a basis, modifying details where necessary to allow for training and in
 machine on a mid tier GPU.
 
 ## Setup
-(WSL) Install necessary apt packages:
-```bash
-sudo apt install hmmer
-```
-
-Set up a virtual env and install Python packages listed in `requirements.txt`.
-```bash
-pip install -r requirements.txt
-```
-
-## Required Data
+### Download Required Data
 Download the PDB structures used as the primary training inputs:
 1) Use RCSB's [advanced search](https://www.rcsb.org/search/advanced) to filter protein structures
 deposited before 01/01/2000, limiting the number of inputs sequences to 10959.
@@ -29,9 +19,14 @@ Download sequences in FASTA format:
 a file containing all PDB protein sequences in FASTA format.
 2) Run `python scripts/process_pdb_seqres.py $SEQRES_FILE` to process the file.
 
-### MSA
 Download and unzip small BFD (17GB) with
 ```bash
 wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_non_consensus_sequences.fasta.gz
 gzip -d bfd-first_non_consensus_sequences.fasta.gz
+```
+
+### Docker
+```bash
+docker build -t nanofold .
+docker run -it nanofold /bin/bash
 ```
