@@ -36,12 +36,12 @@ docker build -t nanofold .
 
 Run tests with
 ```bash
-docker run -it nanofold pytest
+docker build -t nanofold . && docker run -it nanofold pytest
 ```
 
 To run an interactive shell, set `$DATA_DIR` to the directory containing the downloaded data
 and run the following:
 ```bash
 export DATA_DIR=~/data
-docker run -v $DATA_DIR:/app/data -it nanofold /bin/bash
+docker run -v $DATA_DIR:/app/data -it --gpus all nanofold /bin/bash
 ```
