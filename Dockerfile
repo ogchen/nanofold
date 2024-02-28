@@ -5,8 +5,7 @@ RUN apt-get update \
         cmake \
         build-essential \
         git \
-        python3.12 \
-        python3-pip \
+        wget \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
@@ -18,10 +17,21 @@ RUN mkdir -p /tmp/hhsuite/ \
     && cmake -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
     && make -j 4 \
     && make install \
-    && ln -s /opt/hhsuite/bin/* /usr/bin \
     && rm -rf /tmp/hhsuite
+
+RUN mkdir -p /opt/miniconda3 \
+    && wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -b -u -p /opt/miniconda3 \
+    && rm -rf /tmp/miniconda.sh
+
+ENV PATH="/opt/miniconda3/bin:/opt/hhsuite/bin:${PATH}"
+
+RUN conda install -y -c conda-forge -c pytorch -c nvidia \
+        python=3.12 \
+        pip \
+    && conda clean -afy
 
 COPY . /app
 WORKDIR /app
 
-RUN pip install --no-cache-dir --default-timeout=1000 -r requirements.txt
+RUN pip3 install --no-cache-dir --default-timeout=1500 -r requirements.txt
