@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args": "-m /home/ogchen/data/pdb_mmcif/ -f /home/ogchen/data/pdb_seqres.txt "
-        }
+            "args": "-m /data/pdb_mmcif/ -f /data/pdb_seqres.txt "
+        },
     ]
 }
