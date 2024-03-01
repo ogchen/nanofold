@@ -26,7 +26,7 @@ RUN mkdir -p /opt/miniconda3 \
 
 ENV PATH="/opt/miniconda3/bin:/opt/hhsuite/bin:${PATH}"
 
-RUN conda install -y -c conda-forge -c pytorch -c nvidia \
+RUN conda install -y -c conda-forge \
         python=3.12 \
         pip \
     && conda clean -afy
