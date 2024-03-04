@@ -8,14 +8,8 @@ def data_dir(request):
 
 
 @pytest.fixture
-def all_models(data_dir):
+def model(request, data_dir):
     identifiers = mmcif.list_available_mmcif(data_dir)
-    assert len(identifiers) == 2
-    models = [mmcif.load_model(i) for i in identifiers]
-    return {m.id: m for m in models}
-
-
-@pytest.fixture
-def model(all_models):
-    assert "1A00" in all_models
-    return all_models["1A00"]
+    matched = [i for i in identifiers if request.param in i]
+    assert len(matched) == 1
+    return mmcif.load_model(matched[0])
