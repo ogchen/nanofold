@@ -12,15 +12,6 @@ def list_available_mmcif(mmcif_dir):
     return glob.glob(search_glob)
 
 
-def parse_mmcif_file(filepath):
-    model = load_model(filepath)
-    chains = parse_chains(model)
-    return {
-        "id": model.id,
-        "chains": chains,
-    }
-
-
 def load_model(filepath):
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure(id, filepath)
