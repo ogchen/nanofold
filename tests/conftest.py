@@ -11,7 +11,8 @@ def data_dir(request):
 def all_models(data_dir):
     identifiers = mmcif.list_available_mmcif(data_dir)
     assert len(identifiers) == 2
-    return {i["id"]: mmcif.load_model(i["id"], i["filepath"]) for i in identifiers}
+    models = [mmcif.load_model(i) for i in identifiers]
+    return {m.id: m for m in models}
 
 
 @pytest.fixture
