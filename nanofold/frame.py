@@ -2,7 +2,10 @@ import torch
 
 
 class Frame:
-    def __init__(self, rotations, translations):
+    def __init__(self, rotations=torch.empty(0, 3, 3), translations=torch.empty(0, 3)):
+        if len(rotations.shape) == 2 and len(translations.shape) == 1:
+            rotations = rotations.unsqueeze(0)
+            translations = translations.unsqueeze(0)
         i, a, b = rotations.shape
         j, c = translations.shape
         if i != j or (a, b, c) != (3, 3, 3):
@@ -14,6 +17,11 @@ class Frame:
 
     def __repr__(self):
         return f"Frame(rotations={self.rotations},\n translations={self.translations})"
+
+    def __add__(self, other):
+        rotations = torch.cat([self.rotations, other.rotations])
+        translations = torch.cat([self.translations, other.translations])
+        return Frame(rotations, translations)
 
     @staticmethod
     def inverse(frame):
