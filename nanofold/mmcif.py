@@ -2,62 +2,86 @@ import glob
 import os
 import torch
 from Bio.PDB import MMCIFParser
-from pathlib import Path
-from nanofold.frame import Frame
-from nanofold.residue import RESIDUE_LIST
+from nanofold.chain import Chain
 from nanofold.residue import compute_residue_rotation
+from nanofold.residue import RESIDUE_LIST
 
 
 def list_available_mmcif(mmcif_dir):
     search_glob = os.path.join(mmcif_dir, "*.cif")
-    mmcif_files = glob.glob(search_glob)
-    identifiers = [{"id": Path(f).stem, "filepath": f} for f in mmcif_files]
-    return identifiers
+    return glob.glob(search_glob)
 
 
-def load_model(id, filepath):
+def parse_mmcif_file(filepath):
+    model = load_model(filepath)
+    chains = parse_chains(model)
+    return {
+        "id": model.id,
+        "chains": chains,
+    }
+
+
+def load_model(filepath):
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure(id, filepath)
     try:
         model = next(structure.get_models())
-        model.header = structure.header
     except StopIteration:
         raise RuntimeError(f"No models found in {filepath}")
+    model.id = parser._mmcif_dict["_entry.id"][0]
+    model.header = structure.header
+    model.mmcif_dict = parser._mmcif_dict
     return model
 
 
+def parse_chains(model):
+    result = []
+    for strand_id, sequence in zip(
+        model.mmcif_dict["_entity_poly.pdbx_strand_id"],
+        model.mmcif_dict["_entity_poly.pdbx_seq_one_letter_code"],
+    ):
+        strand_id = strand_id.split(",")[0]
+        sequence = sequence.replace("\n", "")
+        mmcif_chain = model[strand_id]
+        residue_list = get_residues(mmcif_chain)
+        if len(residue_list) == 0:
+            continue
+        _, structure_id, chain_id = mmcif_chain.get_full_id()
+        result.append(Chain((structure_id, chain_id), sequence, residue_list))
+    if len(result) == 0:
+        raise RuntimeError(f"No valid chains found for model {model.id}")
+    return result
+
+
+def should_filter_residue(residue):
+    valid_residues = [r[1] for r in RESIDUE_LIST]
+    hetatom, _, _ = residue.get_id()
+    is_hetero_residue = hetatom.strip() != ""
+    return is_hetero_residue or residue.get_resname() not in valid_residues
+
+
 def get_residues(chain):
-    valid_residues = [res[1] for res in RESIDUE_LIST]
     result = []
     for residue in chain.get_residues():
-        if residue.get_resname() not in valid_residues:
+        if should_filter_residue(residue):
             continue
-        ca = None
-        c = None
-        n = None
-        for atom in residue.get_atoms():
-            ca = atom if atom.get_name() == "CA" else ca
-            c = atom if atom.get_name() == "C" else c
-            n = atom if atom.get_name() == "N" else n
-            if all((x is not None for x in [ca, c, n])):
-                break
-        ca_coords = torch.from_numpy(ca.get_coord())
+        if "N" not in residue or "CA" not in residue or "C" not in residue:
+            raise RuntimeError(
+                f"Missing backbone atoms for residue {residue.get_full_id()}"
+            )
+        n_coords = torch.from_numpy(residue["N"].get_coord())
+        ca_coords = torch.from_numpy(residue["CA"].get_coord())
+        c_coords = torch.from_numpy(residue["C"].get_coord())
         result.append(
             {
                 "resname": residue.get_resname(),
-                "id": residue.get_id(),
+                "id": residue.get_full_id(),
                 "rotation": compute_residue_rotation(
-                    n_coords=torch.from_numpy(n.get_coord()),
+                    n_coords=n_coords,
                     ca_coords=ca_coords,
-                    c_coords=torch.from_numpy(c.get_coord()),
+                    c_coords=c_coords,
                 ),
                 "translation": ca_coords,
             }
         )
     return result
-
-
-def get_frames(residues):
-    translations = torch.stack([r["translation"] for r in residues])
-    rotations = torch.stack([r["rotation"] for r in residues])
-    return Frame(rotations, translations)
