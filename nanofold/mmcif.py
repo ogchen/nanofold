@@ -1,3 +1,4 @@
+import difflib
 import glob
 import os
 import torch
@@ -8,9 +9,6 @@ from nanofold.residue import RESIDUE_LIST
 
 
 class EmptyChainError(RuntimeError):
-    pass
-
-class SequenceMismatchError(RuntimeError):
     pass
 
 
@@ -32,6 +30,12 @@ def load_model(filepath):
     return model
 
 
+def get_longest_match(chain, sequence):
+    matcher = difflib.SequenceMatcher(None, chain.sequence, sequence, autojunk=False)
+    start, _, size = matcher.find_longest_match()
+    return chain[start : start + size]
+
+
 def parse_chains(model):
     result = []
     for strand_id, sequence in zip(
@@ -42,11 +46,10 @@ def parse_chains(model):
         sequence = sequence.replace("\n", "")
         mmcif_chain = model[strand_id]
         residue_list = get_residues(mmcif_chain)
-        if len(residue_list) == 0:
+        chain = Chain.from_residue_list(mmcif_chain.get_full_id()[1:], residue_list)
+        chain = get_longest_match(chain, sequence)
+        if len(chain) == 0:
             continue
-        chain = Chain(mmcif_chain.get_full_id()[1:], residue_list)
-        if chain.sequence not in sequence:
-            raise SequenceMismatchError(f"Sequence mismatch for chain {chain.id}")
         result.append(chain)
 
     if len(result) == 0:
@@ -69,9 +72,13 @@ def get_residues(chain):
             continue
         if "CA" not in residue:
             continue
-        n_coords = torch.from_numpy(residue["N"].get_coord()) if "N" in residue else None
+        n_coords = (
+            torch.from_numpy(residue["N"].get_coord()) if "N" in residue else None
+        )
         ca_coords = torch.from_numpy(residue["CA"].get_coord())
-        c_coords = torch.from_numpy(residue["C"].get_coord()) if "C" in residue else None
+        c_coords = (
+            torch.from_numpy(residue["C"].get_coord()) if "C" in residue else None
+        )
         result.append(
             {
                 "resname": residue.get_resname(),
