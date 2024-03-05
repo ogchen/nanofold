@@ -127,3 +127,31 @@ def test_frame_add():
     result = frames1 + frames2
     assert torch.allclose(result.rotations, expected.rotations)
     assert torch.allclose(result.translations, expected.translations)
+
+
+def test_frame_getitem():
+    frames = Frame(
+        torch.stack([torch.eye(3), 2 * torch.eye(3), 3 * torch.eye(3)]),
+        torch.stack([torch.ones(3), 2 * torch.ones(3), 3 * torch.ones(3)]),
+    )
+    expected = Frame(
+        torch.stack([2 * torch.eye(3)]),
+        torch.stack([2 * torch.ones(3)]),
+    )
+    result = frames[1]
+    assert torch.allclose(result.rotations, expected.rotations)
+    assert torch.allclose(result.translations, expected.translations)
+
+
+def test_frame_getitem_slice():
+    frames = Frame(
+        torch.stack([torch.eye(3), 2 * torch.eye(3), 3 * torch.eye(3)]),
+        torch.stack([torch.ones(3), 2 * torch.ones(3), 3 * torch.ones(3)]),
+    )
+    expected = Frame(
+        torch.stack([2 * torch.eye(3), 3 * torch.eye(3)]),
+        torch.stack([2 * torch.ones(3), 3 * torch.ones(3)]),
+    )
+    result = frames[1:]
+    assert torch.allclose(result.rotations, expected.rotations)
+    assert torch.allclose(result.translations, expected.translations)
