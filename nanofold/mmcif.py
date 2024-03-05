@@ -7,6 +7,13 @@ from nanofold.residue import compute_residue_rotation
 from nanofold.residue import RESIDUE_LIST
 
 
+class EmptyChainError(RuntimeError):
+    pass
+
+class SequenceMismatchError(RuntimeError):
+    pass
+
+
 def list_available_mmcif(mmcif_dir):
     search_glob = os.path.join(mmcif_dir, "*.cif")
     return glob.glob(search_glob)
@@ -39,11 +46,11 @@ def parse_chains(model):
             continue
         chain = Chain(mmcif_chain.get_full_id()[1:], residue_list)
         if chain.sequence not in sequence:
-            raise RuntimeError(f"Sequence mismatch for chain {chain.id}")
+            raise SequenceMismatchError(f"Sequence mismatch for chain {chain.id}")
         result.append(chain)
 
     if len(result) == 0:
-        raise RuntimeError(f"No valid chains found for model {model.id}")
+        raise EmptyChainError(f"No valid chains found for model {model.id}")
     return result
 
 
@@ -60,18 +67,18 @@ def get_residues(chain):
     for residue in chain.get_residues():
         if should_filter_residue(residue):
             continue
-        if "N" not in residue or "CA" not in residue or "C" not in residue:
+        if "CA" not in residue:
             raise RuntimeError(
-                f"Missing backbone atoms for residue {residue.get_full_id()[1:]}"
+                f"Missing CA atom for residue {residue.get_full_id()[1:]}"
             )
-        n_coords = torch.from_numpy(residue["N"].get_coord())
+        n_coords = torch.from_numpy(residue["N"].get_coord()) if "N" in residue else None
         ca_coords = torch.from_numpy(residue["CA"].get_coord())
-        c_coords = torch.from_numpy(residue["C"].get_coord())
+        c_coords = torch.from_numpy(residue["C"].get_coord()) if "C" in residue else None
         result.append(
             {
                 "resname": residue.get_resname(),
                 "id": residue.get_full_id()[1:],
-                "serial_number": residue["C"].get_serial_number(),
+                "serial_number": residue["CA"].get_serial_number(),
                 "rotation": compute_residue_rotation(
                     n_coords=n_coords,
                     ca_coords=ca_coords,

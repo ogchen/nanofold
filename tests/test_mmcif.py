@@ -36,6 +36,16 @@ def test_parse_chains(model, valid_chains, num_residues, sequence):
 
 
 @pytest.mark.parametrize(
+    "model",
+    ["1GSG"],
+    indirect=["model"],
+)
+def test_parse_chains_mismatch(model):
+    with pytest.raises(mmcif.SequenceMismatchError):
+        mmcif.parse_chains(model)
+
+
+@pytest.mark.parametrize(
     "model, num_chains, num_residues",
     [("1A00", 4, 141), ("1YUJ", 3, 0)],
     indirect=["model"],

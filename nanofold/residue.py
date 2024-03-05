@@ -25,6 +25,8 @@ RESIDUE_LIST = [
 
 
 def compute_residue_rotation(n_coords, ca_coords, c_coords):
+    if n_coords is None or c_coords is None:
+        return torch.eye(3)
     ca_c = c_coords - ca_coords
     ca_n = n_coords - ca_coords
     ca_c_unit = ca_c / ca_c.norm()
