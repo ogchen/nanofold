@@ -7,6 +7,8 @@ from nanofold.mmcif import EmptyChainError
 from nanofold.util import accept_chain
 from nanofold.util import crop_chain
 from nanofold.util import randint
+from nanofold.input import encode_one_hot
+from nanofold.input import InputEmbedder
 
 
 def parse_args():
@@ -31,19 +33,18 @@ def get_next_chain(files, crop_size=32):
             continue
         chain = chains[randint(0, len(chains))]
         if accept_chain(chain):
-            print(f"Accepted chain {chain.id}")
             chain = crop_chain(chain, crop_size)
-            print(len(chain))
             yield chain
-        else:
-            print(f"Rejected chain {chain.id}")
 
 
 def main():
     args = parse_args()
     available = list_available_mmcif(args.mmcif)
+    input_embedder = InputEmbedder(embedding_size=8, position_bins=4)
     for chain in get_next_chain(available):
-        pass
+        target_feat = encode_one_hot(chain.sequence)
+        pair_representations = input_embedder(target_feat, torch.tensor(chain.positions))
+        print(pair_representations.shape)
 
 
 if __name__ == "__main__":
