@@ -13,7 +13,7 @@ def loss_fape(
         coords_truth (torch.Tensor): The ground truth coordinates.
         eps (float): A small value to ensure gradients are well behaved for small differences.
         length_scale (float): A scaling factor for the loss.
-        clamp (float): The minimum value for a pairwise loss.
+        clamp (float): The maximum value for a pairwise loss.
     """
     inverse = Frame.inverse(frames)
     inverse_truth = Frame.inverse(frames_truth)

@@ -1,10 +1,12 @@
 import argparse
 import torch
-
 from nanofold.mmcif import list_available_mmcif
 from nanofold.mmcif import parse_chains
 from nanofold.mmcif import load_model
 from nanofold.mmcif import EmptyChainError
+from nanofold.util import accept_chain
+from nanofold.util import crop_chain
+from nanofold.util import randint
 
 
 def parse_args():
@@ -19,26 +21,22 @@ def load(filepath):
     return parse_chains(model)
 
 
-def get_next_chain(files):
+def get_next_chain(files, crop_size=32):
     while True:
-        index = torch.randint(0, len(files), (1,)).item()
+        index = randint(0, len(files))
         try:
             chains = load(files[index])
         except EmptyChainError as e:
             print(e)
             continue
-        chain_index = torch.randint(0, len(chains), (1,)).item()
-        if accept_chain(chains[chain_index]):
-            print(f"Accepted chain {chains[chain_index].id}")
-            yield chains[chain_index]
+        chain = chains[randint(0, len(chains))]
+        if accept_chain(chain):
+            print(f"Accepted chain {chain.id}")
+            chain = crop_chain(chain, crop_size)
+            print(len(chain))
+            yield chain
         else:
-            print(f"Rejected chain {chains[chain_index].id}")
-
-
-def accept_chain(chain):
-    prob = 1 / 512 * max(min(len(chain), 512), 256)
-    if torch.rand(1) < prob:
-        return True
+            print(f"Rejected chain {chain.id}")
 
 
 def main():
