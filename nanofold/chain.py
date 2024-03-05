@@ -3,22 +3,30 @@ from nanofold.residue import RESIDUE_LIST
 
 
 class Chain:
-    def __init__(self, id, residue_list):
+    RESIDUE_LOOKUP = {r[1]: r[0] for r in RESIDUE_LIST}
+
+    def __init__(self, id, chain, frames, sequence):
         self.id = id
-        self.chain = []
-        self.frames = Frame()
+        self.chain = chain
+        self.frames = frames
+        self.sequence = sequence
 
+    @classmethod
+    def from_residue_list(cls, id, residue_list):
+        chain = cls(id, chain=[], frames=Frame(), sequence="")
         for residue in residue_list:
-            self.add_residue(residue)
-
-        residue_lookup = {r[1]: r[0] for r in RESIDUE_LIST}
-        self.sequence = "".join([residue_lookup[r["resname"]] for r in self.chain])
+            chain.add_residue(residue)
+        return chain
 
     def __repr__(self):
         return f"Chain(id={self.id}, sequence={self.sequence})"
 
     def __len__(self):
         return len(self.chain)
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return Chain(self.id, self.chain[key], self.frames[key], self.sequence[key])
 
     def add_residue(self, residue):
         self.chain.append(
@@ -28,3 +36,4 @@ class Chain:
             }
         )
         self.frames += Frame(residue["rotation"], residue["translation"])
+        self.sequence += Chain.RESIDUE_LOOKUP[residue["resname"]]
