@@ -23,6 +23,11 @@ class Frame:
         translations = torch.cat([self.translations, other.translations])
         return Frame(rotations, translations)
 
+    def __getitem__(self, key):
+        rotations = self.rotations[key]
+        translations = self.translations[key]
+        return Frame(rotations, translations)
+
     @staticmethod
     def inverse(frame):
         inverse_rotations = torch.inverse(frame.rotations)
