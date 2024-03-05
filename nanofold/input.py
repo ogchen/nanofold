@@ -33,6 +33,6 @@ class InputEmbedder(nn.Module):
 
         d = residue_index.reshape(-1, 1) - residue_index
         d = d.clamp(min=-self.bins, max=self.bins) + self.bins
-        p = nn.functional.one_hot(d)
-        p = self.linear_position(p.float())
+        p = nn.functional.one_hot(d, num_classes=2*self.bins + 1).float()
+        p = self.linear_position(p)
         return z + p
