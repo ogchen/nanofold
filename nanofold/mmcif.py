@@ -25,6 +25,17 @@ def load_model(filepath):
     return model
 
 
+def check_chain(residue_list, chain, model, sequence):
+    serial_number = residue_list[-1]["serial_number"]
+    expected_length = int(model.mmcif_dict["_atom_site.label_seq_id"][serial_number])
+    if len(chain.sequence) != expected_length:
+        raise RuntimeError(
+            f"Sequence length mismatch for chain {chain.id} (expected {expected_length}, got {len(chain.sequence)})"
+        )
+    if chain.sequence not in sequence:
+        raise RuntimeError(f"Sequence mismatch for chain {chain.id}")
+
+
 def parse_chains(model):
     result = []
     for strand_id, sequence in zip(
@@ -37,8 +48,12 @@ def parse_chains(model):
         residue_list = get_residues(mmcif_chain)
         if len(residue_list) == 0:
             continue
-        _, structure_id, chain_id = mmcif_chain.get_full_id()
-        result.append(Chain((structure_id, chain_id), sequence, residue_list))
+        chain = Chain(mmcif_chain.get_full_id()[1:], residue_list)
+
+        # Sanity checks on sequence and length
+        check_chain(residue_list, chain, model, sequence)
+        result.append(chain)
+
     if len(result) == 0:
         raise RuntimeError(f"No valid chains found for model {model.id}")
     return result
@@ -48,7 +63,8 @@ def should_filter_residue(residue):
     valid_residues = [r[1] for r in RESIDUE_LIST]
     hetatom, _, _ = residue.get_id()
     is_hetero_residue = hetatom.strip() != ""
-    return is_hetero_residue or residue.get_resname() not in valid_residues
+    is_valid_residue = residue.get_resname() in valid_residues
+    return is_hetero_residue or not is_valid_residue
 
 
 def get_residues(chain):
@@ -58,7 +74,7 @@ def get_residues(chain):
             continue
         if "N" not in residue or "CA" not in residue or "C" not in residue:
             raise RuntimeError(
-                f"Missing backbone atoms for residue {residue.get_full_id()}"
+                f"Missing backbone atoms for residue {residue.get_full_id()[1:]}"
             )
         n_coords = torch.from_numpy(residue["N"].get_coord())
         ca_coords = torch.from_numpy(residue["CA"].get_coord())
@@ -66,7 +82,8 @@ def get_residues(chain):
         result.append(
             {
                 "resname": residue.get_resname(),
-                "id": residue.get_full_id(),
+                "id": residue.get_full_id()[1:],
+                "serial_number": residue["C"].get_serial_number(),
                 "rotation": compute_residue_rotation(
                     n_coords=n_coords,
                     ca_coords=ca_coords,
