@@ -25,17 +25,6 @@ def load_model(filepath):
     return model
 
 
-def check_chain(residue_list, chain, sequence):
-    get_resseq = lambda i: residue_list[i]["id"][-1][1]
-    expected_length = get_resseq(-1) - get_resseq(0) + 1
-    if len(chain.sequence) != expected_length:
-        raise RuntimeError(
-            f"Sequence length mismatch for chain {chain.id} (expected {expected_length}, got {len(chain.sequence)})"
-        )
-    if chain.sequence not in sequence:
-        raise RuntimeError(f"Sequence mismatch for chain {chain.id}")
-
-
 def parse_chains(model):
     result = []
     for strand_id, sequence in zip(
@@ -49,9 +38,8 @@ def parse_chains(model):
         if len(residue_list) == 0:
             continue
         chain = Chain(mmcif_chain.get_full_id()[1:], residue_list)
-
-        # Sanity checks on sequence and length
-        check_chain(residue_list, chain, sequence)
+        if chain.sequence not in sequence:
+            raise RuntimeError(f"Sequence mismatch for chain {chain.id}")
         result.append(chain)
 
     if len(result) == 0:
@@ -83,6 +71,7 @@ def get_residues(chain):
             {
                 "resname": residue.get_resname(),
                 "id": residue.get_full_id()[1:],
+                "serial_number": residue["C"].get_serial_number(),
                 "rotation": compute_residue_rotation(
                     n_coords=n_coords,
                     ca_coords=ca_coords,
