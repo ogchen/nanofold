@@ -68,9 +68,7 @@ def get_residues(chain):
         if should_filter_residue(residue):
             continue
         if "CA" not in residue:
-            raise RuntimeError(
-                f"Missing CA atom for residue {residue.get_full_id()[1:]}"
-            )
+            continue
         n_coords = torch.from_numpy(residue["N"].get_coord()) if "N" in residue else None
         ca_coords = torch.from_numpy(residue["CA"].get_coord())
         c_coords = torch.from_numpy(residue["C"].get_coord()) if "C" in residue else None
