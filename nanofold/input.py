@@ -27,9 +27,7 @@ class InputEmbedder(nn.Module):
         a = self.linear_a(target_feat)
         b = self.linear_b(target_feat)
         # Add a dimension to a and b to allow broadcasting
-        a = a.reshape(-1, 1, self.embedding_size)
-        b = b.reshape(1, -1, self.embedding_size)
-        z = a + b
+        z = a.unsqueeze(1) + b.unsqueeze(0)
 
         d = residue_index.reshape(-1, 1) - residue_index
         d = d.clamp(min=-self.bins, max=self.bins) + self.bins
