@@ -107,45 +107,6 @@ def test_frame_apply():
     assert torch.allclose(res, expected), f"{res} != {expected}"
 
 
-def test_frame_apply_batch():
-    rotations = torch.stack(
-        [
-            torch.eye(3),
-            2 * torch.eye(3),
-            torch.ones(3, 3),
-        ]
-    )
-    translations = torch.stack([torch.zeros(3), torch.ones(3), torch.tensor([1, 2, 3])])
-    frames = Frame(rotations, translations)
-    vectors = torch.tensor(
-        [[[1, 1, 1], [-1, -1, -1], [1, 0, -1]], [[1, 0, -1], [1, 1, 1], [-1, -1, -1]]]
-    ).float()
-    expected = torch.stack(
-        [
-            torch.stack(
-                [
-                    vectors[0],
-                    torch.stack(
-                        [3 * torch.ones(3), -torch.ones(3), torch.tensor([3, 1, -1])]
-                    ),
-                    torch.tensor([[4, 5, 6], [-2, -1, 0], [1, 2, 3]]),
-                ]
-            ),
-            torch.stack(
-                [
-                    vectors[1],
-                    torch.stack(
-                        [torch.tensor([3, 1, -1]), 3 * torch.ones(3), -torch.ones(3)]
-                    ),
-                    torch.tensor([[1, 2, 3], [4, 5, 6], [-2, -1, 0]]),
-                ]
-            ),
-        ]
-    )
-    res = Frame.apply(frames, vectors)
-    assert torch.allclose(res, expected), f"{res} != {expected}"
-
-
 def test_frame_add():
     frames1 = Frame(
         torch.stack([torch.eye(3), 2 * torch.eye(3)]),

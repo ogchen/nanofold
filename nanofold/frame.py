@@ -48,9 +48,6 @@ class Frame:
 
     @staticmethod
     def apply(frames, vectors):
-        if len(vectors.shape) == 3:
-            b, x, y = vectors.shape
-            vectors = vectors.reshape(b, 1, x, y)
         result = vectors @ frames.rotations.transpose(-2, -1)
         result = result.transpose(-2, -3) + frames.translations
         return result.transpose(-2, -3)
