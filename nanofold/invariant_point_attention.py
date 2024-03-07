@@ -7,8 +7,8 @@ from nanofold.frame import Frame
 class InvariantPointAttention(nn.Module):
     def __init__(
         self,
-        pair_embedding_size,
         single_embedding_size,
+        pair_embedding_size,
         embedding_size,
         num_query_points,
         num_value_points,
@@ -18,49 +18,25 @@ class InvariantPointAttention(nn.Module):
         self.num_heads = num_heads
         self.num_query_points = num_query_points
         self.num_value_points = num_value_points
-        self.embedding_size = embedding_size
-        self.query = nn.ModuleList(
-            [
-                nn.Linear(single_embedding_size, embedding_size, bias=False)
-                for _ in range(self.num_heads)
-            ]
+        self.query = nn.Linear(
+            single_embedding_size, embedding_size * num_heads, bias=False
         )
-        self.key = nn.ModuleList(
-            [
-                nn.Linear(single_embedding_size, embedding_size, bias=False)
-                for _ in range(self.num_heads)
-            ]
+        self.key = nn.Linear(
+            single_embedding_size, embedding_size * num_heads, bias=False
         )
-        self.value = nn.ModuleList(
-            [
-                nn.Linear(single_embedding_size, embedding_size, bias=False)
-                for _ in range(self.num_heads)
-            ]
+        self.value = nn.Linear(
+            single_embedding_size, embedding_size * num_heads, bias=False
         )
-        self.query_points = nn.ModuleList(
-            [
-                nn.Linear(single_embedding_size, 3, bias=False)
-                for _ in range(self.num_heads * self.num_query_points)
-            ]
+        self.query_points = nn.Linear(
+            single_embedding_size, 3 * num_query_points * num_heads, bias=False
         )
-        self.key_points = nn.ModuleList(
-            [
-                nn.Linear(single_embedding_size, 3, bias=False)
-                for _ in range(self.num_heads * self.num_query_points)
-            ]
+        self.key_points = nn.Linear(
+            single_embedding_size, 3 * num_query_points * num_heads, bias=False
         )
-        self.value_points = nn.ModuleList(
-            [
-                nn.Linear(single_embedding_size, 3, bias=False)
-                for _ in range(self.num_heads * self.num_value_points)
-            ]
+        self.value_points = nn.Linear(
+            single_embedding_size, 3 * num_value_points * num_heads, bias=False
         )
-        self.bias = nn.ModuleList(
-            [
-                nn.Linear(pair_embedding_size, 1, bias=False)
-                for _ in range(self.num_heads)
-            ]
-        )
+        self.bias = nn.Linear(pair_embedding_size, num_heads, bias=False)
         self.out = nn.Linear(
             self.num_heads
             * (pair_embedding_size + embedding_size + self.num_value_points * (3 + 1)),
@@ -68,59 +44,78 @@ class InvariantPointAttention(nn.Module):
         )
         self.softplus = nn.Softplus()
         self.scale_head = nn.Parameter(torch.ones(self.num_heads))
+        self.scale_single_rep = 1 / math.sqrt(embedding_size)
+        self.scale_frame = -1 / math.sqrt(18 * self.num_query_points)
 
     def single_rep_weight(self, single_representation):
-        q = torch.stack([f(single_representation) for f in self.query])
-        k = torch.stack([f(single_representation) for f in self.key])
-        weight = math.sqrt(1 / self.embedding_size) * q @ k.transpose(-2, -1)
+        len_seq = single_representation.shape[0]
+        q = (
+            self.query(single_representation)
+            .view(len_seq, self.num_heads, -1)
+            .transpose(0, 1)
+        )
+        k = (
+            self.key(single_representation)
+            .view(len_seq, self.num_heads, -1)
+            .transpose(0, 1)
+        )
+        weight = self.scale_single_rep * q @ k.transpose(-2, -1)
         return weight
 
     def pair_rep_weight(self, pair_representation):
-        weight = torch.stack([f(pair_representation) for f in self.bias]).squeeze(-1)
+        weight = self.bias(pair_representation).permute(2, 0, 1)
         return weight
 
     def frame_weight(self, frames, single_representation):
-        qp = torch.stack([f(single_representation) for f in self.query_points]).reshape(
-            self.num_heads, self.num_query_points, -1, 3
+        len_seq = single_representation.shape[0]
+        qp = (
+            self.query_points(single_representation)
+            .view(len_seq, self.num_heads, -1, 3)
+            .transpose(0, 1)
         )
-        kp = torch.stack([f(single_representation) for f in self.key_points]).reshape(
-            self.num_heads, self.num_query_points, -1, 3
+        kp = (
+            self.key_points(single_representation)
+            .view(len_seq, self.num_heads, -1, 3)
+            .transpose(0, 1)
         )
-
-        local_qp = Frame.apply(frames, qp.transpose(-2, -3)).transpose(-2, -3)
-        local_kp = Frame.apply(frames, kp.transpose(-2, -3)).transpose(-2, -3)
-        difference = local_qp.unsqueeze(-2) - local_kp.unsqueeze(-3)
+        local_qp = Frame.apply(frames, qp)
+        local_kp = Frame.apply(frames, kp)
+        difference = local_qp.unsqueeze(-3) - local_kp.unsqueeze(-4)
         squared_distance = difference.unsqueeze(-2) @ difference.unsqueeze(-1)
         squared_distance = squared_distance.squeeze(-1, -2)
-        weight = torch.sum(squared_distance, dim=-3)
+        weight = torch.sum(squared_distance, dim=-1)
         weight = self.softplus(self.scale_head) * weight.transpose(0, -1)
-        weight = (
-            -1 * math.sqrt(1 / (18 * self.num_query_points)) * weight.transpose(0, -1)
-        )
+        weight = self.scale_frame * weight.transpose(0, -1)
         return weight
 
     def single_rep_attention(self, weight, single_representation):
-        len_seq, _ = single_representation.shape
-        v = torch.stack([f(single_representation) for f in self.value])
+        len_seq = single_representation.shape[0]
+        v = (
+            self.value(single_representation)
+            .view(len_seq, self.num_heads, -1)
+            .transpose(0, 1)
+        )
         attention = weight.unsqueeze(-3) @ v.unsqueeze(-3)
         attention = attention.squeeze(-3)
         attention = attention.transpose(0, 1).reshape(len_seq, -1)
         return attention
 
     def pair_rep_attention(self, weight, pair_representation):
-        len_seq, _, _ = pair_representation.shape
+        len_seq = pair_representation.shape[0]
         attention = weight.unsqueeze(-3) @ pair_representation
         attention = torch.sum(attention, dim=-2)
         attention = attention.transpose(0, 1).reshape(len_seq, -1)
         return attention
 
     def frame_attention(self, weight, frames, single_representation):
-        len_seq, _ = single_representation.shape
-        vp = torch.stack([f(single_representation) for f in self.value_points]).reshape(
-            self.num_heads, self.num_value_points, -1, 3
+        len_seq = single_representation.shape[0]
+        vp = (
+            self.value_points(single_representation)
+            .view(len_seq, self.num_heads, -1, 3)
+            .transpose(0, 1)
         )
-        local_vp = Frame.apply(frames, vp.transpose(-2, -3)).transpose(-2, -3)
-        local_out_points = weight.unsqueeze(-3) @ local_vp
+        local_vp = Frame.apply(frames, vp)
+        local_out_points = weight.unsqueeze(-3) @ local_vp.transpose(-2, -3)
         inverse_frames = Frame.inverse(frames)
         global_out_points = Frame.apply(
             inverse_frames, local_out_points.transpose(-2, -3)
