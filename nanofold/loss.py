@@ -17,8 +17,9 @@ def loss_fape(
     """
     inverse = Frame.inverse(frames)
     inverse_truth = Frame.inverse(frames_truth)
-    globals = Frame.apply(inverse, coords)
-    globals_truth = Frame.apply(inverse_truth, coords_truth)
-    squared_norm = torch.linalg.vector_norm(globals - globals_truth, dim=-1) ** 2
+    globals = Frame.apply(inverse, coords.unsqueeze(1))
+    globals_truth = Frame.apply(inverse_truth, coords_truth.unsqueeze(1))
+    difference = globals - globals_truth
+    squared_norm = difference.unsqueeze(-2) @ difference.unsqueeze(-1)
     norm = torch.sqrt(squared_norm + eps).clamp(max=clamp)
     return (1 / length_scale) * norm.mean()
