@@ -1,6 +1,7 @@
 from nanofold.frame import Frame
 import pytest
 import torch
+import math
 
 
 def test_frame_init():
@@ -12,35 +13,22 @@ def test_frame_init():
 
 
 def test_frame_inverse():
+    cos = math.cos(1)
+    sin = math.sin(1)
     rotations = torch.stack(
         [
             torch.eye(3),
-            torch.diag(torch.tensor([2, 0.5, 1])),
-            torch.diag(torch.tensor([4, 2, 2])),
+            torch.tensor([[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]]),
+            torch.tensor([[cos, 0, sin], [0, 1, 0], [-sin, 0, cos]]),
         ]
     )
     translations = torch.stack([torch.zeros(3), torch.ones(3), torch.tensor([1, 2, 3])])
 
-    expected_rotations = torch.stack(
-        [
-            torch.eye(3),
-            torch.diag(torch.tensor([0.5, 2, 1])),
-            torch.diag(torch.tensor([0.25, 0.5, 0.5])),
-        ]
-    )
-    expected_translations = torch.stack(
-        [torch.zeros(3), -torch.tensor([0.5, 2, 1]), -torch.tensor([0.25, 1, 1.5])]
-    )
-    expected = Frame(expected_rotations, expected_translations)
-
     frames = Frame(rotations, translations)
     inverse = Frame.inverse(frames)
-    assert torch.allclose(
-        inverse.rotations, expected.rotations
-    ), f"{inverse.rotations} != {expected.rotations}"
-    assert torch.allclose(
-        inverse.translations, expected.translations
-    ), f"{inverse.translations} != {expected.translations}"
+    x = torch.tensor([1, 2, 3]).float()
+    result = Frame.apply(inverse, Frame.apply(frames, x))
+    assert torch.allclose(result, x)
 
 
 def test_frame_compose():
@@ -102,8 +90,8 @@ def test_frame_apply():
             torch.stack([3 * torch.ones(3), -torch.ones(3), torch.tensor([3, 1, -1])]),
             torch.tensor([[4, 5, 6], [-2, -1, 0], [1, 2, 3]]),
         ]
-    )
-    res = Frame.apply(frames, vectors)
+    ).transpose(0, 1)
+    res = Frame.apply(frames, vectors.unsqueeze(1))
     assert torch.allclose(res, expected), f"{res} != {expected}"
 
 
