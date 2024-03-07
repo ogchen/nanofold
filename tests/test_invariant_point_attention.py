@@ -14,8 +14,8 @@ class TestInvariantPointAttention:
         self.num_value_points = 8
         self.num_heads = 2
         self.model = InvariantPointAttention(
-            pair_embedding_size=self.pair_embedding_size,
             single_embedding_size=self.single_embedding_size,
+            pair_embedding_size=self.pair_embedding_size,
             embedding_size=self.embedding_size,
             num_query_points=self.num_query_points,
             num_value_points=self.num_value_points,
@@ -75,15 +75,32 @@ class TestInvariantPointAttention:
         weight = self.model.single_rep_weight(self.single_representation)
         assert weight.shape == (self.num_heads, self.len_seq, self.len_seq)
 
-        q = torch.stack([f(self.single_representation) for f in self.model.query])
-        k = torch.stack([f(self.single_representation) for f in self.model.key])
+        q = self.model.query(self.single_representation).view(
+            self.len_seq, self.num_heads, -1
+        )
+        k = self.model.key(self.single_representation).view(
+            self.len_seq, self.num_heads, -1
+        )
         for h in range(weight.shape[0]):
             for i in range(weight.shape[1]):
                 for j in range(weight.shape[2]):
                     assert torch.allclose(
                         weight[h, i, j],
-                        math.sqrt(1 / self.embedding_size)
-                        * torch.dot(q[h, i], k[h, j]),
+                        self.model.scale_single_rep * torch.dot(q[i, h], k[j, h]),
+                        atol=1e-5,
+                    )
+
+    @torch.no_grad
+    def test_pair_rep_weight(self):
+        weight = self.model.pair_rep_weight(self.pair_representation)
+        assert weight.shape == (self.num_heads, self.len_seq, self.len_seq)
+
+        for i in range(self.len_seq):
+            for j in range(self.len_seq):
+                for h in range(self.num_heads):
+                    assert torch.allclose(
+                        weight[h, i, j],
+                        self.model.bias(self.pair_representation[i, j])[h],
                         atol=1e-5,
                     )
 
@@ -94,12 +111,15 @@ class TestInvariantPointAttention:
         weight = self.model.frame_weight(self.frames, self.single_representation)
         assert weight.shape == (self.num_heads, self.len_seq, self.len_seq)
 
-        qp = torch.stack(
-            [f(self.single_representation) for f in self.model.query_points]
-        ).reshape(self.num_heads, self.num_query_points, -1, 3)
-        kp = torch.stack(
-            [f(self.single_representation) for f in self.model.key_points]
-        ).reshape(self.num_heads, self.num_query_points, -1, 3)
+        qp = self.model.query_points(self.single_representation).view(
+            self.len_seq, self.num_heads, -1, 3
+        )
+        kp = self.model.key_points(self.single_representation).view(
+            self.len_seq, self.num_heads, -1, 3
+        )
+        scale_factor = (
+            self.model.softplus(self.model.scale_head) * self.model.scale_frame
+        )
 
         for h in range(weight.shape[0]):
             for i in range(weight.shape[1]):
@@ -107,8 +127,11 @@ class TestInvariantPointAttention:
                     sum_distance = 0
                     for p in range(self.num_query_points):
                         diff = Frame.apply(
-                            self.frames[i], qp[h][p][i].unsqueeze(0)
-                        ) - Frame.apply(self.frames[j], kp[h][p][j].unsqueeze(0))
+                            self.frames[i], qp[i][h][p].unsqueeze(0)
+                        ) - Frame.apply(self.frames[j], kp[j][h][p].unsqueeze(0))
                         sum_distance += torch.linalg.vector_norm(diff) ** 2
-                    scale_factor = -self.model.softplus(self.model.scale_head[h]) * math.sqrt(2/(9 * self.num_query_points)) * 1/2
-                    assert torch.allclose(scale_factor * sum_distance, weight[h, i, j], atol=1e-5)
+                    assert torch.allclose(
+                        scale_factor[h] * sum_distance,
+                        weight[h, i, j],
+                        atol=1e-5,
+                    )
