@@ -90,8 +90,9 @@ class InvariantPointAttention(nn.Module):
         local_qp = Frame.apply(frames, qp.transpose(-2, -3)).transpose(-2, -3)
         local_kp = Frame.apply(frames, kp.transpose(-2, -3)).transpose(-2, -3)
         difference = local_qp.unsqueeze(-2) - local_kp.unsqueeze(-3)
-        distance = torch.linalg.vector_norm(difference, dim=-1)
-        weight = torch.sum(distance, dim=-3)
+        squared_distance = difference.unsqueeze(-2) @ difference.unsqueeze(-1)
+        squared_distance = squared_distance.squeeze(-1, -2)
+        weight = torch.sum(squared_distance, dim=-3)
         weight = self.softplus(self.scale_head) * weight.transpose(0, -1)
         weight = (
             -1 * math.sqrt(1 / (18 * self.num_query_points)) * weight.transpose(0, -1)
