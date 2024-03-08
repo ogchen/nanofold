@@ -82,7 +82,7 @@ def test_frame_apply():
         ]
     )
     translations = torch.stack([torch.zeros(3), torch.ones(3), torch.tensor([1, 2, 3])])
-    frames = Frame(rotations, translations)
+    frames = Frame(rotations.unsqueeze(1), translations.unsqueeze(1))
     vectors = torch.stack([torch.ones(3), -torch.ones(3), torch.tensor([1, 0, -1])])
     expected = torch.stack(
         [
@@ -90,8 +90,8 @@ def test_frame_apply():
             torch.stack([3 * torch.ones(3), -torch.ones(3), torch.tensor([3, 1, -1])]),
             torch.tensor([[4, 5, 6], [-2, -1, 0], [1, 2, 3]]),
         ]
-    ).transpose(0, 1)
-    res = Frame.apply(frames, vectors.unsqueeze(1))
+    )
+    res = Frame.apply(frames, vectors)
     assert torch.allclose(res, expected), f"{res} != {expected}"
 
 
