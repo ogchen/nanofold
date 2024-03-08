@@ -26,12 +26,6 @@ from nanofold import mmcif
             "TIQPGTGYNNGYFYSYWNDGHGGVTYTNGPGGQFSVNWSNSGNFVGGKGWQPGTKNKVINFSGSYNPNGNSYLSVYGWSRNPLIEYYIVENFGTYNPSTGATKLGEVTSDGSVYDIYRTQRVNQPSIIGTATFYQYWSVRRNHRSSGSVNTANHFNAWAQQGLTLGTMDYQIVAVEGYFSSGSASITVS",
         ),
         (
-            "1GSG",
-            1,
-            432,
-            "TNFIRQIIDEDLASGKHTTVHTRFPPEPNGYLHIGHAKSICLNFGIAQDYKGQCNLRFDDTNPVKEDIEYVESIKNDVEWLGFHWSGNVRYSSDYFDQLHAYAIELINKGLAYVDELTPEQIREYRGTLTQPGKNSPYRDRSVEENLALFEKMRAGGFEEGKACLRAKIDMASPFIVMRDPVLYRIKFAEHHQTGNKWCIYPMYDFTHCISDALEGITHSLCTLEFQDNRRLYDWVLDNITIPVHPRQYEFSRLNLEYTVMSKRKLNLLVTDKHVEGWDDPRMPTISGLRRRGYTAASIREFCKRIGVTKQDNTIEMASLESCIREDLNENAPRAMAVIDPVKLVIENYQGEGEMVTMPNHPNKPEMGSRQVPFSGEIWIDRADFREEANKQYKRLVLGKEVRLRNAYVIKAERVEKDAEGNITTIFCTYDA",
-        ),
-        (
             "1RNL",
             1,
             138,
@@ -55,8 +49,19 @@ def test_parse_chains(model, valid_chains, num_residues, sequence):
 def test_get_residue(model, num_chains, num_residues):
     chains = list(model.get_chains())
     assert len(chains) == num_chains
-    residues = list(mmcif.get_residues(chains[0]))
-    for r in residues:
-        result = r["rotation"] @ r["rotation"].transpose(-2, -1)
-        assert torch.allclose(result, torch.eye(3), atol=1e-5)
-    assert len(residues) == num_residues
+    metadata, frames = mmcif.get_residues(chains[0])
+    assert len(metadata) == num_residues
+    assert len(frames) == num_residues
+    assert torch.allclose(
+        frames.rotations @ frames.rotations.transpose(-2, -1), torch.eye(3), atol=1e-5
+    )
+
+
+@pytest.mark.parametrize(
+    "model",
+    ["1GSG"],
+    indirect=["model"],
+)
+def test_empty_chain_error(model):
+    with pytest.raises(mmcif.EmptyChainError):
+        mmcif.parse_chains(model)

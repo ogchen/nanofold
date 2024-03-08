@@ -4,7 +4,7 @@ import os
 import torch
 from Bio.PDB import MMCIFParser
 from nanofold.chain import Chain
-from nanofold.residue import compute_residue_rotation
+from nanofold.residue import compute_residue_frames
 from nanofold.residue import RESIDUE_LIST
 
 
@@ -45,8 +45,7 @@ def parse_chains(model):
         strand_id = strand_id.split(",")[0]
         sequence = sequence.replace("\n", "")
         mmcif_chain = model[strand_id]
-        residue_list = get_residues(mmcif_chain)
-        chain = Chain.from_residue_list(mmcif_chain.get_full_id()[1:], residue_list)
+        chain = Chain.from_residue_list(mmcif_chain.get_full_id()[1:], *get_residues(mmcif_chain))
         chain = get_longest_match(chain, sequence)
         if len(chain) == 0:
             continue
@@ -66,26 +65,21 @@ def should_filter_residue(residue):
 
 
 def get_residues(chain):
-    result = []
+    atoms = ["N", "CA", "C"]
+    metadata = []
+    coords = torch.empty(0, 3, 3)
     for residue in chain.get_residues():
         if should_filter_residue(residue):
             continue
-        if "CA" not in residue:
+        if any(a not in residue for a in atoms):
             continue
-        n_coords = torch.from_numpy(residue["N"].get_coord()) if "N" in residue else None
-        ca_coords = torch.from_numpy(residue["CA"].get_coord())
-        c_coords = torch.from_numpy(residue["C"].get_coord()) if "C" in residue else None
-        result.append(
+        residue_coords = torch.stack([torch.from_numpy(residue[a].get_coord()) for a in atoms])
+        coords = torch.cat([coords, residue_coords.unsqueeze(0)])
+        metadata.append(
             {
                 "resname": residue.get_resname(),
                 "id": residue.get_full_id()[1:],
                 "serial_number": residue["CA"].get_serial_number(),
-                "rotation": compute_residue_rotation(
-                    n_coords=n_coords,
-                    ca_coords=ca_coords,
-                    c_coords=c_coords,
-                ),
-                "translation": ca_coords,
             }
         )
-    return result
+    return metadata, compute_residue_frames(coords)

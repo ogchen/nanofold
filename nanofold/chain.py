@@ -13,11 +13,12 @@ class Chain:
         self.positions = positions
 
     @classmethod
-    def from_residue_list(cls, id, residue_list):
-        chain = cls(id, chain=[], frames=Frame(), sequence="", positions=[])
-        for residue in residue_list:
-            chain.add_residue(residue)
-        return chain
+    def from_residue_list(cls, id, residue_list, frames):
+        chain = cls(id, chain=[], frames=frames, sequence="", positions=[])
+        chain = [{"resname": r["resname"], "id": r["id"]} for r in residue_list]
+        sequence = "".join([cls.RESIDUE_LOOKUP[r["resname"]] for r in residue_list])
+        positions = [r["id"][-1][1] for r in residue_list]
+        return cls(id, chain, frames, sequence, positions)
 
     def __repr__(self):
         return f"Chain(id={self.id}, sequence={self.sequence})"
@@ -34,16 +35,3 @@ class Chain:
                 self.sequence[key],
                 self.positions[key],
             )
-
-    def add_residue(self, residue):
-        self.chain.append(
-            {
-                "resname": residue["resname"],
-                "id": residue["id"],
-            }
-        )
-        self.frames = Frame.cat(
-            self.frames, Frame(residue["rotation"], residue["translation"]).unsqueeze(0)
-        )
-        self.sequence += Chain.RESIDUE_LOOKUP[residue["resname"]]
-        self.positions.append(residue["id"][-1][1])
