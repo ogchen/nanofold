@@ -40,10 +40,8 @@ class Frame:
     @staticmethod
     def compose(a, b):
         rotations = a.rotations @ b.rotations
-        translations = a.rotations @ b.translations.unsqueeze(
-            -1
-        ) + a.translations.unsqueeze(-1)
-        return Frame(rotations, translations.squeeze(-1))
+        translations = Frame.apply(a, b.translations)
+        return Frame(rotations, translations)
 
     @staticmethod
     def apply(frames, vectors):
