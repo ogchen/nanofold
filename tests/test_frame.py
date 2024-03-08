@@ -95,7 +95,7 @@ def test_frame_apply():
     assert torch.allclose(res, expected), f"{res} != {expected}"
 
 
-def test_frame_add():
+def test_frame_cat():
     frames1 = Frame(
         torch.stack([torch.eye(3), 2 * torch.eye(3)]),
         torch.stack([torch.ones(3), 2 * torch.ones(3)]),
@@ -112,7 +112,7 @@ def test_frame_add():
             [torch.ones(3), 2 * torch.ones(3), 3 * torch.ones(3), 4 * torch.ones(3)]
         ),
     )
-    result = frames1 + frames2
+    result = Frame.cat(frames1, frames2)
     assert torch.allclose(result.rotations, expected.rotations)
     assert torch.allclose(result.translations, expected.translations)
 
@@ -143,6 +143,7 @@ def test_frame_getitem_slice():
     result = frames[1:]
     assert torch.allclose(result.rotations, expected.rotations)
     assert torch.allclose(result.translations, expected.translations)
+
 
 def test_frame_unsqueeze_squeeze():
     batch_size = 4

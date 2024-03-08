@@ -42,6 +42,8 @@ class Chain:
                 "id": residue["id"],
             }
         )
-        self.frames += Frame(residue["rotation"], residue["translation"])
+        self.frames = Frame.cat(
+            self.frames, Frame(residue["rotation"], residue["translation"]).unsqueeze(0)
+        )
         self.sequence += Chain.RESIDUE_LOOKUP[residue["resname"]]
         self.positions.append(residue["id"][-1][1])

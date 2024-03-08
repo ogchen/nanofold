@@ -18,20 +18,11 @@ class Frame:
                 f"Expected rotations to have shape (3, 3) and translations to have shape (3) with equal batch dimensions, got {r} and {t}"
             )
 
-        if len(r) == 2 and len(t) == 1:
-            self.rotations = rotations.unsqueeze(0)
-            self.translations = translations.unsqueeze(0)
-
     def __repr__(self):
         return f"Frame(rotations={self.rotations},\n translations={self.translations})"
 
     def __len__(self):
         return len(self.rotations)
-
-    def __add__(self, other):
-        rotations = torch.cat([self.rotations, other.rotations])
-        translations = torch.cat([self.translations, other.translations])
-        return Frame(rotations, translations)
 
     def __getitem__(self, key):
         rotations = self.rotations[key]
@@ -45,6 +36,12 @@ class Frame:
 
     def squeeze(self, *args):
         return Frame(self.rotations.squeeze(*args), self.translations.squeeze(*args))
+
+    @staticmethod
+    def cat(a, b, *args, **kwargs):
+        rotations = torch.cat([a.rotations, b.rotations], *args, **kwargs)
+        translations = torch.cat([a.translations, b.translations], *args, **kwargs)
+        return Frame(rotations, translations)
 
     @staticmethod
     def inverse(frame):
