@@ -10,7 +10,7 @@ class InvariantPointAttention(nn.Module):
         self,
         single_embedding_size,
         pair_embedding_size,
-        embedding_size,
+        ipa_embedding_size,
         num_query_points,
         num_value_points,
         num_heads,
@@ -20,13 +20,13 @@ class InvariantPointAttention(nn.Module):
         self.num_query_points = num_query_points
         self.num_value_points = num_value_points
         self.query = LinearWithView(
-            single_embedding_size, (num_heads, embedding_size), bias=False
+            single_embedding_size, (num_heads, ipa_embedding_size), bias=False
         )
         self.key = LinearWithView(
-            single_embedding_size, (num_heads, embedding_size), bias=False
+            single_embedding_size, (num_heads, ipa_embedding_size), bias=False
         )
         self.value = LinearWithView(
-            single_embedding_size, (num_heads, embedding_size), bias=False
+            single_embedding_size, (num_heads, ipa_embedding_size), bias=False
         )
         self.query_points = LinearWithView(
             single_embedding_size, (num_heads, num_query_points, 3), bias=False
@@ -40,12 +40,16 @@ class InvariantPointAttention(nn.Module):
         self.bias = nn.Linear(pair_embedding_size, num_heads, bias=False)
         self.out = nn.Linear(
             self.num_heads
-            * (pair_embedding_size + embedding_size + self.num_value_points * (3 + 1)),
+            * (
+                pair_embedding_size
+                + ipa_embedding_size
+                + self.num_value_points * (3 + 1)
+            ),
             single_embedding_size,
         )
         self.softplus = nn.Softplus()
         self.scale_head = nn.Parameter(torch.ones(self.num_heads))
-        self.scale_single_rep = 1 / math.sqrt(embedding_size)
+        self.scale_single_rep = 1 / math.sqrt(ipa_embedding_size)
         self.scale_frame = -1 / math.sqrt(18 * self.num_query_points)
 
     def single_rep_weight(self, single_rep):

@@ -16,7 +16,7 @@ class TestInvariantPointAttention:
         self.model = InvariantPointAttention(
             single_embedding_size=self.single_embedding_size,
             pair_embedding_size=self.pair_embedding_size,
-            embedding_size=self.embedding_size,
+            ipa_embedding_size=self.embedding_size,
             num_query_points=self.num_query_points,
             num_value_points=self.num_value_points,
             num_heads=self.num_heads,
@@ -52,9 +52,7 @@ class TestInvariantPointAttention:
 
     @torch.no_grad
     def test_shape(self):
-        result = self.model(
-            self.single_rep, self.pair_rep, self.frames
-        )
+        result = self.model(self.single_rep, self.pair_rep, self.frames)
         assert result.shape == (self.len_seq, self.single_embedding_size)
 
     @torch.no_grad
@@ -63,9 +61,7 @@ class TestInvariantPointAttention:
             [[math.cos(1), -math.sin(1), 0], [math.sin(1), math.cos(1), 0], [0, 0, 1]]
         )
         transform = Frame(rotations=rotation, translations=torch.ones(3))
-        attention = self.model(
-            self.single_rep, self.pair_rep, self.frames
-        )
+        attention = self.model(self.single_rep, self.pair_rep, self.frames)
         transformed_attention = self.model(
             self.single_rep,
             self.pair_rep,
@@ -167,9 +163,7 @@ class TestInvariantPointAttention:
     @torch.no_grad
     def test_frame_attention(self):
         weight = self.model.frame_weight(self.frames, self.single_rep)
-        attention = self.model.frame_attention(
-            weight, self.frames, self.single_rep
-        )
+        attention = self.model.frame_attention(weight, self.frames, self.single_rep)
         assert attention.shape == (
             self.len_seq,
             self.num_heads,
