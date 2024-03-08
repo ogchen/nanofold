@@ -1,5 +1,5 @@
 import torch
-from nanofold.backbone_update import BackboneUpdate
+from nanofold.model.backbone_update import BackboneUpdate
 
 
 def test_backbone_update():

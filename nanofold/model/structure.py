@@ -1,7 +1,7 @@
 from torch import nn
-from nanofold.backbone_update import BackboneUpdate
+from nanofold.model.backbone_update import BackboneUpdate
 from nanofold.frame import Frame
-from nanofold.invariant_point_attention import InvariantPointAttention
+from nanofold.model.invariant_point_attention import InvariantPointAttention
 
 
 class StructureModuleLayer(nn.Module):

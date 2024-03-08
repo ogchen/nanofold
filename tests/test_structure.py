@@ -1,6 +1,6 @@
 import torch
 from nanofold.frame import Frame
-from nanofold.structure import StructureModuleLayer
+from nanofold.model.structure import StructureModuleLayer
 
 
 def test_structure_module_layer():

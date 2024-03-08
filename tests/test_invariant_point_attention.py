@@ -1,6 +1,6 @@
 import math
 import torch
-from nanofold.invariant_point_attention import InvariantPointAttention
+from nanofold.model.invariant_point_attention import InvariantPointAttention
 from nanofold.frame import Frame
 
 
