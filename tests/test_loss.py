@@ -35,4 +35,4 @@ def test_loss_fape():
             glob_coord_truth = Frame.apply(inverse_truth, coords_truth[j])
             expected += min(clamp, abs(glob_coord - glob_coord_truth).norm())
     expected /= len(frames) * len(coords) * length_scale
-    assert torch.isclose(loss, torch.tensor(expected))
+    assert torch.isclose(loss, expected)
