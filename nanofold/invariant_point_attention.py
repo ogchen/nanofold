@@ -2,17 +2,7 @@ import math
 import torch
 from torch import nn
 from nanofold.frame import Frame
-
-
-class LinearWithView(nn.Module):
-    def __init__(self, in_features, out_features, *args, **kwargs):
-        super().__init__()
-        self.linear = nn.Linear(in_features, math.prod(out_features), *args, **kwargs)
-        self.out_features = out_features
-
-    def forward(self, x):
-        out = self.linear(x)
-        return out.view(*out.shape[:-1], *self.out_features)
+from nanofold.util import LinearWithView
 
 
 class InvariantPointAttention(nn.Module):
@@ -77,14 +67,14 @@ class InvariantPointAttention(nn.Module):
         squared_distance = difference.unsqueeze(-2) @ difference.unsqueeze(-1)
         squared_distance = squared_distance.squeeze()
         weight = torch.sum(squared_distance, dim=0)
-        weight = self.scale_frame * self.softplus(self.scale_head)[:,None,None] * weight
+        weight = (
+            self.scale_frame * self.softplus(self.scale_head)[:, None, None] * weight
+        )
         return weight
 
     def single_rep_attention(self, weight, single_representation):
         v = self.value(single_representation).transpose(0, 1)
-        attention = weight.unsqueeze(-3) @ v.unsqueeze(-3)
-        attention = attention.squeeze(-3)
-        return attention
+        return weight @ v
 
     def pair_rep_attention(self, weight, pair_representation):
         attention = weight.unsqueeze(-2) @ pair_representation

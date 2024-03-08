@@ -27,7 +27,13 @@ class Chain:
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-            return Chain(self.id, self.chain[key], self.frames[key], self.sequence[key], self.positions[key])
+            return Chain(
+                self.id,
+                self.chain[key],
+                self.frames[key],
+                self.sequence[key],
+                self.positions[key],
+            )
 
     def add_residue(self, residue):
         self.chain.append(
