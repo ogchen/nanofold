@@ -21,6 +21,9 @@ class TestInvariantPointAttention:
             num_value_points=self.num_value_points,
             num_heads=self.num_heads,
         )
+        with torch.no_grad():
+            for i in range(self.num_heads):
+                self.model.scale_head[i] = i + 1
         self.single_representation = (
             torch.arange(self.single_embedding_size * self.len_seq)
             .float()
@@ -73,19 +76,15 @@ class TestInvariantPointAttention:
     @torch.no_grad
     def test_single_rep_weight(self):
         weight = self.model.single_rep_weight(self.single_representation)
-        assert weight.shape == (self.num_heads, self.len_seq, self.len_seq)
+        assert weight.shape == (self.len_seq, self.num_heads, self.len_seq)
 
-        q = self.model.query(self.single_representation).view(
-            self.len_seq, self.num_heads, -1
-        )
-        k = self.model.key(self.single_representation).view(
-            self.len_seq, self.num_heads, -1
-        )
-        for h in range(weight.shape[0]):
-            for i in range(weight.shape[1]):
+        q = self.model.query(self.single_representation)
+        k = self.model.key(self.single_representation)
+        for i in range(weight.shape[0]):
+            for h in range(weight.shape[1]):
                 for j in range(weight.shape[2]):
                     assert torch.allclose(
-                        weight[h, i, j],
+                        weight[i, h, j],
                         self.model.scale_single_rep * torch.dot(q[i, h], k[j, h]),
                         atol=1e-5,
                     )
@@ -93,36 +92,30 @@ class TestInvariantPointAttention:
     @torch.no_grad
     def test_pair_rep_weight(self):
         weight = self.model.pair_rep_weight(self.pair_representation)
-        assert weight.shape == (self.num_heads, self.len_seq, self.len_seq)
+        assert weight.shape == (self.len_seq, self.num_heads, self.len_seq)
 
-        for i in range(self.len_seq):
-            for j in range(self.len_seq):
-                for h in range(self.num_heads):
+        for i in range(weight.shape[0]):
+            for h in range(weight.shape[1]):
+                for j in range(weight.shape[2]):
                     assert torch.allclose(
-                        weight[h, i, j],
+                        weight[i, h, j],
                         self.model.bias(self.pair_representation[i, j])[h],
                         atol=1e-5,
                     )
 
     @torch.no_grad
     def test_frame_weight(self):
-        for i in range(self.num_heads):
-            self.model.scale_head[i] = i + 1
         weight = self.model.frame_weight(self.frames, self.single_representation)
-        assert weight.shape == (self.num_heads, self.len_seq, self.len_seq)
+        assert weight.shape == (self.len_seq, self.num_heads, self.len_seq)
 
-        qp = self.model.query_points(self.single_representation).view(
-            self.len_seq, self.num_heads, -1, 3
-        )
-        kp = self.model.key_points(self.single_representation).view(
-            self.len_seq, self.num_heads, -1, 3
-        )
+        qp = self.model.query_points(self.single_representation)
+        kp = self.model.key_points(self.single_representation)
         scale_factor = (
             self.model.softplus(self.model.scale_head) * self.model.scale_frame
         )
 
-        for h in range(weight.shape[0]):
-            for i in range(weight.shape[1]):
+        for i in range(weight.shape[0]):
+            for h in range(weight.shape[1]):
                 for j in range(weight.shape[2]):
                     sum_distance = 0
                     for p in range(self.num_query_points):
@@ -132,7 +125,7 @@ class TestInvariantPointAttention:
                         sum_distance += torch.linalg.vector_norm(diff) ** 2
                     assert torch.allclose(
                         scale_factor[h] * sum_distance,
-                        weight[h, i, j],
+                        weight[i, h, j],
                         atol=1e-5,
                     )
 
@@ -140,17 +133,15 @@ class TestInvariantPointAttention:
     def test_single_rep_attention(self):
         weight = self.model.single_rep_weight(self.single_representation)
         attention = self.model.single_rep_attention(weight, self.single_representation)
-        assert attention.shape == (self.num_heads, self.len_seq, self.embedding_size)
+        assert attention.shape == (self.len_seq, self.num_heads, self.embedding_size)
 
-        v = self.model.value(self.single_representation).view(
-            self.len_seq, self.num_heads, -1
-        )
-        for h in range(self.num_heads):
-            for i in range(self.len_seq):
-                for x in range(self.embedding_size):
+        v = self.model.value(self.single_representation)
+        for i in range(attention.shape[0]):
+            for h in range(attention.shape[1]):
+                for x in range(attention.shape[2]):
                     assert torch.allclose(
-                        attention[h, i, x],
-                        weight[h][i] @ v[:, h, x],
+                        attention[i, h, x],
+                        weight[i][h] @ v[:, h, x],
                         atol=1e-5,
                     )
 
@@ -158,14 +149,18 @@ class TestInvariantPointAttention:
     def test_pair_rep_attention(self):
         weight = self.model.pair_rep_weight(self.pair_representation)
         attention = self.model.pair_rep_attention(weight, self.pair_representation)
-        assert attention.shape == (self.num_heads, self.len_seq, self.pair_embedding_size)
+        assert attention.shape == (
+            self.len_seq,
+            self.num_heads,
+            self.pair_embedding_size,
+        )
 
-        for h in range(self.num_heads):
-            for i in range(self.len_seq):
-                for x in range(self.pair_embedding_size):
+        for i in range(attention.shape[0]):
+            for h in range(attention.shape[1]):
+                for x in range(attention.shape[2]):
                     assert torch.allclose(
-                        attention[h, i, x],
-                        weight[h][i] @ self.pair_representation[i, :, x],
+                        attention[i, h, x],
+                        weight[i][h] @ self.pair_representation[i, :, x],
                         atol=1e-5,
                     )
 
@@ -175,19 +170,24 @@ class TestInvariantPointAttention:
         attention = self.model.frame_attention(
             weight, self.frames, self.single_representation
         )
-        assert attention.shape == (self.num_heads, self.num_value_points, self.len_seq, 3)
-
-        vp = self.model.value_points(self.single_representation).view(
-            self.len_seq, self.num_heads, -1, 3
+        assert attention.shape == (
+            self.len_seq,
+            self.num_heads,
+            self.num_value_points,
+            3,
         )
-        for h in range(self.num_heads):
-            for i in range(self.len_seq):
-                for p in range(self.num_value_points):
+
+        vp = self.model.value_points(self.single_representation)
+        for i in range(attention.shape[0]):
+            for h in range(attention.shape[1]):
+                for p in range(attention.shape[2]):
                     sum = torch.zeros(3)
                     for j in range(self.len_seq):
-                        sum += weight[h][i][j] * Frame.apply(self.frames[j], vp[j][h][p])
+                        sum += weight[i][h][j] * Frame.apply(
+                            self.frames[j], vp[j][h][p]
+                        )
                     assert torch.allclose(
-                        attention[h][p][i],
+                        attention[i][h][p],
                         Frame.apply(Frame.inverse(self.frames[i]), sum),
                         atol=1e-5,
                     )
