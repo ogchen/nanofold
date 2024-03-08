@@ -135,3 +135,59 @@ class TestInvariantPointAttention:
                         weight[h, i, j],
                         atol=1e-5,
                     )
+
+    @torch.no_grad
+    def test_single_rep_attention(self):
+        weight = self.model.single_rep_weight(self.single_representation)
+        attention = self.model.single_rep_attention(weight, self.single_representation)
+        assert attention.shape == (self.num_heads, self.len_seq, self.embedding_size)
+
+        v = self.model.value(self.single_representation).view(
+            self.len_seq, self.num_heads, -1
+        )
+        for h in range(self.num_heads):
+            for i in range(self.len_seq):
+                for x in range(self.embedding_size):
+                    assert torch.allclose(
+                        attention[h, i, x],
+                        weight[h][i] @ v[:, h, x],
+                        atol=1e-5,
+                    )
+
+    @torch.no_grad
+    def test_pair_rep_attention(self):
+        weight = self.model.pair_rep_weight(self.pair_representation)
+        attention = self.model.pair_rep_attention(weight, self.pair_representation)
+        assert attention.shape == (self.num_heads, self.len_seq, self.pair_embedding_size)
+
+        for h in range(self.num_heads):
+            for i in range(self.len_seq):
+                for x in range(self.pair_embedding_size):
+                    assert torch.allclose(
+                        attention[h, i, x],
+                        weight[h][i] @ self.pair_representation[i, :, x],
+                        atol=1e-5,
+                    )
+
+    @torch.no_grad
+    def test_frame_attention(self):
+        weight = self.model.frame_weight(self.frames, self.single_representation)
+        attention = self.model.frame_attention(
+            weight, self.frames, self.single_representation
+        )
+        assert attention.shape == (self.num_heads, self.num_value_points, self.len_seq, 3)
+
+        vp = self.model.value_points(self.single_representation).view(
+            self.len_seq, self.num_heads, -1, 3
+        )
+        for h in range(self.num_heads):
+            for i in range(self.len_seq):
+                for p in range(self.num_value_points):
+                    sum = torch.zeros(3)
+                    for j in range(self.len_seq):
+                        sum += weight[h][i][j] * Frame.apply(self.frames[j], vp[j][h][p])
+                    assert torch.allclose(
+                        attention[h][p][i],
+                        Frame.apply(Frame.inverse(self.frames[i]), sum),
+                        atol=1e-5,
+                    )
