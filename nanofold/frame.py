@@ -3,17 +3,24 @@ import torch
 
 class Frame:
     def __init__(self, rotations=torch.empty(0, 3, 3), translations=torch.empty(0, 3)):
-        r = rotations.shape
-        t = translations.shape
-        if len(r) == 2 and len(t) == 1:
-            rotations = rotations.unsqueeze(0)
-            translations = translations.unsqueeze(0)
-        if r[:-2] != t[:-1] or (r[-2], r[-1], t[-1]) != (3, 3, 3):
-            raise ValueError(
-                f"Expected rotations to have shape (3, 3) and translations to have shape (3) with equal batch dimensions, got {rotations.shape} and {translations.shape}"
-            )
         self.rotations = rotations
         self.translations = translations
+        r = rotations.shape
+        t = translations.shape
+
+        if (
+            len(r) < 2
+            or len(t) < 1
+            or r[:-2] != t[:-1]
+            or (r[-2], r[-1], t[-1]) != (3, 3, 3)
+        ):
+            raise ValueError(
+                f"Expected rotations to have shape (3, 3) and translations to have shape (3) with equal batch dimensions, got {r} and {t}"
+            )
+
+        if len(r) == 2 and len(t) == 1:
+            self.rotations = rotations.unsqueeze(0)
+            self.translations = translations.unsqueeze(0)
 
     def __repr__(self):
         return f"Frame(rotations={self.rotations},\n translations={self.translations})"
@@ -30,6 +37,14 @@ class Frame:
         rotations = self.rotations[key]
         translations = self.translations[key]
         return Frame(rotations, translations)
+
+    def unsqueeze(self, *args):
+        return Frame(
+            self.rotations.unsqueeze(*args), self.translations.unsqueeze(*args)
+        )
+
+    def squeeze(self, *args):
+        return Frame(self.rotations.squeeze(*args), self.translations.squeeze(*args))
 
     @staticmethod
     def inverse(frame):
