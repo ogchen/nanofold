@@ -3,14 +3,14 @@ import torch
 
 class Frame:
     def __init__(self, rotations=torch.empty(0, 3, 3), translations=torch.empty(0, 3)):
-        if len(rotations.shape) == 2 and len(translations.shape) == 1:
+        r = rotations.shape
+        t = translations.shape
+        if len(r) == 2 and len(t) == 1:
             rotations = rotations.unsqueeze(0)
             translations = translations.unsqueeze(0)
-        i, a, b = rotations.shape
-        j, c = translations.shape
-        if i != j or (a, b, c) != (3, 3, 3):
+        if r[:-2] != t[:-1] or (r[-2], r[-1], t[-1]) != (3, 3, 3):
             raise ValueError(
-                f"Expected rotations to have shape (n, 3, 3) and translations to have shape (n, 3), got {rotations.shape} and {translations.shape}"
+                f"Expected rotations to have shape (3, 3) and translations to have shape (3) with equal batch dimensions, got {rotations.shape} and {translations.shape}"
             )
         self.rotations = rotations
         self.translations = translations
@@ -47,5 +47,7 @@ class Frame:
 
     @staticmethod
     def apply(frames, vectors):
-        result = frames.rotations @ vectors.unsqueeze(-1) + frames.translations.unsqueeze(-1)
+        result = frames.rotations @ vectors.unsqueeze(
+            -1
+        ) + frames.translations.unsqueeze(-1)
         return result.squeeze(-1)
