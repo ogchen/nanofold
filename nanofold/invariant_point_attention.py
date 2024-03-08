@@ -52,6 +52,23 @@ class InvariantPointAttention(nn.Module):
         self.scale_single_rep = 1 / math.sqrt(ipa_embedding_size)
         self.scale_frame = -1 / math.sqrt(18 * self.num_query_points)
 
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            single_embedding_size=config.getint("Other", "single_embedding_size"),
+            pair_embedding_size=config.getint("InputEmbedding", "pair_embedding_size"),
+            ipa_embedding_size=config.getint(
+                "InvariantPointAttention", "embedding_size"
+            ),
+            num_query_points=config.getint(
+                "InvariantPointAttention", "num_query_points"
+            ),
+            num_value_points=config.getint(
+                "InvariantPointAttention", "num_value_points"
+            ),
+            num_heads=config.getint("InvariantPointAttention", "num_heads"),
+        )
+
     def single_rep_weight(self, single_rep):
         q = self.query(single_rep)
         k = self.key(single_rep)

@@ -1,4 +1,5 @@
 import argparse
+import configparser
 import torch
 from nanofold.mmcif import list_available_mmcif
 from nanofold.mmcif import parse_chains
@@ -8,14 +9,21 @@ from nanofold.util import accept_chain
 from nanofold.util import crop_chain
 from nanofold.util import randint
 from nanofold.input import encode_one_hot
-from nanofold.input import InputEmbedder
+from nanofold.input import InputEmbedding
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", help="Configuration file for training")
     parser.add_argument("-m", "--mmcif", help="Directory containing mmcif files")
     parser.add_argument("-f", "--fasta", help="File containing FASTA sequences")
     return parser.parse_args()
+
+
+def load_config(filepath):
+    config = configparser.ConfigParser()
+    config.read(filepath)
+    return config
 
 
 def load(filepath):
@@ -39,11 +47,14 @@ def get_next_chain(files, crop_size=32):
 
 def main():
     args = parse_args()
+    config = load_config(args.config)
     available = list_available_mmcif(args.mmcif)
-    input_embedder = InputEmbedder(embedding_size=8, position_bins=4)
+    input_embedder = InputEmbedding.from_config(config)
     for chain in get_next_chain(available):
         target_feat = encode_one_hot(chain.sequence)
-        pair_representations = input_embedder(target_feat, torch.tensor(chain.positions))
+        pair_representations = input_embedder(
+            target_feat, torch.tensor(chain.positions)
+        )
         print(pair_representations.shape)
 
 

@@ -43,5 +43,5 @@ To run an interactive shell, set `$DATA_DIR` to the directory containing the dow
 and run the following:
 ```bash
 export DATA_DIR=~/data
-docker run -v $DATA_DIR:/app/data -it --gpus all --rm nanofold /bin/bash
+docker run -v $DATA_DIR:/data -it --gpus all --rm nanofold /bin/bash
 ```

@@ -13,7 +13,7 @@ def encode_one_hot(seq):
     return one_hot
 
 
-class InputEmbedder(nn.Module):
+class InputEmbedding(nn.Module):
     def __init__(self, embedding_size, position_bins):
         super().__init__()
         self.embedding_size = embedding_size
@@ -23,10 +23,16 @@ class InputEmbedder(nn.Module):
         self.linear_b = nn.Linear(input_size, self.embedding_size)
         self.linear_position = nn.Linear(2 * self.bins + 1, self.embedding_size)
 
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            embedding_size=config.getint("InputEmbedding", "pair_embedding_size"),
+            position_bins=config.getint("InputEmbedding", "position_bins"),
+        )
+
     def forward(self, target_feat, residue_index):
         a = self.linear_a(target_feat)
         b = self.linear_b(target_feat)
-        # Add a dimension to a and b to allow broadcasting
         z = a.unsqueeze(1) + b.unsqueeze(0)
 
         d = residue_index.reshape(-1, 1) - residue_index

@@ -22,7 +22,7 @@ def test_encode_one_hot():
 def test_input_embedder():
     embedding_size = 5
     position_bins = 3
-    embedder = input.InputEmbedder(embedding_size, position_bins)
+    embedder = input.InputEmbedding(embedding_size, position_bins)
 
     seq = "ADHIAAAA"
     target_feat = input.encode_one_hot(seq)
