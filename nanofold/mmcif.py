@@ -72,13 +72,9 @@ def get_residues(chain):
             continue
         if "CA" not in residue:
             continue
-        n_coords = (
-            torch.from_numpy(residue["N"].get_coord()) if "N" in residue else None
-        )
+        n_coords = torch.from_numpy(residue["N"].get_coord()) if "N" in residue else None
         ca_coords = torch.from_numpy(residue["CA"].get_coord())
-        c_coords = (
-            torch.from_numpy(residue["C"].get_coord()) if "C" in residue else None
-        )
+        c_coords = torch.from_numpy(residue["C"].get_coord()) if "C" in residue else None
         result.append(
             {
                 "resname": residue.get_resname(),

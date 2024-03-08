@@ -8,12 +8,7 @@ class Frame:
         r = rotations.shape
         t = translations.shape
 
-        if (
-            len(r) < 2
-            or len(t) < 1
-            or r[:-2] != t[:-1]
-            or (r[-2], r[-1], t[-1]) != (3, 3, 3)
-        ):
+        if len(r) < 2 or len(t) < 1 or r[:-2] != t[:-1] or (r[-2], r[-1], t[-1]) != (3, 3, 3):
             raise ValueError(
                 f"Expected rotations to have shape (3, 3) and translations to have shape (3) with equal batch dimensions, got {r} and {t}"
             )
@@ -30,9 +25,7 @@ class Frame:
         return Frame(rotations, translations)
 
     def unsqueeze(self, *args):
-        return Frame(
-            self.rotations.unsqueeze(*args), self.translations.unsqueeze(*args)
-        )
+        return Frame(self.rotations.unsqueeze(*args), self.translations.unsqueeze(*args))
 
     def squeeze(self, *args):
         return Frame(self.rotations.squeeze(*args), self.translations.squeeze(*args))
@@ -57,7 +50,5 @@ class Frame:
 
     @staticmethod
     def apply(frames, vectors):
-        result = frames.rotations @ vectors.unsqueeze(
-            -1
-        ) + frames.translations.unsqueeze(-1)
+        result = frames.rotations @ vectors.unsqueeze(-1) + frames.translations.unsqueeze(-1)
         return result.squeeze(-1)

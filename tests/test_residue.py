@@ -1,6 +1,5 @@
 from nanofold import residue
 import torch
-import math
 
 
 def test_compute_residue_rotation():

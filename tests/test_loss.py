@@ -23,8 +23,10 @@ def test_loss_fape():
     )
     coords_truth = 10 * torch.ones(len(coords), 3)
     length_scale = 10
-    clamp=20
-    loss = loss_fape(frames, coords, frames_truth, coords_truth, length_scale=length_scale, clamp=clamp)
+    clamp = 20
+    loss = loss_fape(
+        frames, coords, frames_truth, coords_truth, length_scale=length_scale, clamp=clamp
+    )
 
     expected = 0
     for i in range(len(frames)):

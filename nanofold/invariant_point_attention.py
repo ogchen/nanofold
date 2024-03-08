@@ -40,11 +40,7 @@ class InvariantPointAttention(nn.Module):
         self.bias = nn.Linear(pair_embedding_size, num_heads, bias=False)
         self.out = nn.Linear(
             self.num_heads
-            * (
-                pair_embedding_size
-                + ipa_embedding_size
-                + self.num_value_points * (3 + 1)
-            ),
+            * (pair_embedding_size + ipa_embedding_size + self.num_value_points * (3 + 1)),
             single_embedding_size,
         )
         self.softplus = nn.Softplus()
@@ -57,15 +53,9 @@ class InvariantPointAttention(nn.Module):
         return cls(
             single_embedding_size=config.getint("Other", "single_embedding_size"),
             pair_embedding_size=config.getint("InputEmbedding", "pair_embedding_size"),
-            ipa_embedding_size=config.getint(
-                "InvariantPointAttention", "embedding_size"
-            ),
-            num_query_points=config.getint(
-                "InvariantPointAttention", "num_query_points"
-            ),
-            num_value_points=config.getint(
-                "InvariantPointAttention", "num_value_points"
-            ),
+            ipa_embedding_size=config.getint("InvariantPointAttention", "embedding_size"),
+            num_query_points=config.getint("InvariantPointAttention", "num_query_points"),
+            num_value_points=config.getint("InvariantPointAttention", "num_value_points"),
             num_heads=config.getint("InvariantPointAttention", "num_heads"),
         )
 
@@ -88,9 +78,7 @@ class InvariantPointAttention(nn.Module):
         squared_distance = difference.unsqueeze(-2) @ difference.unsqueeze(-1)
         squared_distance = squared_distance.squeeze()
         weight = torch.sum(squared_distance, dim=0).transpose(0, 1)
-        weight = (
-            self.scale_frame * self.softplus(self.scale_head).unsqueeze(-1) * weight
-        )
+        weight = self.scale_frame * self.softplus(self.scale_head).unsqueeze(-1) * weight
         return weight
 
     def single_rep_attention(self, weight, single_rep):

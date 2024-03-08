@@ -46,9 +46,7 @@ def test_frame_compose():
             torch.diag(torch.tensor([0.5, 0.5, 0.5])),
         ]
     )
-    translationsA = torch.stack(
-        [torch.zeros(3), torch.ones(3), torch.tensor([1, 2, 3])]
-    )
+    translationsA = torch.stack([torch.zeros(3), torch.ones(3), torch.tensor([1, 2, 3])])
     translationsB = torch.stack([torch.zeros(3), torch.ones(3), -torch.ones(3)])
 
     expected_rotations = torch.stack(
@@ -105,12 +103,8 @@ def test_frame_cat():
         torch.stack([3 * torch.ones(3), 4 * torch.ones(3)]),
     )
     expected = Frame(
-        torch.stack(
-            [torch.eye(3), 2 * torch.eye(3), 3 * torch.eye(3), 4 * torch.eye(3)]
-        ),
-        torch.stack(
-            [torch.ones(3), 2 * torch.ones(3), 3 * torch.ones(3), 4 * torch.ones(3)]
-        ),
+        torch.stack([torch.eye(3), 2 * torch.eye(3), 3 * torch.eye(3), 4 * torch.eye(3)]),
+        torch.stack([torch.ones(3), 2 * torch.ones(3), 3 * torch.ones(3), 4 * torch.ones(3)]),
     )
     result = Frame.cat(frames1, frames2)
     assert torch.allclose(result.rotations, expected.rotations)

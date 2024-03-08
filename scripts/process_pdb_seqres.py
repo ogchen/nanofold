@@ -1,9 +1,11 @@
 import argparse
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("filepath", type=str, help="PDB FASTA file to process")
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
@@ -15,6 +17,7 @@ def main():
             if "mol:protein" in id:
                 f.write(id)
                 f.write(seq)
+
 
 if __name__ == "__main__":
     main()

@@ -106,18 +106,16 @@ class TestInvariantPointAttention:
 
         qp = self.model.query_points(self.single_rep)
         kp = self.model.key_points(self.single_rep)
-        scale_factor = (
-            self.model.softplus(self.model.scale_head) * self.model.scale_frame
-        )
+        scale_factor = self.model.softplus(self.model.scale_head) * self.model.scale_frame
 
         for i in range(weight.shape[0]):
             for h in range(weight.shape[1]):
                 for j in range(weight.shape[2]):
                     sum_distance = 0
                     for p in range(self.num_query_points):
-                        diff = Frame.apply(
-                            self.frames[i], qp[i][h][p].unsqueeze(0)
-                        ) - Frame.apply(self.frames[j], kp[j][h][p].unsqueeze(0))
+                        diff = Frame.apply(self.frames[i], qp[i][h][p].unsqueeze(0)) - Frame.apply(
+                            self.frames[j], kp[j][h][p].unsqueeze(0)
+                        )
                         sum_distance += torch.linalg.vector_norm(diff) ** 2
                     assert torch.allclose(
                         scale_factor[h] * sum_distance,
@@ -177,9 +175,7 @@ class TestInvariantPointAttention:
                 for p in range(attention.shape[2]):
                     sum = torch.zeros(3)
                     for j in range(self.len_seq):
-                        sum += weight[i][h][j] * Frame.apply(
-                            self.frames[j], vp[j][h][p]
-                        )
+                        sum += weight[i][h][j] * Frame.apply(self.frames[j], vp[j][h][p])
                     assert torch.allclose(
                         attention[i][h][p],
                         Frame.apply(Frame.inverse(self.frames[i]), sum),
