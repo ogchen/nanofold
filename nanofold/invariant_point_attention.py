@@ -48,19 +48,19 @@ class InvariantPointAttention(nn.Module):
         self.scale_single_rep = 1 / math.sqrt(embedding_size)
         self.scale_frame = -1 / math.sqrt(18 * self.num_query_points)
 
-    def single_rep_weight(self, single_representation):
-        q = self.query(single_representation)
-        k = self.key(single_representation)
+    def single_rep_weight(self, single_rep):
+        q = self.query(single_rep)
+        k = self.key(single_rep)
         weight = self.scale_single_rep * q.unsqueeze(-2) @ k.permute(1, 2, 0)
         return weight.squeeze(-2)
 
-    def pair_rep_weight(self, pair_representation):
-        weight = self.bias(pair_representation).transpose(-2, -1)
+    def pair_rep_weight(self, pair_rep):
+        weight = self.bias(pair_rep).transpose(-2, -1)
         return weight
 
-    def frame_weight(self, frames, single_representation):
-        qp = self.query_points(single_representation)
-        kp = self.key_points(single_representation)
+    def frame_weight(self, frames, single_rep):
+        qp = self.query_points(single_rep)
+        kp = self.key_points(single_rep)
         local_qp = Frame.apply(frames, qp.transpose(0, -2))
         local_kp = Frame.apply(frames, kp.transpose(0, -2))
         difference = local_qp.unsqueeze(-2) - local_kp.unsqueeze(-3)
@@ -72,37 +72,43 @@ class InvariantPointAttention(nn.Module):
         )
         return weight
 
-    def single_rep_attention(self, weight, single_representation):
-        v = self.value(single_representation)
+    def single_rep_attention(self, weight, single_rep):
+        v = self.value(single_rep)
         attention = weight.unsqueeze(-2) @ v.transpose(0, 1)
         return attention.squeeze(-2)
 
-    def pair_rep_attention(self, weight, pair_representation):
-        attention = weight.unsqueeze(-2) @ pair_representation.unsqueeze(1)
+    def pair_rep_attention(self, weight, pair_rep):
+        attention = weight.unsqueeze(-2) @ pair_rep.unsqueeze(1)
         return attention.squeeze(-2)
 
-    def frame_attention(self, weight, frames, single_representation):
-        vp = self.value_points(single_representation).permute(1, 2, 0, 3)
+    def frame_attention(self, weight, frames, single_rep):
+        vp = self.value_points(single_rep).permute(1, 2, 0, 3)
         local_vp = Frame.apply(frames, vp)
         local_attention = weight.unsqueeze(-2).unsqueeze(-2) @ local_vp
         frames_inverse = Frame.inverse(frames)[:, None, None, ...]
         return Frame.apply(frames_inverse, local_attention.squeeze(-2))
 
-    def forward(self, single_representation, pair_representation, frames):
+    def forward(self, single_rep, pair_rep, frames):
         weight = (
-            self.single_rep_weight(single_representation)
-            + self.pair_rep_weight(pair_representation)
-            + self.frame_weight(frames, single_representation)
+            self.single_rep_weight(single_rep)
+            + self.pair_rep_weight(pair_rep)
+            + self.frame_weight(frames, single_rep)
         )
         weight = nn.functional.softmax(weight, dim=-1)
 
+        len_seq = single_rep.shape[0]
+        single_rep_attention = self.single_rep_attention(weight, single_rep)
+        pair_rep_attention = self.pair_rep_attention(weight, pair_rep)
+        frame_attention = self.frame_attention(weight, frames, single_rep)
+        frame_norm_attention = torch.linalg.vector_norm(frame_attention, dim=-1)
         attention = torch.cat(
             [
-                self.single_rep_attention(weight, single_representation),
-                self.pair_rep_attention(weight, pair_representation),
-                self.frame_attention(weight, frames, single_representation),
+                single_rep_attention,
+                pair_rep_attention,
+                frame_attention.view(len_seq, self.num_heads, -1),
+                frame_norm_attention,
             ],
             dim=-1,
         )
-        attention = self.out(attention)
+        attention = self.out(attention.reshape(len_seq, -1))
         return attention
