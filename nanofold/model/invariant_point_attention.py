@@ -95,8 +95,8 @@ class InvariantPointAttention(nn.Module):
         return attention.squeeze(-2)
 
     def frame_attention(self, weight, frames, single_rep):
-        vp = self.value_points(single_rep).permute(1, 2, 0, 3)
-        local_vp = Frame.apply(frames, vp)
+        vp = self.value_points(single_rep)
+        local_vp = Frame.apply(frames, vp.permute(1, 2, 0, 3))
         local_attention = weight.unsqueeze(-2).unsqueeze(-2) @ local_vp
         frames_inverse = Frame.inverse(frames)[:, None, None, ...]
         return Frame.apply(frames_inverse, local_attention.squeeze(-2))

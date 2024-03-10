@@ -50,12 +50,10 @@ class TestInvariantPointAttention:
             translations=translations,
         )
 
-    @torch.no_grad
     def test_shape(self):
         result = self.model(self.single_rep, self.pair_rep, self.frames)
         assert result.shape == (self.len_seq, self.single_embedding_size)
 
-    @torch.no_grad
     def test_invariant_to_transformations(self):
         rotation = torch.tensor(
             [[math.cos(1), -math.sin(1), 0], [math.sin(1), math.cos(1), 0], [0, 0, 1]]
@@ -69,7 +67,6 @@ class TestInvariantPointAttention:
         )
         assert torch.allclose(attention, transformed_attention, atol=1e-5)
 
-    @torch.no_grad
     def test_single_rep_weight(self):
         weight = self.model.single_rep_weight(self.single_rep)
         assert weight.shape == (self.len_seq, self.num_heads, self.len_seq)
@@ -85,7 +82,6 @@ class TestInvariantPointAttention:
                         atol=1e-5,
                     )
 
-    @torch.no_grad
     def test_pair_rep_weight(self):
         weight = self.model.pair_rep_weight(self.pair_rep)
         assert weight.shape == (self.len_seq, self.num_heads, self.len_seq)
@@ -99,7 +95,6 @@ class TestInvariantPointAttention:
                         atol=1e-5,
                     )
 
-    @torch.no_grad
     def test_frame_weight(self):
         weight = self.model.frame_weight(self.frames, self.single_rep)
         assert weight.shape == (self.len_seq, self.num_heads, self.len_seq)
@@ -123,7 +118,6 @@ class TestInvariantPointAttention:
                         atol=1e-5,
                     )
 
-    @torch.no_grad
     def test_single_rep_attention(self):
         weight = self.model.single_rep_weight(self.single_rep)
         attention = self.model.single_rep_attention(weight, self.single_rep)
@@ -139,7 +133,6 @@ class TestInvariantPointAttention:
                         atol=1e-5,
                     )
 
-    @torch.no_grad
     def test_pair_rep_attention(self):
         weight = self.model.pair_rep_weight(self.pair_rep)
         attention = self.model.pair_rep_attention(weight, self.pair_rep)
@@ -158,7 +151,6 @@ class TestInvariantPointAttention:
                         atol=1e-5,
                     )
 
-    @torch.no_grad
     def test_frame_attention(self):
         weight = self.model.frame_weight(self.frames, self.single_rep)
         attention = self.model.frame_attention(weight, self.frames, self.single_rep)

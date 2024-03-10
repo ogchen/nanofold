@@ -18,7 +18,6 @@ def test_encode_one_hot():
     assert torch.equal(one_hot, expected)
 
 
-@torch.no_grad
 def test_input_embedder():
     embedding_size = 5
     position_bins = 3

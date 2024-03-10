@@ -1,4 +1,5 @@
 from torch import nn
+from nanofold.loss import compute_fape_loss
 from nanofold.model.backbone_update import BackboneUpdate
 from nanofold.frame import Frame
 from nanofold.model.invariant_point_attention import InvariantPointAttention
@@ -42,13 +43,22 @@ class StructureModuleLayer(nn.Module):
     def from_config(cls, config):
         return cls(**cls.get_args(config))
 
-    def forward(self, single, pair, frames):
-        single += self.invariant_point_attention(single, pair, frames)
+    def forward(self, single, pair, frames, frames_truth=None):
+        single = single + self.invariant_point_attention(single, pair, frames)
         single = self.layer_norm1(self.dropout(single))
-        single += self.linear3(self.relu(self.linear2(self.relu(self.linear1(single)))))
+        single = single + self.linear3(self.relu(self.linear2(self.relu(self.linear1(single)))))
         single = self.layer_norm2(self.dropout(single))
         frames = Frame.compose(frames, self.backbone_update(single))
-        return single, frames
+
+        loss = (
+            compute_fape_loss(
+                frames, frames.translations, frames_truth, frames_truth.translations, eps=1e-12
+            )
+            if frames_truth is not None
+            else None
+        )
+
+        return single, frames, loss
 
 
 class StructureModule(nn.Module):
