@@ -1,7 +1,9 @@
+import torch
 from torch import nn
+
 from nanofold.loss import compute_fape_loss
-from nanofold.model.backbone_update import BackboneUpdate
 from nanofold.frame import Frame
+from nanofold.model.backbone_update import BackboneUpdate
 from nanofold.model.invariant_point_attention import InvariantPointAttention
 
 
@@ -62,8 +64,47 @@ class StructureModuleLayer(nn.Module):
 
 
 class StructureModule(nn.Module):
-    def __init__(self, num_layers, *args, **kwargs):
+    def __init__(self, num_layers, single_embedding_size, pair_embedding_size, *args, **kwargs):
         super().__init__()
         self.layers = nn.ModuleList(
-            [StructureModuleLayer(*args, **kwargs) for _ in range(num_layers)]
+            [
+                StructureModuleLayer(
+                    single_embedding_size=single_embedding_size,
+                    pair_embedding_size=pair_embedding_size,
+                    *args,
+                    **kwargs,
+                )
+                for _ in range(num_layers)
+            ]
         )
+        self.single_layer_norm = nn.LayerNorm(single_embedding_size)
+        self.pair_layer_norm = nn.LayerNorm(pair_embedding_size)
+        self.single_linear = nn.Linear(single_embedding_size, single_embedding_size)
+
+    def forward(self, single, pair, frames_truth=None):
+        len_seq = single.shape[0]
+        single = self.single_layer_norm(single)
+        pair = self.pair_layer_norm(pair)
+        single = self.single_linear(single)
+        frames = Frame(
+            rotations=torch.eye(3).unsqueeze(0).repeat(len_seq, 1, 1),
+            translations=torch.zeros(len_seq, 3),
+        )
+
+        aux_losses = []
+        for i, layer in enumerate(self.layers):
+            single, frames, loss = layer(single, pair, frames, frames_truth)
+            aux_losses.append(loss)
+            if i < len(self.layers) - 1:
+                frames.rotations = frames.rotations.detach()
+
+        aux_loss = (
+            torch.stack(aux_losses).mean() if all(l is not None for l in aux_losses) else None
+        )
+        fape_loss = (
+            compute_fape_loss(frames, frames.translations, frames_truth, frames_truth.translations)
+            if (frames_truth is not None)
+            else None
+        )
+
+        return fape_loss, aux_loss

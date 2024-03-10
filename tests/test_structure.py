@@ -1,6 +1,9 @@
 import torch
 from nanofold.frame import Frame
 from nanofold.model.structure import StructureModuleLayer
+from nanofold.model.structure import StructureModule
+
+
 class TestStructureModuleLayer:
     def setup_method(self):
         self.single_embedding_size = 4
@@ -38,3 +41,41 @@ class TestStructureModuleLayer:
         assert loss is not None
         # Check no exception raised when we traverse the graph
         loss.backward()
+
+
+class TestStructureModule:
+    def setup_method(self):
+        self.single_embedding_size = 4
+        self.len_seq = 7
+        self.pair_embedding_size = 5
+        self.model = StructureModule(
+            num_layers=3,
+            single_embedding_size=self.single_embedding_size,
+            pair_embedding_size=self.pair_embedding_size,
+            ipa_embedding_size=6,
+            num_query_points=3,
+            num_value_points=3,
+            num_heads=2,
+            dropout=0.1,
+        )
+        self.len_seq = 7
+        self.single_embedding_size = 4
+        self.pair_embedding_size = 5
+        self.single = torch.rand(self.len_seq, self.single_embedding_size)
+        self.pair = torch.rand(self.len_seq, self.len_seq, self.pair_embedding_size)
+        self.frames_truth = Frame(
+            rotations=torch.eye(3).unsqueeze(0).repeat(self.len_seq, 1, 1),
+            translations=torch.zeros(self.len_seq, 3),
+        )
+
+    def test_structure_module_layer(self):
+        aux_loss, fape_loss = self.model(self.single, self.pair)
+        assert aux_loss is None
+        assert fape_loss is None
+
+    def test_structure_module_layer_loss(self):
+        aux_loss, fape_loss = self.model(self.single, self.pair, self.frames_truth)
+        assert aux_loss is not None
+        assert fape_loss is not None
+        # Check no exception raised when we traverse the graph
+        (aux_loss + fape_loss).backward()
