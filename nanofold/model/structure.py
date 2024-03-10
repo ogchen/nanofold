@@ -9,20 +9,16 @@ class StructureModuleLayer(nn.Module):
         self,
         single_embedding_size,
         pair_embedding_size,
-        ipa_embedding_size,
-        ipa_num_query_points,
-        ipa_num_value_points,
-        ipa_num_heads,
         dropout,
+        *args,
+        **kwargs,
     ):
         super().__init__()
         self.invariant_point_attention = InvariantPointAttention(
             single_embedding_size=single_embedding_size,
             pair_embedding_size=pair_embedding_size,
-            ipa_embedding_size=ipa_embedding_size,
-            num_query_points=ipa_num_query_points,
-            num_value_points=ipa_num_value_points,
-            num_heads=ipa_num_heads,
+            *args,
+            **kwargs,
         )
         self.backbone_update = BackboneUpdate(single_embedding_size)
         self.dropout = nn.Dropout(dropout)
@@ -33,17 +29,18 @@ class StructureModuleLayer(nn.Module):
         self.linear2 = nn.Linear(single_embedding_size, single_embedding_size)
         self.linear3 = nn.Linear(single_embedding_size, single_embedding_size)
 
+    @staticmethod
+    def get_args(config):
+        return {
+            **InvariantPointAttention.get_args(config),
+            "single_embedding_size": config.getint("Other", "single_embedding_size"),
+            "pair_embedding_size": config.getint("InputEmbedding", "pair_embedding_size"),
+            "dropout": config.getfloat("StructureModule", "dropout"),
+        }
+
     @classmethod
     def from_config(cls, config):
-        return cls(
-            single_embedding_size=config.getint("Other", "single_embedding_size"),
-            pair_embedding_size=config.getint("InputEmbedding", "pair_embedding_size"),
-            ipa_embedding_size=config.getint("InvariantPointAttention", "embedding_size"),
-            ipa_num_query_points=config.getint("InvariantPointAttention", "num_query_points"),
-            ipa_num_value_points=config.getint("InvariantPointAttention", "num_value_points"),
-            ipa_num_heads=config.getint("InvariantPointAttention", "num_heads"),
-            dropout=config.getfloat("StructureModule", "dropout"),
-        )
+        return cls(**cls.get_args(config))
 
     def forward(self, single, pair, frames):
         single += self.invariant_point_attention(single, pair, frames)
@@ -52,3 +49,11 @@ class StructureModuleLayer(nn.Module):
         single = self.layer_norm2(self.dropout(single))
         frames = Frame.compose(frames, self.backbone_update(single))
         return single, frames
+
+
+class StructureModule(nn.Module):
+    def __init__(self, num_layers, *args, **kwargs):
+        super().__init__()
+        self.layers = nn.ModuleList(
+            [StructureModuleLayer(*args, **kwargs) for _ in range(num_layers)]
+        )
