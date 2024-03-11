@@ -58,7 +58,8 @@ class TestStructureModule:
             num_heads=2,
             dropout=0.1,
         )
-        self.len_seq = 7
+        self.sequence = ["MET", "PHE", "PRO", "SER", "THR"]
+        self.len_seq = len(self.sequence)
         self.single_embedding_size = 4
         self.pair_embedding_size = 5
         self.single = torch.rand(self.len_seq, self.single_embedding_size)
@@ -68,13 +69,14 @@ class TestStructureModule:
             translations=torch.zeros(self.len_seq, 3),
         )
 
-    def test_structure_module_layer(self):
-        aux_loss, fape_loss = self.model(self.single, self.pair)
-        assert aux_loss is None
-        assert fape_loss is None
+    def test_structure_module(self):
+        coords, _, _ = self.model(self.single, self.pair, self.sequence)
+        assert coords.shape == (self.len_seq, 3, 3)
 
-    def test_structure_module_layer_loss(self):
-        aux_loss, fape_loss = self.model(self.single, self.pair, self.frames_truth)
+    def test_structure_module_loss(self):
+        _, aux_loss, fape_loss = self.model(
+            self.single, self.pair, self.sequence, self.frames_truth
+        )
         assert aux_loss is not None
         assert fape_loss is not None
         # Check no exception raised when we traverse the graph

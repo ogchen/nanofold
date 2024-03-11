@@ -5,6 +5,7 @@ from nanofold.loss import compute_fape_loss
 from nanofold.frame import Frame
 from nanofold.model.backbone_update import BackboneUpdate
 from nanofold.model.invariant_point_attention import InvariantPointAttention
+from nanofold.residue import compute_backbone_coords
 
 
 class StructureModuleLayer(nn.Module):
@@ -81,7 +82,7 @@ class StructureModule(nn.Module):
         self.pair_layer_norm = nn.LayerNorm(pair_embedding_size)
         self.single_linear = nn.Linear(single_embedding_size, single_embedding_size)
 
-    def forward(self, single, pair, frames_truth=None):
+    def forward(self, single, pair, sequence, frames_truth=None):
         len_seq = single.shape[0]
         single = self.single_layer_norm(single)
         pair = self.pair_layer_norm(pair)
@@ -106,5 +107,6 @@ class StructureModule(nn.Module):
             if (frames_truth is not None)
             else None
         )
+        coords = compute_backbone_coords(frames, sequence)
 
-        return fape_loss, aux_loss
+        return coords, fape_loss, aux_loss
