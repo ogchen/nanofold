@@ -82,6 +82,19 @@ class StructureModule(nn.Module):
         self.pair_layer_norm = nn.LayerNorm(pair_embedding_size)
         self.single_linear = nn.Linear(single_embedding_size, single_embedding_size)
 
+    @staticmethod
+    def get_args(config):
+        return {
+            **StructureModuleLayer.get_args(config),
+            "num_layers": config.getint("StructureModule", "num_layers"),
+            "single_embedding_size": config.getint("Other", "single_embedding_size"),
+            "pair_embedding_size": config.getint("InputEmbedding", "pair_embedding_size"),
+        }
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**cls.get_args(config))
+
     def forward(self, single, pair, sequence, frames_truth=None):
         len_seq = single.shape[0]
         single = self.single_layer_norm(single)
