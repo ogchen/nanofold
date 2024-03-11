@@ -26,9 +26,10 @@ RUN mkdir -p /opt/miniconda3 \
 
 ENV PATH="/opt/miniconda3/bin:/opt/hhsuite/bin:${PATH}"
 
-RUN conda install -y -c conda-forge \
+RUN conda install -y -c conda-forge -c schrodinger \
         python=3.12 \
         pip \
+        pymol-bundle \
     && conda clean -afy
 
 COPY requirements.txt /app/requirements.txt
