@@ -145,6 +145,9 @@ def compute_residue_frames(coords):
 
 
 def compute_backbone_coords(frames, sequence):
+    if isinstance(sequence, str):
+        residue_lookup = dict(RESIDUE_LIST)
+        sequence = [residue_lookup[r] for r in sequence]
     if len(sequence) != len(frames):
         raise ValueError("Sequence length must match number of frames")
 
