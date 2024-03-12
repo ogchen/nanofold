@@ -12,7 +12,12 @@
 			"extensions": [
 				"ms-python.python",
 				"ms-python.black-formatter"
-			]
+			],
+			"settings": {
+				"python.testing.pytestArgs": [
+					"tests/data_processing"
+				]
+			}
 		}
 	}
 }
