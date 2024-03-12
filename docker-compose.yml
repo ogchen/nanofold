@@ -12,6 +12,13 @@ services:
   nanofold:
     build: ./
     image: nanofold
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     volumes:
       - /home/ogchen/data:/data
     environment:
