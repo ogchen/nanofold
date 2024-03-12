@@ -9,9 +9,11 @@ services:
       - /home/ogchen/mlflow:/mlflow
     working_dir: /mlflow
 
-  nanofold:
-    build: ./
-    image: nanofold
+  train:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.train
+    image: train
     deploy:
       resources:
         reservations:

@@ -26,13 +26,14 @@ RUN mkdir -p /opt/miniconda3 \
 
 ENV PATH="/opt/miniconda3/bin:/opt/hhsuite/bin:${PATH}"
 
-RUN conda install -y -c conda-forge -c schrodinger \
+RUN conda install -y -c conda-forge \
         python=3.12 \
         pip \
     && conda clean -afy
 
-COPY requirements.txt /app/requirements.txt
-RUN pip3 install --no-cache-dir --default-timeout=1500 -r /app/requirements.txt
+COPY requirements/requirements.train.txt /tmp/requirements.txt
+RUN pip3 install --no-cache-dir --default-timeout=1500 -r /tmp/requirements.txt \
+    && rm -rf /tmp/requirements.txt
 
 COPY . /app
 WORKDIR /app

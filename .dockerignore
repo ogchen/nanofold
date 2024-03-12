@@ -7,5 +7,5 @@ data
 **/__pycache__
 **/*.pyc
 .dockerignore
-Dockerfile
+docker/**
 README.md
