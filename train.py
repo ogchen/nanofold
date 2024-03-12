@@ -1,5 +1,7 @@
 import argparse
 import configparser
+import mlflow
+import os
 import torch
 from nanofold.mmcif import list_available_mmcif
 from nanofold.mmcif import parse_chains
@@ -23,7 +25,8 @@ def parse_args():
 
 def load_config(filepath):
     config = configparser.ConfigParser()
-    config.read(filepath)
+    with open(filepath) as f:
+        config.read_file(f)
     return config
 
 
@@ -32,8 +35,8 @@ def load(filepath):
     return parse_chains(model)
 
 
-def get_next_chain(files, crop_size=32):
-    while True:
+def get_next_chain(files, max_iter, crop_size=32):
+    for _ in range(max_iter):
         index = randint(0, len(files))
         try:
             chains = load(files[index])
@@ -49,6 +52,7 @@ def get_next_chain(files, crop_size=32):
 def main():
     args = parse_args()
     config = load_config(args.config)
+    mlflow.set_tracking_uri(uri=os.getenv("MLFLOW_SERVER_URI"))
     available = list_available_mmcif(args.mmcif)
     input_embedder = InputEmbedding.from_config(config)
     model = StructureModule.from_config(config)
@@ -58,7 +62,7 @@ def main():
         betas=(config.getfloat("Optimizer", "beta1"), config.getfloat("Optimizer", "beta2")),
         eps=config.getfloat("Optimizer", "eps"),
     )
-    for chain in get_next_chain(available):
+    for chain in get_next_chain(available, max_iter=10):
         target_feat = encode_one_hot(chain.sequence)
         pair_representations = input_embedder(target_feat, torch.tensor(chain.positions))
         single_representations = torch.zeros(
@@ -72,6 +76,9 @@ def main():
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+    mlflow.log_params(StructureModule.get_args(config))
+    mlflow.pytorch.log_model(model, "model", pip_requirements="requirements.txt")
 
 
 if __name__ == "__main__":

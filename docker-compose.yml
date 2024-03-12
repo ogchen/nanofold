@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  mlflow-server:
+    image: ghcr.io/mlflow/mlflow:v2.11.1
+    command: mlflow server --host 0.0.0.0 --port 8000
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - /home/ogchen/mlflow:/mlflow
+    working_dir: /mlflow
+
+  nanofold:
+    build: ./
+    image: nanofold
+    volumes:
+      - /home/ogchen/data:/data
+    environment:
+      - MLFLOW_SERVER_URI=http://mlflow-server:8000
