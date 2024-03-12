@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from nanofold.frame import Frame
+from nanofold.training.frame import Frame
 
 
 class BackboneUpdate(nn.Module):

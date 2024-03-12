@@ -1,4 +1,4 @@
-from nanofold.frame import Frame
+from nanofold.training.frame import Frame
 import pytest
 import torch
 import math

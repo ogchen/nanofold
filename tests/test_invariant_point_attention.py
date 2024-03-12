@@ -1,7 +1,7 @@
 import math
 import torch
-from nanofold.model.invariant_point_attention import InvariantPointAttention
-from nanofold.frame import Frame
+from nanofold.training.model.invariant_point_attention import InvariantPointAttention
+from nanofold.training.frame import Frame
 
 
 class TestInvariantPointAttention:

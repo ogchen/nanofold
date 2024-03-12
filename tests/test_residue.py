@@ -1,4 +1,4 @@
-from nanofold import residue
+from nanofold.training import residue
 import torch
 
 

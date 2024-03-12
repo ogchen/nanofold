@@ -1,8 +1,8 @@
 import math
 import torch
 from torch import nn
-from nanofold.frame import Frame
-from nanofold.util import LinearWithView
+from nanofold.training.frame import Frame
+from nanofold.training.util import LinearWithView
 
 
 class InvariantPointAttention(nn.Module):

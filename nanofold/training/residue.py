@@ -1,5 +1,5 @@
 import torch
-from nanofold.frame import Frame
+from nanofold.training.frame import Frame
 
 RESIDUE_LIST = [
     ("A", "ALA"),

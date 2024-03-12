@@ -1,11 +1,11 @@
 import torch
 from torch import nn
 
-from nanofold.loss import compute_fape_loss
-from nanofold.frame import Frame
-from nanofold.model.backbone_update import BackboneUpdate
-from nanofold.model.invariant_point_attention import InvariantPointAttention
-from nanofold.residue import compute_backbone_coords
+from nanofold.training.loss import compute_fape_loss
+from nanofold.training.frame import Frame
+from nanofold.training.model.backbone_update import BackboneUpdate
+from nanofold.training.model.invariant_point_attention import InvariantPointAttention
+from nanofold.training.residue import compute_backbone_coords
 
 
 class StructureModuleLayer(nn.Module):
@@ -37,7 +37,7 @@ class StructureModuleLayer(nn.Module):
     def get_args(config):
         return {
             **InvariantPointAttention.get_args(config),
-            "single_embedding_size": config.getint("Other", "single_embedding_size"),
+            "single_embedding_size": config.getint("General", "single_embedding_size"),
             "pair_embedding_size": config.getint("InputEmbedding", "pair_embedding_size"),
             "dropout": config.getfloat("StructureModule", "dropout"),
         }
@@ -87,7 +87,7 @@ class StructureModule(nn.Module):
         return {
             **StructureModuleLayer.get_args(config),
             "num_layers": config.getint("StructureModule", "num_layers"),
-            "single_embedding_size": config.getint("Other", "single_embedding_size"),
+            "single_embedding_size": config.getint("General", "single_embedding_size"),
             "pair_embedding_size": config.getint("InputEmbedding", "pair_embedding_size"),
         }
 

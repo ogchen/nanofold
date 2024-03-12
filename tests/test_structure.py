@@ -1,7 +1,7 @@
 import torch
-from nanofold.frame import Frame
-from nanofold.model.structure import StructureModuleLayer
-from nanofold.model.structure import StructureModule
+from nanofold.training.frame import Frame
+from nanofold.training.model.structure import StructureModuleLayer
+from nanofold.training.model.structure import StructureModule
 
 
 class TestStructureModuleLayer:

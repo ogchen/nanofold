@@ -1,4 +1,4 @@
-from nanofold.fasta import FastaParser
+from nanofold.training.fasta import FastaParser
 
 
 def test_get_fasta(data_dir):

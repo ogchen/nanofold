@@ -1,5 +1,5 @@
-from nanofold.frame import Frame
-from nanofold.residue import RESIDUE_LIST
+from nanofold.training.frame import Frame
+from nanofold.training.residue import RESIDUE_LIST
 
 
 class Chain:

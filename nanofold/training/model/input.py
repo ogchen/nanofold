@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from nanofold.residue import RESIDUE_LIST
+from nanofold.training.residue import RESIDUE_LIST
 
 
 def encode_one_hot(seq):

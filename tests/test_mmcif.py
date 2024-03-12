@@ -1,6 +1,6 @@
 import pytest
 import torch
-from nanofold import mmcif
+from nanofold.training import mmcif
 
 
 @pytest.mark.parametrize(

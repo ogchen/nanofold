@@ -1,4 +1,4 @@
-from nanofold.model import input
+from nanofold.training.model import input
 import torch
 
 

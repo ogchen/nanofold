@@ -1,7 +1,7 @@
 import math
 import torch
-from nanofold.frame import Frame
-from nanofold.loss import compute_fape_loss
+from nanofold.training.frame import Frame
+from nanofold.training.loss import compute_fape_loss
 
 
 def test_loss_fape():

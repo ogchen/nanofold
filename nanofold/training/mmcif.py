@@ -3,9 +3,9 @@ import glob
 import os
 import torch
 from Bio.PDB import MMCIFParser
-from nanofold.chain import Chain
-from nanofold.residue import compute_residue_frames
-from nanofold.residue import RESIDUE_LIST
+from nanofold.training.chain import Chain
+from nanofold.training.residue import compute_residue_frames
+from nanofold.training.residue import RESIDUE_LIST
 
 
 class EmptyChainError(RuntimeError):
