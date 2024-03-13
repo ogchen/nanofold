@@ -1,4 +1,4 @@
 biopython
 numpy
-pyspark
+pymongo
 pytest
