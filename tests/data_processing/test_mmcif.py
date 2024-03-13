@@ -52,13 +52,3 @@ def test_get_residue(model, num_chains, num_residues):
     assert len(metadata) == num_residues
     assert len(rotations) == num_residues
     assert len(translations) == num_residues
-
-
-@pytest.mark.parametrize(
-    "model",
-    ["1GSG"],
-    indirect=["model"],
-)
-def test_empty_chain_error(model):
-    with pytest.raises(mmcif.EmptyChainError):
-        mmcif.parse_chains(model)

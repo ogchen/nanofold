@@ -10,10 +10,6 @@ from nanofold.data_processing.chain import Chain
 from nanofold.data_processing.residue import compute_residue_frames
 
 
-class EmptyChainError(RuntimeError):
-    pass
-
-
 def list_available_mmcif(mmcif_dir):
     search_glob = os.path.join(mmcif_dir, "*.cif")
     return glob.glob(search_glob)
@@ -52,9 +48,6 @@ def parse_chains(model):
         if len(chain) == 0:
             continue
         result.append(chain)
-
-    if len(result) == 0:
-        raise EmptyChainError(f"No valid chains found for model {model.id}")
     return result
 
 
