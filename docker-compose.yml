@@ -1,17 +1,12 @@
 version: '3.8'
 services:
-  db:
-    image: mongo:7.0
-    volumes:
-      - db:/data/db
-
   mlflow-server:
     image: ghcr.io/mlflow/mlflow:v2.11.1
     command: mlflow server --host 0.0.0.0 --port 8000
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - /home/ogchen/mlflow:/mlflow
+      - mlflow:/mlflow
     working_dir: /mlflow
 
   train:
@@ -36,6 +31,10 @@ services:
       context: .
       dockerfile: docker/Dockerfile.process
     image: data_processing
+    volumes:
+      - db:/db
+      - /home/ogchen/data:/data
 
 volumes:
   db:
+  mlflow:

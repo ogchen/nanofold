@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.dev.ini -m /data/pdb_mmcif/ -f /data/pdb_seqres.txt"
+            "args": "-c /workspace/config/config.dev.ini -m /data/data/pdb_mmcif/ -f /data/data/pdb_seqres.txt"
         },
         {
             "name": "Process PDB",
@@ -18,7 +18,7 @@
             "request": "launch",
             "program": "process_pdb.py",
             "console": "integratedTerminal",
-            "args": "-m /data/pdb_mmcif/"
+            "args": "-m /data/data/pdb_mmcif/ -s /data/data/"
         }
     ]
 }
