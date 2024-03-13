@@ -7,7 +7,6 @@ import torch
 import torchinfo
 from pathlib import Path
 
-from nanofold.data_processing.mmcif import EmptyChainError
 from nanofold.data_processing.mmcif import list_available_mmcif
 from nanofold.data_processing.mmcif import load_model
 from nanofold.data_processing.mmcif import parse_chains
@@ -44,9 +43,8 @@ def get_next_chain(files, max_iter, crop_size=32):
     epoch = 0
     while epoch < max_iter:
         index = randint(0, len(files))
-        try:
-            chains = load(files[index])
-        except EmptyChainError as e:
+        chains = load(files[index])
+        if len(chains) == 0:
             continue
         chain = chains[randint(0, len(chains))]
         if accept_chain(chain):
