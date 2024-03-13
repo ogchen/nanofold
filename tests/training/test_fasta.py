@@ -1,4 +1,10 @@
+import pytest
 from nanofold.training.fasta import FastaParser
+
+
+@pytest.fixture
+def data_dir(request):
+    return request.path.parent / "data"
 
 
 def test_get_fasta(data_dir):
