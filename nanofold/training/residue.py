@@ -1,7 +1,7 @@
 import torch
 
-from nanofold.common.residue import BACKBONE_POSITIONS
-from nanofold.common.residue import RESIDUE_LOOKUP_1L
+from nanofold.common.residue_definitions import BACKBONE_POSITIONS
+from nanofold.common.residue_definitions import RESIDUE_LOOKUP_1L
 from nanofold.training.frame import Frame
 
 

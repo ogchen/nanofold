@@ -4,7 +4,7 @@ import os
 import numpy as np
 from Bio.PDB import MMCIFParser
 
-from nanofold.common.residue import RESIDUE_LOOKUP_3L
+from nanofold.common.residue_definitions import RESIDUE_LOOKUP_3L
 from nanofold.data_processing.chain import Chain
 from nanofold.data_processing.residue import compute_residue_frames
 

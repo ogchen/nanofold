@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from nanofold.common.residue import RESIDUE_LOOKUP_1L
+from nanofold.common.residue_definitions import RESIDUE_LOOKUP_1L
 
 
 def encode_one_hot(seq):

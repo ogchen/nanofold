@@ -1,4 +1,4 @@
-from nanofold.common.residue import RESIDUE_LOOKUP_3L
+from nanofold.common.residue_definitions import RESIDUE_LOOKUP_3L
 
 
 class Chain:
