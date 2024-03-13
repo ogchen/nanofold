@@ -1,12 +1,12 @@
 {
 	"name": "Data Processing Dev Container",
-	"build": {
-		"context": "../..",
-		"dockerfile": "../../docker/Dockerfile.process"
-	},
 	"mounts": [
 		"source=/home/ogchen/data,target=/data,type=bind,consistency=cached"
 	],
+	"dockerComposeFile": ["../../docker-compose.yml", "../docker-compose.extend.yml"],
+	"service": "data_processing",
+	"workspaceFolder": "/workspace",
+	"shutdownAction": "none",
 	"customizations": {
 		"vscode": {
 			"extensions": [
