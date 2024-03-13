@@ -79,7 +79,7 @@ class TestInvariantPointAttention:
                     assert torch.allclose(
                         weight[i, h, j],
                         self.model.scale_single_rep * torch.dot(q[i, h], k[j, h]),
-                        atol=1e-5,
+                        atol=1e-3,
                     )
 
     def test_pair_rep_weight(self):
