@@ -1,10 +1,16 @@
+import difflib
 import glob
 import os
 import numpy as np
 from Bio.PDB import MMCIFParser
 
+from nanofold.data_processing.chain import Chain
 from nanofold.data_processing.residue import compute_residue_frames
 from nanofold.data_processing.residue import RESIDUE_LIST
+
+
+class EmptyChainError(RuntimeError):
+    pass
 
 
 def list_available_mmcif(mmcif_dir):
@@ -23,6 +29,32 @@ def load_model(filepath):
     model.header = structure.header
     model.mmcif_dict = parser._mmcif_dict
     return model
+
+
+def get_longest_match(chain, sequence):
+    matcher = difflib.SequenceMatcher(None, chain.sequence, sequence, autojunk=False)
+    start, _, size = matcher.find_longest_match()
+    return chain[start : start + size]
+
+
+def parse_chains(model):
+    result = []
+    for strand_id, sequence in zip(
+        model.mmcif_dict["_entity_poly.pdbx_strand_id"],
+        model.mmcif_dict["_entity_poly.pdbx_seq_one_letter_code"],
+    ):
+        strand_id = strand_id.split(",")[0]
+        sequence = sequence.replace("\n", "")
+        mmcif_chain = model[strand_id]
+        chain = Chain.from_residue_list(mmcif_chain.get_full_id()[1:], *get_residues(mmcif_chain))
+        chain = get_longest_match(chain, sequence)
+        if len(chain) == 0:
+            continue
+        result.append(chain)
+
+    if len(result) == 0:
+        raise EmptyChainError(f"No valid chains found for model {model.id}")
+    return result
 
 
 def should_filter_residue(residue):
