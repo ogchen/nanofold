@@ -6,13 +6,13 @@ machine on a mid tier GPU.
 
 ## Setup
 ### Download Required Data
-Download the PDB structures used as the primary training inputs:
-1) Use RCSB's [advanced search](https://www.rcsb.org/search/advanced) to filter protein structures
-deposited before 01/01/2000, limiting the number of inputs sequences to 10959.
-2) Download the list of IDs resulting from the search above, and use the RCSB
-[batch script](https://www.rcsb.org/docs/programmatic-access/batch-downloads-with-shell-script) to
-download all structures in the `mmCIF` format.
-3) Unzip all files with `gzip -d *.cif.gz`.
+The download script uses `aria2c` under the hood which can be installed by running `sudo apt install aria2`.
+
+Download and unzip `mmCIF` files that were deposited before a specified date with the following invocation:
+```bash
+./scripts/download_pdb.sh ~/data/pdb 2005-01-01
+gzip -d ~/data/pdb/*.cif.gz
+```
 
 Download sequences in FASTA format:
 1) Download [`pdb_seqres.txt`](https://files.rcsb.org/pub/pdb/derived_data/pdb_seqres.txt),
@@ -29,19 +29,13 @@ gzip -d bfd-first_non_consensus_sequences.fasta.gz
 Requires [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 for GPU support within containers.
 
-Build the image with
+Build docker images with
 ```bash
-docker build -t nanofold .
+docker-compose build
 ```
 
 Run tests with
 ```bash
-docker build -t nanofold . && docker run -it --gpus all --rm nanofold pytest
-```
-
-To run an interactive shell, set `$DATA_DIR` to the directory containing the downloaded data
-and run the following:
-```bash
-export DATA_DIR=~/data
-docker run -v $DATA_DIR:/data -it --gpus all --rm nanofold /bin/bash
+docker run -it --gpus all --rm train pytest tests/training
+docker run -it --rm data_processing pytest tests/data_processing
 ```
