@@ -81,4 +81,4 @@ EOF
 done
 echo "Fetched URLS to $URL_FILE"
 
-aria2c -d "$DOWNLOAD_DIR" --allow-overwrite=true -i "$URLS_FILE"
+aria2c -d "$DOWNLOAD_DIR" --auto-file-renaming=false -i "$URLS_FILE"
