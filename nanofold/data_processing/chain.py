@@ -1,9 +1,7 @@
-from nanofold.data_processing.residue import RESIDUE_LIST
+from nanofold.common.residue import RESIDUE_LOOKUP_3L
 
 
 class Chain:
-    RESIDUE_LOOKUP = {r[1]: r[0] for r in RESIDUE_LIST}
-
     def __init__(self, id, chain, rotations, translations, sequence, positions):
         self.id = id
         self.chain = chain
@@ -18,7 +16,7 @@ class Chain:
             id, chain=[], rotations=rotations, translations=translations, sequence="", positions=[]
         )
         chain = [{"resname": r["resname"], "id": r["id"]} for r in residue_list]
-        sequence = "".join([cls.RESIDUE_LOOKUP[r["resname"]] for r in residue_list])
+        sequence = "".join([RESIDUE_LOOKUP_3L[r["resname"]] for r in residue_list])
         positions = [r["id"][-1][1] for r in residue_list]
         return cls(id, chain, rotations, translations, sequence, positions)
 

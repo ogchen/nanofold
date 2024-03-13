@@ -1,30 +1,6 @@
 import numpy as np
 
 
-RESIDUE_LIST = [
-    ("A", "ALA"),
-    ("R", "ARG"),
-    ("N", "ASN"),
-    ("D", "ASP"),
-    ("C", "CYS"),
-    ("Q", "GLN"),
-    ("E", "GLU"),
-    ("G", "GLY"),
-    ("H", "HIS"),
-    ("I", "ILE"),
-    ("L", "LEU"),
-    ("K", "LYS"),
-    ("M", "MET"),
-    ("F", "PHE"),
-    ("P", "PRO"),
-    ("S", "SER"),
-    ("T", "THR"),
-    ("W", "TRP"),
-    ("Y", "TYR"),
-    ("V", "VAL"),
-]
-
-
 def compute_residue_frames(coords):
     x0 = coords[:, 0, :]
     x1 = coords[:, 1, :]

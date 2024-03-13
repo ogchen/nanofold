@@ -1,28 +1,7 @@
 import torch
-from nanofold.training.frame import Frame
 
-RESIDUE_LIST = [
-    ("A", "ALA"),
-    ("R", "ARG"),
-    ("N", "ASN"),
-    ("D", "ASP"),
-    ("C", "CYS"),
-    ("Q", "GLN"),
-    ("E", "GLU"),
-    ("G", "GLY"),
-    ("H", "HIS"),
-    ("I", "ILE"),
-    ("L", "LEU"),
-    ("K", "LYS"),
-    ("M", "MET"),
-    ("F", "PHE"),
-    ("P", "PRO"),
-    ("S", "SER"),
-    ("T", "THR"),
-    ("W", "TRP"),
-    ("Y", "TYR"),
-    ("V", "VAL"),
-]
+from nanofold.common.residue import RESIDUE_LOOKUP_1L
+from nanofold.training.frame import Frame
 
 BACKBONE_POSITIONS = {
     "ALA": [
@@ -130,8 +109,7 @@ BACKBONE_POSITIONS = {
 
 def compute_backbone_coords(frames, sequence):
     if isinstance(sequence, str):
-        residue_lookup = dict(RESIDUE_LIST)
-        sequence = [residue_lookup[r] for r in sequence]
+        sequence = [RESIDUE_LOOKUP_1L[r] for r in sequence]
     if len(sequence) != len(frames):
         raise ValueError("Sequence length must match number of frames")
 

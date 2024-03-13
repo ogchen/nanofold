@@ -4,9 +4,9 @@ import os
 import numpy as np
 from Bio.PDB import MMCIFParser
 
+from nanofold.common.residue import RESIDUE_LOOKUP_3L
 from nanofold.data_processing.chain import Chain
 from nanofold.data_processing.residue import compute_residue_frames
-from nanofold.data_processing.residue import RESIDUE_LIST
 
 
 class EmptyChainError(RuntimeError):
@@ -58,10 +58,9 @@ def parse_chains(model):
 
 
 def should_filter_residue(residue):
-    valid_residues = [r[1] for r in RESIDUE_LIST]
     hetatom, _, _ = residue.get_id()
     is_hetero_residue = hetatom.strip() != ""
-    is_valid_residue = residue.get_resname() in valid_residues
+    is_valid_residue = residue.get_resname() in RESIDUE_LOOKUP_3L.keys()
     return is_hetero_residue or not is_valid_residue
 
 
