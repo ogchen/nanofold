@@ -4,6 +4,7 @@ import os
 import numpy as np
 from Bio.PDB import MMCIFParser
 
+from nanofold.common.residue_definitions import BACKBONE_ATOMS
 from nanofold.common.residue_definitions import RESIDUE_LOOKUP_3L
 from nanofold.data_processing.chain import Chain
 from nanofold.data_processing.residue import compute_residue_frames
@@ -65,15 +66,14 @@ def should_filter_residue(residue):
 
 
 def get_residues(chain):
-    atoms = ["N", "CA", "C"]
     metadata = []
     coords = np.empty((0, 3, 3))
     for residue in chain.get_residues():
         if should_filter_residue(residue):
             continue
-        if any(a not in residue for a in atoms):
+        if any(a not in residue for a in BACKBONE_ATOMS):
             continue
-        residue_coords = np.stack([residue[a].get_coord() for a in atoms])
+        residue_coords = np.stack([residue[a].get_coord() for a in BACKBONE_ATOMS])
         coords = np.concatenate([coords, residue_coords[np.newaxis, :]])
         metadata.append(
             {

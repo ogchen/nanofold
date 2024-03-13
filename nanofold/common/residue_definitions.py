@@ -23,6 +23,7 @@ RESIDUE_LIST = [
 RESIDUE_LOOKUP_1L = dict(RESIDUE_LIST)
 RESIDUE_LOOKUP_3L = {r[1]: r[0] for r in RESIDUE_LIST}
 
+BACKBONE_ATOMS = ["N", "CA", "C"]
 BACKBONE_POSITIONS = {
     "ALA": [
         ("N", [-0.525, 1.363, 0.000]),
