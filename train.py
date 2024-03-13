@@ -7,16 +7,17 @@ import torch
 import torchinfo
 from pathlib import Path
 
-from nanofold.training.mmcif import list_available_mmcif
-from nanofold.training.mmcif import parse_chains
-from nanofold.training.mmcif import load_model
-from nanofold.training.mmcif import EmptyChainError
-from nanofold.training.util import accept_chain
-from nanofold.training.util import crop_chain
-from nanofold.training.util import randint
+from nanofold.data_processing.mmcif import EmptyChainError
+from nanofold.data_processing.mmcif import list_available_mmcif
+from nanofold.data_processing.mmcif import load_model
+from nanofold.data_processing.mmcif import parse_chains
+from nanofold.training.frame import Frame
 from nanofold.training.model.input import encode_one_hot
 from nanofold.training.model.input import InputEmbedding
 from nanofold.training.model.structure import StructureModule
+from nanofold.training.util import accept_chain
+from nanofold.training.util import crop_chain
+from nanofold.training.util import randint
 
 
 def parse_args():
@@ -84,10 +85,16 @@ def main():
             target_feat = encode_one_hot(chain.sequence)
             pair_representations = input_embedder(target_feat, torch.tensor(chain.positions))
             single_representations = torch.zeros(
-                len(chain.sequence), config.getint("Other", "single_embedding_size")
+                len(chain.sequence), config.getint("General", "single_embedding_size")
             )
             coords, fape_loss, aux_loss = model(
-                single_representations, pair_representations, chain.sequence, chain.frames
+                single_representations,
+                pair_representations,
+                chain.sequence,
+                Frame(
+                    rotations=torch.from_numpy(chain.rotations),
+                    translations=torch.from_numpy(chain.translations),
+                ),
             )
             loss = fape_loss + aux_loss
             optimizer.zero_grad()
@@ -98,7 +105,9 @@ def main():
             mlflow.log_metric("total_loss", loss.detach().item(), step=epoch)
             epoch += 1
 
-        mlflow.pytorch.log_model(model, "model", pip_requirements="requirements.train.txt")
+        mlflow.pytorch.log_model(
+            model, "model", pip_requirements="requirements/requirements.train.txt"
+        )
 
 
 if __name__ == "__main__":

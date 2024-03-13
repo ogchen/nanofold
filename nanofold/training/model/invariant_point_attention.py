@@ -51,7 +51,7 @@ class InvariantPointAttention(nn.Module):
     @staticmethod
     def get_args(config):
         return {
-            "single_embedding_size": config.getint("Other", "single_embedding_size"),
+            "single_embedding_size": config.getint("General", "single_embedding_size"),
             "pair_embedding_size": config.getint("InputEmbedding", "pair_embedding_size"),
             "ipa_embedding_size": config.getint("InvariantPointAttention", "embedding_size"),
             "num_query_points": config.getint("InvariantPointAttention", "num_query_points"),
