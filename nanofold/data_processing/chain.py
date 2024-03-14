@@ -36,3 +36,15 @@ class Chain:
                 self.sequence[key],
                 self.positions[key],
             )
+
+    @staticmethod
+    def to_record(chain):
+        return {
+            "model_id": chain.id[0],
+            "chain_id": chain.id[1],
+            "chain": chain.chain,
+            "rotations": chain.rotations.flatten().tolist(),
+            "translations": chain.translations.flatten().tolist(),
+            "sequence": chain.sequence,
+            "positions": chain.positions,
+        }

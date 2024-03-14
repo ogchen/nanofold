@@ -39,3 +39,9 @@ Run tests with
 docker run -it --gpus all --rm train pytest tests/training
 docker run -it --rm data_processing pytest tests/data_processing
 ```
+
+### Training
+Process downloaded PDB files using Spark
+```bash
+docker-compose run --rm data_processing python process_pdb.py -m /data/pdb/ -s /db/
+```
