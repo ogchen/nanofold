@@ -3,4 +3,5 @@ pytest
 torch
 torchinfo
 mlflow
+pyspark
 --extra-index-url https://download.pytorch.org/whl/cu121
