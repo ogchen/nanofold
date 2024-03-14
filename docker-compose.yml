@@ -6,12 +6,14 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - /home/ogchen/mlflow:/mlflow
+      - mlflow:/mlflow
     working_dir: /mlflow
 
-  nanofold:
-    build: ./
-    image: nanofold
+  train:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.train
+    image: train
     deploy:
       resources:
         reservations:
@@ -20,6 +22,20 @@ services:
               count: 1
               capabilities: [gpu]
     volumes:
+      - db:/db
       - /home/ogchen/data:/data
     environment:
       - MLFLOW_SERVER_URI=http://mlflow-server:8000
+
+  data_processing:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.process
+    image: data_processing
+    volumes:
+      - db:/db
+      - /home/ogchen/data:/data
+
+volumes:
+  db:
+  mlflow:

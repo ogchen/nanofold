@@ -1,5 +1,0 @@
-biopython
-pytest
-torch
-mlflow
---extra-index-url https://download.pytorch.org/whl/cu121
