@@ -1,6 +1,7 @@
 import argparse
 import csv
 import logging
+from Bio.PDB.PDBExceptions import PDBConstructionException
 from itertools import batched
 from pathlib import Path
 from pyspark.sql import SparkSession
@@ -13,6 +14,9 @@ from nanofold.data_processing.mmcif import parse_chains
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-b", "--batch", help="Batch size of files to process", default=500, type=int
+    )
     parser.add_argument("-m", "--mmcif", help="Directory containing mmcif files", type=Path)
     parser.add_argument("-s", "--store", help="Directory to store processed data in", type=Path)
     parser.add_argument("-l", "--logging", help="Logging level", default="INFO")
@@ -20,7 +24,11 @@ def parse_args():
 
 
 def process_pdb_file(filepath):
-    model = load_model(filepath)
+    try:
+        model = load_model(filepath)
+    except PDBConstructionException as e:
+        logging.warn(f"Got PDB construction error for file={filepath}, error={e}")
+        return []
     chains = parse_chains(model)
     return [Chain.to_record(c) for c in chains]
 
@@ -43,12 +51,11 @@ def main():
     except FileNotFoundError:
         processed_ids = []
 
-    batch_size = 500
     pdb_files = list_available_mmcif(args.mmcif)
     pdb_files = list(filter(lambda x: get_id(x) not in processed_ids, pdb_files))
     logging.info(f"Found {len(pdb_files)} files to process")
 
-    for i, batch in enumerate(batched(pdb_files, batch_size)):
+    for i, batch in enumerate(batched(pdb_files, args.batch)):
         pdb_files_rdd = spark.sparkContext.parallelize(batch)
         data = pdb_files_rdd.flatMap(process_pdb_file)
 
@@ -60,7 +67,7 @@ def main():
         with open(id_filepath, mode="w") as f:
             writer = csv.writer(f)
             writer.writerow(processed_ids)
-        logging.info(f"Processed {i * batch_size + len(batch)}/{len(pdb_files)} files")
+        logging.info(f"Processed {i * args.batch + len(batch)}/{len(pdb_files)} files")
 
 
 if __name__ == "__main__":
