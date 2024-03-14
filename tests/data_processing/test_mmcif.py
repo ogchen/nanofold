@@ -30,14 +30,21 @@ from nanofold.data_processing import mmcif
             138,
             "EPATILLIDDHPMLRTGVKQLISMAPDITVVGEASNGEQGIELAESLDPDLILLDLNMPGMNGLETLDKLREKSLSGRIVVFSVSNHEEDVVTALKRGADGYLLKDMEPEDLLKALHQAAAGEMVLSEALTPVLAASL",
         ),
+        (
+            "1AGA",
+            0,
+            None,
+            None,
+        ),
     ],
     indirect=["model"],
 )
 def test_parse_chains(model, valid_chains, num_residues, sequence):
     chains = mmcif.parse_chains(model)
     assert len(chains) == valid_chains
-    assert len(chains[0]) == num_residues
-    assert chains[0].sequence == sequence
+    if len(chains) > 0:
+        assert len(chains[0]) == num_residues
+        assert chains[0].sequence == sequence
 
 
 @pytest.mark.parametrize(

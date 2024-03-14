@@ -36,14 +36,17 @@ def get_longest_match(chain, sequence):
 
 def parse_chains(model):
     result = []
+    release_date = min(model.mmcif_dict.get("_pdbx_audit_revision_history.revision_date", [None]))
     for strand_id, sequence in zip(
-        model.mmcif_dict["_entity_poly.pdbx_strand_id"],
-        model.mmcif_dict["_entity_poly.pdbx_seq_one_letter_code"],
+        model.mmcif_dict.get("_entity_poly.pdbx_strand_id", []),
+        model.mmcif_dict.get("_entity_poly.pdbx_seq_one_letter_code", []),
     ):
         strand_id = strand_id.split(",")[0]
         sequence = sequence.replace("\n", "")
         mmcif_chain = model[strand_id]
-        chain = Chain.from_residue_list(mmcif_chain.get_full_id()[1:], *get_residues(mmcif_chain))
+        chain = Chain.from_residue_list(
+            mmcif_chain.get_full_id()[1:], release_date, *get_residues(mmcif_chain)
+        )
         chain = get_longest_match(chain, sequence)
         if len(chain) == 0:
             continue
