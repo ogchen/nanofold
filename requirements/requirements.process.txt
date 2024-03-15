@@ -1,4 +1,4 @@
 biopython
 numpy
-pyspark
+polars
 pytest
