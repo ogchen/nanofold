@@ -14,7 +14,9 @@ class ChainRecord:
         ]
     )
 
-    def __init__(self, model_id, chain_id, release_date, rotations, translations, sequence, positions):
+    def __init__(
+        self, model_id, chain_id, release_date, rotations, translations, sequence, positions
+    ):
         self.model_id = model_id
         self.chain_id = chain_id
         self.release_date = release_date
@@ -52,7 +54,3 @@ class ChainRecord:
             pa.array([c.positions for c in chains]),
         ]
         return pa.record_batch(data, schema=ChainRecord.SCHEMA)
-    
-    @staticmethod
-    def from_record_batch(batch):
-        
