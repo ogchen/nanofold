@@ -6,7 +6,7 @@ from Bio.PDB import MMCIFParser
 
 from nanofold.common.residue_definitions import BACKBONE_ATOMS
 from nanofold.common.residue_definitions import RESIDUE_LOOKUP_3L
-from nanofold.data_processing.chain import Chain
+from nanofold.common.chain import Chain
 from nanofold.data_processing.residue import compute_residue_frames
 
 
@@ -36,7 +36,7 @@ def get_longest_match(chain, sequence):
 
 def parse_chains(model):
     result = []
-    release_date = min(model.mmcif_dict.get("_pdbx_audit_revision_history.revision_date", [None]))
+    release_date = min(model.mmcif_dict["_pdbx_audit_revision_history.revision_date"])
     for strand_id, sequence in zip(
         model.mmcif_dict.get("_entity_poly.pdbx_strand_id", []),
         model.mmcif_dict.get("_entity_poly.pdbx_seq_one_letter_code", []),

@@ -43,5 +43,5 @@ docker run -it --rm data_processing pytest tests/data_processing
 ### Training
 Process downloaded PDB files using Spark
 ```bash
-docker-compose run --rm data_processing python process_pdb.py -m /data/pdb/ -s /db/
+docker-compose run --rm data_processing python process_pdb.py -m /data/pdb/ -o /db/pdb_data.arrow
 ```
