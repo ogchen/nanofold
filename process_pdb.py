@@ -6,7 +6,7 @@ from concurrent.futures import ProcessPoolExecutor
 from itertools import batched
 from pathlib import Path
 
-from nanofold.common.chain import ChainRecord
+from nanofold.common.chain_record import ChainRecord
 from nanofold.data_processing.mmcif import list_available_mmcif
 from nanofold.data_processing.mmcif import load_model
 from nanofold.data_processing.mmcif import parse_chains
