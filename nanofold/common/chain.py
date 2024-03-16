@@ -1,7 +1,21 @@
+import pyarrow as pa
+
 from nanofold.common.residue_definitions import RESIDUE_LOOKUP_3L
 
 
 class Chain:
+    SCHEMA = pa.schema(
+        [
+            ("model_id", pa.string()),
+            ("chain_id", pa.string()),
+            ("release_date", pa.string()),
+            ("rotations", pa.list_(pa.float32())),
+            ("translations", pa.list_(pa.float32())),
+            ("sequence", pa.string()),
+            ("positions", pa.list_(pa.int32())),
+        ]
+    )
+
     def __init__(self, id, release_date, rotations, translations, sequence, positions):
         self.id = id
         self.release_date = release_date
@@ -34,13 +48,14 @@ class Chain:
             )
 
     @staticmethod
-    def to_record(chain):
-        return {
-            "model_id": chain.id[0],
-            "chain_id": chain.id[1],
-            "release_date": chain.release_date,
-            "rotations": chain.rotations.flatten().tolist(),
-            "translations": chain.translations.flatten().tolist(),
-            "sequence": chain.sequence,
-            "positions": chain.positions,
-        }
+    def to_record_batch(chains):
+        data = [
+            pa.array([c.id[0] for c in chains]),
+            pa.array([c.id[1] for c in chains]),
+            pa.array([c.release_date for c in chains]),
+            pa.array([c.rotations.flatten() for c in chains]),
+            pa.array([c.translations.flatten() for c in chains]),
+            pa.array([c.sequence for c in chains]),
+            pa.array([c.positions for c in chains]),
+        ]
+        return pa.record_batch(data, schema=Chain.SCHEMA)
