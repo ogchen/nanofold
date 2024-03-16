@@ -6,7 +6,7 @@ from concurrent.futures import ProcessPoolExecutor
 from itertools import batched
 from pathlib import Path
 
-from nanofold.common.chain import Chain
+from nanofold.common.chain import ChainRecord
 from nanofold.data_processing.mmcif import list_available_mmcif
 from nanofold.data_processing.mmcif import load_model
 from nanofold.data_processing.mmcif import parse_chains
@@ -27,7 +27,7 @@ def process_pdb_file(filepath):
     try:
         model = load_model(filepath)
     except PDBConstructionException as e:
-        logging.warn(f"Got PDB construction error for file={filepath}, error={e}")
+        logging.warning(f"Got PDB construction error for file={filepath}, error={e}")
         return []
     return parse_chains(model)
 
@@ -45,10 +45,10 @@ def main():
 
     with ProcessPoolExecutor() as executor:
         with pa.OSFile(str(args.output), mode="w") as f:
-            with pa.ipc.new_file(f, Chain.SCHEMA) as writer:
+            with pa.ipc.new_file(f, ChainRecord.SCHEMA) as writer:
                 for i, batch in enumerate(batched(pdb_files, args.batch)):
                     result = [c for chains in executor.map(process_pdb_file, batch) for c in chains]
-                    writer.write_batch(Chain.to_record_batch(result))
+                    writer.write_batch(ChainRecord.to_record_batch(result))
                     logging.info(f"Processed {i * args.batch + len(batch)}/{len(pdb_files)} files")
     logging.info(f"Finished processing {len(pdb_files)} files, output written to {args.output}")
 

@@ -6,7 +6,7 @@ from Bio.PDB import MMCIFParser
 
 from nanofold.common.residue_definitions import BACKBONE_ATOMS
 from nanofold.common.residue_definitions import RESIDUE_LOOKUP_3L
-from nanofold.common.chain import Chain
+from nanofold.common.chain_record import ChainRecord
 from nanofold.data_processing.residue import compute_residue_frames
 
 
@@ -44,8 +44,12 @@ def parse_chains(model):
         strand_id = strand_id.split(",")[0]
         sequence = sequence.replace("\n", "")
         mmcif_chain = model[strand_id]
-        chain = Chain.from_residue_list(
-            mmcif_chain.get_full_id()[1:], release_date, *get_residues(mmcif_chain)
+        full_id = mmcif_chain.get_full_id()
+        residue_list, rotations, translations = get_residues(mmcif_chain)
+        sequence = "".join([RESIDUE_LOOKUP_3L[r["resname"]] for r in residue_list])
+        positions = [r["id"][-1][1] for r in residue_list]
+        chain = ChainRecord(
+            full_id[0], full_id[1], release_date, rotations, translations, sequence, positions
         )
         chain = get_longest_match(chain, sequence)
         if len(chain) == 0:
