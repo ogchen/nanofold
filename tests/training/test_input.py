@@ -29,3 +29,6 @@ def test_input_embedder():
 
     x = embedder(target_feat, residue_index)
     assert x.shape == (len(seq), len(seq), embedding_size)
+
+    batched = embedder(target_feat.unsqueeze(0), residue_index.unsqueeze(0))
+    assert torch.allclose(x.unsqueeze(0), batched, atol=1e-3)
