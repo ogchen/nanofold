@@ -19,11 +19,13 @@ def test_chain_dataset(arrow_file):
     assert len(test_data.df) == 2
 
     batch = next(iter(train_data))
-    assert batch["rotations"].shape == (residue_crop_size, 3, 3)
-    assert batch["translations"].shape == (residue_crop_size, 3)
+    assert batch["frames"].rotations.shape == (residue_crop_size, 3, 3)
+    assert batch["frames"].translations.shape == (residue_crop_size, 3)
     assert len(batch["sequence"]) == residue_crop_size
     assert batch["positions"].shape == (residue_crop_size,)
     assert batch["target_feat"].shape == (residue_crop_size, 20)
     assert torch.allclose(
-        batch["rotations"] @ batch["rotations"].transpose(-1, -2), torch.eye(3), atol=1e-3
+        batch["frames"].rotations @ batch["frames"].rotations.transpose(-1, -2),
+        torch.eye(3),
+        atol=1e-3,
     )
