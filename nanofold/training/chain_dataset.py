@@ -1,25 +1,44 @@
-from torch.utils.data import Dataset
-import pyarrow as pa
+from torch.utils.data import IterableDataset
+import numpy as np
+import polars as pl
+import torch
 
-from nanofold.common.chain_record import ChainRecord
 
+class ChainDataset(IterableDataset):
+    def __init__(self, arrow_file, residue_crop_size, batch_size):
+        super().__init__()
+        self.residue_crop_size = residue_crop_size
+        self.batch_size = batch_size
+        self.df = pl.read_ipc(
+            arrow_file, columns=["rotations", "translations", "sequence", "positions"]
+        )
+        self.df = self.df.with_columns(length=pl.col("sequence").str.len_chars())
+        self.df = self.df.filter(pl.col("length") >= self.residue_crop_size)
 
-class ChainDataset(Dataset):
-    def __init__(self, arrow_file):
-        self.mmap = pa.memory_map(str(arrow_file), mode="r")
-        self.reader = pa.ipc.open_file(self.mmap)
-        self.table = self.reader.read_all()
-
-    def __len__(self):
-        return len(self.table)
-
-    def __getitem__(self, idx):
-        if not isinstance(idx, int):
-            raise ValueError(f"Expected int, got {type(idx)}")
-        batches = self.table.take([idx]).to_batches()
-        if len(batches) != 1:
-            raise ValueError(f"Expected 1 batch when reading index {idx}, got {len(batches)}")
-        chains = ChainRecord.from_record_batch(batches[0])
-        if len(chains) != 1:
-            raise ValueError(f"Expected 1 chain when reading index {idx}, got {len(chains)}")
-        return chains[0]
+    def __iter__(self):
+        while True:
+            sample = self.df.sample(n=self.batch_size, shuffle=True)
+            sample = sample.with_columns(
+                start=pl.lit(np.random.randint(sample["length"] - self.residue_crop_size + 1)),
+            )
+            sample = sample.with_columns(
+                positions=pl.col("positions").list.slice(pl.col("start"), self.residue_crop_size),
+                sequence=pl.col("sequence").str.slice(pl.col("start"), self.residue_crop_size),
+                translations=pl.col("translations").list.slice(
+                    pl.col("start") * 3, self.residue_crop_size * 3
+                ),
+                rotations=pl.col("rotations").list.slice(
+                    pl.col("start") * 3 * 3, self.residue_crop_size * 3 * 3
+                ),
+            )
+            batch = {
+                "rotations": torch.stack(
+                    [torch.tensor(r.to_numpy().reshape(-1, 3, 3)) for r in sample["rotations"]]
+                ),
+                "translations": torch.stack(
+                    [torch.tensor(t.to_numpy().reshape(-1, 3)) for t in sample["translations"]]
+                ),
+                "sequence": sample["sequence"].to_list(),
+                "positions": torch.stack([torch.tensor(p.to_numpy()) for p in sample["positions"]]),
+            }
+            yield batch

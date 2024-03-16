@@ -1,4 +1,6 @@
 import pytest
+import torch
+
 from nanofold.training.chain_dataset import ChainDataset
 
 
@@ -8,12 +10,15 @@ def arrow_file(request):
 
 
 def test_chain_dataset(arrow_file):
-    dataset = ChainDataset(arrow_file)
-    assert len(dataset) == 13
-    chain = dataset[10]
-    assert chain.model_id == "1RDT"
-    assert len(chain.positions) == 7
-    assert chain.rotations.shape == (7, 3, 3)
-    assert chain.translations.shape == (7, 3)
-    with pytest.raises(IndexError):
-        dataset[len(dataset)]
+    residue_crop_size = 32
+    batch_size = 2
+    dataset = iter(ChainDataset(arrow_file, residue_crop_size, batch_size))
+    batch = next(dataset)
+    assert batch["rotations"].shape == (batch_size, residue_crop_size, 3, 3)
+    assert batch["translations"].shape == (batch_size, residue_crop_size, 3)
+    assert len(batch["sequence"]) == batch_size
+    assert len(batch["sequence"][0]) == residue_crop_size
+    assert batch["positions"].shape == (batch_size, residue_crop_size)
+    assert torch.allclose(
+        batch["rotations"] @ batch["rotations"].transpose(-1, -2), torch.eye(3), atol=1e-3
+    )
