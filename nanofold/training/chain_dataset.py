@@ -3,7 +3,6 @@ import numpy as np
 import polars as pl
 import torch
 
-from nanofold.training.frame import Frame
 from nanofold.training.model.input import encode_one_hot
 
 
@@ -46,12 +45,8 @@ class ChainDataset(IterableDataset):
                 ),
             )
             for row in sample.iter_rows(named=True):
-                yield {
-                    "sequence": row["sequence"],
-                    "frames": Frame(
-                        rotations=torch.tensor(row["rotations"]).reshape(-1, 3, 3),
-                        translations=torch.tensor(row["translations"]).reshape(-1, 3),
-                    ),
-                    "positions": torch.tensor(row["positions"]),
-                    "target_feat": encode_one_hot(row["sequence"]),
-                }
+                row["rotations"] = torch.tensor(row["rotations"]).reshape(-1, 3, 3)
+                row["translations"] = torch.tensor(row["translations"]).reshape(-1, 3)
+                row["positions"] = torch.tensor(row["positions"])
+                row["target_feat"] = encode_one_hot(row["sequence"])
+                yield row
