@@ -45,8 +45,8 @@ class ChainRecord:
     @staticmethod
     def to_record_batch(chains):
         data = [
-            pa.array([c.id[0] for c in chains]),
-            pa.array([c.id[1] for c in chains]),
+            pa.array([c.model_id for c in chains]),
+            pa.array([c.chain_id for c in chains]),
             pa.array([c.release_date for c in chains]),
             pa.array([c.rotations.flatten() for c in chains]),
             pa.array([c.translations.flatten() for c in chains]),
