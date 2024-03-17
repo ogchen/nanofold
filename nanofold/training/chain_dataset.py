@@ -3,6 +3,8 @@ import numpy as np
 import polars as pl
 import torch
 
+from nanofold.common.residue_definitions import BACKBONE_POSITIONS
+from nanofold.common.residue_definitions import RESIDUE_LOOKUP_1L
 from nanofold.training.model.input import encode_one_hot
 
 
@@ -45,8 +47,15 @@ class ChainDataset(IterableDataset):
                 ),
             )
             for row in sample.iter_rows(named=True):
-                row["rotations"] = torch.tensor(row["rotations"]).reshape(-1, 3, 3)
-                row["translations"] = torch.tensor(row["translations"]).reshape(-1, 3)
-                row["positions"] = torch.tensor(row["positions"])
-                row["target_feat"] = encode_one_hot(row["sequence"])
-                yield row
+                yield ChainDataset.process_row(row)
+
+    @staticmethod
+    def process_row(row):
+        row["rotations"] = torch.tensor(row["rotations"]).reshape(-1, 3, 3)
+        row["translations"] = torch.tensor(row["translations"]).reshape(-1, 3)
+        row["positions"] = torch.tensor(row["positions"])
+        row["target_feat"] = encode_one_hot(row["sequence"])
+        row["local_coords"] = torch.tensor(
+            [[a[1] for a in BACKBONE_POSITIONS[RESIDUE_LOOKUP_1L[r]]] for r in row["sequence"]]
+        )
+        return row
