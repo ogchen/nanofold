@@ -101,7 +101,7 @@ class InvariantPointAttention(nn.Module):
 
     def single_rep_attention(self, weight, single_rep):
         v = self.value(single_rep)
-        attention = weight.unsqueeze(-2) @ v.transpose(-3, -2)
+        attention = weight.unsqueeze(-2) @ v.unsqueeze(-4).transpose(-3, -2)
         return attention.squeeze(-2)
 
     def pair_rep_attention(self, weight, pair_rep):
@@ -110,8 +110,12 @@ class InvariantPointAttention(nn.Module):
 
     def frame_attention(self, weight, frames, single_rep):
         vp = self.value_points(single_rep)
-        local_vp = Frame.apply(frames, vp.transpose(-3, -4).transpose(-2, -3))
-        local_attention = weight.unsqueeze(-2).unsqueeze(-2) @ local_vp
+        batched_frames = Frame(
+            frames.rotations.unsqueeze(-4).unsqueeze(-4),
+            frames.translations.unsqueeze(-3).unsqueeze(-3),
+        )
+        local_vp = Frame.apply(batched_frames, vp.transpose(-3, -4).transpose(-2, -3))
+        local_attention = weight.unsqueeze(-2).unsqueeze(-2) @ local_vp.unsqueeze(-5)
         frames_inverse = Frame.inverse(frames)
         frames_inverse.rotations = frames_inverse.rotations.unsqueeze(-3).unsqueeze(-3)
         frames_inverse.translations = frames_inverse.translations.unsqueeze(-2).unsqueeze(-2)

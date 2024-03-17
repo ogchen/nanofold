@@ -53,11 +53,17 @@ class TestInvariantPointAttention:
     def test_batched(self):
         result = self.model(self.single_rep, self.pair_rep, self.frames)
         assert result.shape == (self.len_seq, self.single_embedding_size)
-
-        batched = self.model(
-            self.single_rep.unsqueeze(0), self.pair_rep.unsqueeze(0), self.frames[None, ...]
+        batched_frames = Frame(
+            torch.stack([self.frames.rotations, self.frames.rotations]),
+            torch.stack([self.frames.translations, self.frames.translations]),
         )
-        assert torch.allclose(result.unsqueeze(0), batched, atol=1e-3)
+        batched = self.model(
+            torch.stack([self.single_rep, self.single_rep]),
+            torch.stack([self.pair_rep, self.pair_rep]),
+            batched_frames,
+        )
+        assert torch.allclose(result, batched[0], atol=1e-3)
+        assert torch.allclose(result, batched[1], atol=1e-3)
 
     def test_invariant_to_transformations(self):
         rotation = torch.tensor(
