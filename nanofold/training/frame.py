@@ -24,12 +24,6 @@ class Frame:
         translations = self.translations[key]
         return Frame(rotations, translations)
 
-    def unsqueeze(self, *args):
-        return Frame(self.rotations.unsqueeze(*args), self.translations.unsqueeze(*args))
-
-    def squeeze(self, *args):
-        return Frame(self.rotations.squeeze(*args), self.translations.squeeze(*args))
-
     @staticmethod
     def cat(a, b, *args, **kwargs):
         rotations = torch.cat([a.rotations, b.rotations], *args, **kwargs)

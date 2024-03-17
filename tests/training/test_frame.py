@@ -80,7 +80,7 @@ def test_frame_apply():
         ]
     )
     translations = torch.stack([torch.zeros(3), torch.ones(3), torch.tensor([1, 2, 3])])
-    frames = Frame(rotations, translations).unsqueeze(1)
+    frames = Frame(rotations, translations)[:, None, ...]
     vectors = torch.stack([torch.ones(3), -torch.ones(3), torch.tensor([1, 0, -1])])
     expected = torch.stack(
         [
@@ -137,19 +137,3 @@ def test_frame_getitem_slice():
     result = frames[1:]
     assert torch.allclose(result.rotations, expected.rotations)
     assert torch.allclose(result.translations, expected.translations)
-
-
-def test_frame_unsqueeze_squeeze():
-    batch_size = 4
-    frames = Frame(
-        torch.stack([torch.eye(3)] * batch_size),
-        torch.stack([torch.ones(3)] * batch_size),
-    )
-    result = frames.unsqueeze(1)
-    assert result.rotations.shape == (batch_size, 1, 3, 3)
-    assert result.translations.shape == (batch_size, 1, 3)
-    with pytest.raises(ValueError):
-        frames.unsqueeze(-1)
-
-    assert result.squeeze().rotations.shape == (batch_size, 3, 3)
-    assert result.squeeze().translations.shape == (batch_size, 3)
