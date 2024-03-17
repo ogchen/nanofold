@@ -1,4 +1,5 @@
 from torch.utils.data import IterableDataset
+import logging
 import numpy as np
 import polars as pl
 import torch
@@ -22,6 +23,7 @@ class ChainDataset(IterableDataset):
     @classmethod
     def construct_datasets(cls, arrow_file, train_split, residue_crop_size):
         df = pl.read_ipc(arrow_file, columns=["rotations", "translations", "sequence", "positions"])
+        logging.info(f"Dataframe loaded, estimated size {df.estimated_size(unit="mb"):.2f} MB")
         train_size = int(train_split * len(df))
         if train_size <= 0 or train_split >= len(df):
             raise ValueError(f"train_size must be between 0 and len(df), got {train_size}")

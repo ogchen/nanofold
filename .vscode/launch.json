@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.dev.ini -f /data/pdb_seqres.txt -d /db/pdb_data"
+            "args": "-c /workspace/config/config.dev.ini -f /data/pdb_seqres.txt -i /db/pdb_data.arrow"
         },
         {
             "name": "Process PDB",
