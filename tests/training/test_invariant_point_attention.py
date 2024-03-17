@@ -50,9 +50,14 @@ class TestInvariantPointAttention:
             translations=translations,
         )
 
-    def test_shape(self):
+    def test_batched(self):
         result = self.model(self.single_rep, self.pair_rep, self.frames)
         assert result.shape == (self.len_seq, self.single_embedding_size)
+
+        batched = self.model(
+            self.single_rep.unsqueeze(0), self.pair_rep.unsqueeze(0), self.frames[None, ...]
+        )
+        assert torch.allclose(result.unsqueeze(0), batched, atol=1e-3)
 
     def test_invariant_to_transformations(self):
         rotation = torch.tensor(
@@ -82,6 +87,11 @@ class TestInvariantPointAttention:
                         atol=1e-3,
                     )
 
+    def test_single_rep_weight_batched(self):
+        weight = self.model.single_rep_weight(self.single_rep)
+        batched = self.model.single_rep_weight(self.single_rep.unsqueeze(0))
+        assert torch.allclose(weight.unsqueeze(0), batched, atol=1e-3)
+
     def test_pair_rep_weight(self):
         weight = self.model.pair_rep_weight(self.pair_rep)
         assert weight.shape == (self.len_seq, self.num_heads, self.len_seq)
@@ -94,6 +104,11 @@ class TestInvariantPointAttention:
                         self.model.bias(self.pair_rep[i, j])[h],
                         atol=1e-5,
                     )
+
+    def test_pair_rep_weight_batched(self):
+        weight = self.model.pair_rep_weight(self.pair_rep)
+        batched = self.model.pair_rep_weight(self.pair_rep.unsqueeze(0))
+        assert torch.allclose(weight.unsqueeze(0), batched, atol=1e-3)
 
     def test_frame_weight(self):
         weight = self.model.frame_weight(self.frames, self.single_rep)
@@ -118,6 +133,11 @@ class TestInvariantPointAttention:
                         atol=1e-5,
                     )
 
+    def test_frame_weight_batched(self):
+        weight = self.model.frame_weight(self.frames, self.single_rep)
+        batched = self.model.frame_weight(self.frames[None, ...], self.single_rep.unsqueeze(0))
+        assert torch.allclose(weight.unsqueeze(0), batched, atol=1e-3)
+
     def test_single_rep_attention(self):
         weight = self.model.single_rep_weight(self.single_rep)
         attention = self.model.single_rep_attention(weight, self.single_rep)
@@ -132,6 +152,12 @@ class TestInvariantPointAttention:
                         weight[i][h] @ v[:, h, x],
                         atol=1e-5,
                     )
+
+    def test_single_rep_attention_batched(self):
+        weight = self.model.single_rep_weight(self.single_rep)
+        attention = self.model.single_rep_attention(weight, self.single_rep)
+        batched = self.model.single_rep_attention(weight.unsqueeze(0), self.single_rep.unsqueeze(0))
+        assert torch.allclose(attention.unsqueeze(0), batched, atol=1e-3)
 
     def test_pair_rep_attention(self):
         weight = self.model.pair_rep_weight(self.pair_rep)
@@ -150,6 +176,12 @@ class TestInvariantPointAttention:
                         weight[i][h] @ self.pair_rep[i, :, x],
                         atol=1e-5,
                     )
+
+    def test_pair_rep_attention_batched(self):
+        weight = self.model.pair_rep_weight(self.pair_rep)
+        attention = self.model.pair_rep_attention(weight, self.pair_rep)
+        batched = self.model.pair_rep_attention(weight.unsqueeze(0), self.pair_rep.unsqueeze(0))
+        assert torch.allclose(attention.unsqueeze(0), batched, atol=1e-3)
 
     def test_frame_attention(self):
         weight = self.model.frame_weight(self.frames, self.single_rep)
@@ -173,3 +205,11 @@ class TestInvariantPointAttention:
                         Frame.apply(Frame.inverse(self.frames[i]), sum),
                         atol=1e-5,
                     )
+
+    def test_frame_attention_batched(self):
+        weight = self.model.frame_weight(self.frames, self.single_rep)
+        attention = self.model.frame_attention(weight, self.frames, self.single_rep)
+        batched = self.model.frame_attention(
+            weight.unsqueeze(0), self.frames[None, ...], self.single_rep.unsqueeze(0)
+        )
+        assert torch.allclose(attention.unsqueeze(0), batched, atol=1e-3)
