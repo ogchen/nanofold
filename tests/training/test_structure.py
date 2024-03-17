@@ -42,6 +42,22 @@ class TestStructureModuleLayer:
         # Check no exception raised when we traverse the graph
         loss.backward()
 
+    def test_structure_module_layer_batched(self):
+        self.model.eval()  # Ensure dropout is not applied
+        s, f, loss = self.model(self.single, self.pair, self.frames, self.frames)
+        batch_frames = Frame(
+            rotations=torch.stack([self.frames.rotations] * 2),
+            translations=torch.stack([self.frames.translations] * 2),
+        )
+        batch_s, batch_f, batch_loss = self.model(
+            torch.stack([self.single] * 2), torch.stack([self.pair] * 2), batch_frames, batch_frames
+        )
+        for i in range(2):
+            assert torch.allclose(s, batch_s[i], atol=1e-3)
+            assert torch.allclose(f.rotations, batch_f.rotations[i], atol=1e-3)
+            assert torch.allclose(f.translations, batch_f.translations[i], atol=1e-3)
+            assert torch.allclose(loss, batch_loss[i], atol=1e-3)
+
 
 class TestStructureModule:
     def setup_method(self):
@@ -58,8 +74,9 @@ class TestStructureModule:
             num_heads=2,
             dropout=0.1,
         )
+        self.len_seq = 5
         self.sequence = ["MET", "PHE", "PRO", "SER", "THR"]
-        self.len_seq = len(self.sequence)
+        self.local_coords = torch.zeros(self.len_seq, 3, 3)
         self.single_embedding_size = 4
         self.pair_embedding_size = 5
         self.single = torch.rand(self.len_seq, self.single_embedding_size)
@@ -70,14 +87,33 @@ class TestStructureModule:
         )
 
     def test_structure_module(self):
-        coords, _, _ = self.model(self.single, self.pair, self.sequence)
+        coords, _, _ = self.model(self.single, self.pair, self.local_coords)
         assert coords.shape == (self.len_seq, 3, 3)
 
     def test_structure_module_loss(self):
         _, aux_loss, fape_loss = self.model(
-            self.single, self.pair, self.sequence, self.frames_truth
+            self.single, self.pair, self.local_coords, self.frames_truth
         )
         assert aux_loss is not None
         assert fape_loss is not None
         # Check no exception raised when we traverse the graph
         (aux_loss + fape_loss).backward()
+
+    def test_structure_module_batched(self):
+        self.model.eval()  # Ensure dropout is not applied
+        coords, aux_loss, fape_loss = self.model(
+            self.single, self.pair, self.local_coords, self.frames_truth
+        )
+        batch_coords, batch_aux_loss, batch_fape_loss = self.model(
+            torch.stack([self.single] * 2),
+            torch.stack([self.pair] * 2),
+            torch.stack([self.local_coords] * 2),
+            Frame(
+                rotations=torch.stack([self.frames_truth.rotations] * 2),
+                translations=torch.stack([self.frames_truth.translations] * 2),
+            ),
+        )
+        for i in range(2):
+            assert torch.allclose(coords, batch_coords[i], atol=1e-3)
+            assert torch.allclose(aux_loss, batch_aux_loss[i], atol=1e-3)
+            assert torch.allclose(fape_loss, batch_fape_loss[i], atol=1e-3)
