@@ -6,7 +6,7 @@ from Bio.PDB import MMCIFParser
 
 from nanofold.common.residue_definitions import BACKBONE_ATOMS
 from nanofold.common.residue_definitions import RESIDUE_LOOKUP_3L
-from nanofold.common.chain import Chain
+from nanofold.common.chain_record import ChainRecord
 from nanofold.data_processing.residue import compute_residue_frames
 
 
@@ -37,17 +37,21 @@ def get_longest_match(chain, sequence):
 def parse_chains(model):
     result = []
     release_date = min(model.mmcif_dict["_pdbx_audit_revision_history.revision_date"])
-    for strand_id, sequence in zip(
+    for strand_id, pdbx_seq in zip(
         model.mmcif_dict.get("_entity_poly.pdbx_strand_id", []),
         model.mmcif_dict.get("_entity_poly.pdbx_seq_one_letter_code", []),
     ):
         strand_id = strand_id.split(",")[0]
-        sequence = sequence.replace("\n", "")
+        pdbx_seq = pdbx_seq.replace("\n", "")
         mmcif_chain = model[strand_id]
-        chain = Chain.from_residue_list(
-            mmcif_chain.get_full_id()[1:], release_date, *get_residues(mmcif_chain)
+        full_id = mmcif_chain.get_full_id()
+        residue_list, rotations, translations = get_residues(mmcif_chain)
+        sequence = "".join([RESIDUE_LOOKUP_3L[r["resname"]] for r in residue_list])
+        positions = [r["id"][-1][1] for r in residue_list]
+        chain = ChainRecord(
+            full_id[1], full_id[2], release_date, rotations, translations, sequence, positions
         )
-        chain = get_longest_match(chain, sequence)
+        chain = get_longest_match(chain, pdbx_seq)
         if len(chain) == 0:
             continue
         result.append(chain)

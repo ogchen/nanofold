@@ -38,3 +38,23 @@ def test_loss_fape():
             expected += min(clamp, abs(glob_coord - glob_coord_truth).norm())
     expected /= len(frames) * len(coords) * length_scale
     assert torch.isclose(loss, expected)
+
+    batched_frames = Frame(
+        torch.stack([frames.rotations, frames.rotations]),
+        torch.stack([frames.translations, frames.translations]),
+    )
+    batched_frames_truth = Frame(
+        torch.stack([frames_truth.rotations, frames_truth.rotations]),
+        torch.stack([frames_truth.translations, frames_truth.translations]),
+    )
+
+    batched = compute_fape_loss(
+        batched_frames,
+        torch.stack([coords, coords]),
+        batched_frames_truth,
+        torch.stack([coords_truth, coords_truth]),
+        length_scale=length_scale,
+        clamp=clamp,
+    )
+
+    assert torch.allclose(loss, batched, atol=1e-3)

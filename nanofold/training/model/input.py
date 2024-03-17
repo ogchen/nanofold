@@ -34,9 +34,9 @@ class InputEmbedding(nn.Module):
     def forward(self, target_feat, residue_index):
         a = self.linear_a(target_feat)
         b = self.linear_b(target_feat)
-        z = a.unsqueeze(1) + b.unsqueeze(0)
+        z = a.unsqueeze(-2) + b.unsqueeze(-3)
 
-        d = residue_index.reshape(-1, 1) - residue_index
+        d = residue_index.unsqueeze(-1) - residue_index.unsqueeze(-2)
         d = d.clamp(min=-self.bins, max=self.bins) + self.bins
         p = nn.functional.one_hot(d, num_classes=2 * self.bins + 1).float()
         p = self.linear_position(p)

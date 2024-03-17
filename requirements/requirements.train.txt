@@ -3,5 +3,6 @@ pytest
 torch
 torchinfo
 mlflow
-pyarrow
+polars
+numpy
 --extra-index-url https://download.pytorch.org/whl/cu121

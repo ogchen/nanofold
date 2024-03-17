@@ -43,6 +43,7 @@ def test_parse_chains(model, valid_chains, num_residues, sequence):
     chains = mmcif.parse_chains(model)
     assert len(chains) == valid_chains
     if len(chains) > 0:
+        assert chains[0].model_id == model.id
         assert len(chains[0]) == num_residues
         assert chains[0].sequence == sequence
 

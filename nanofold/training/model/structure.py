@@ -5,7 +5,6 @@ from nanofold.training.loss import compute_fape_loss
 from nanofold.training.frame import Frame
 from nanofold.training.model.backbone_update import BackboneUpdate
 from nanofold.training.model.invariant_point_attention import InvariantPointAttention
-from nanofold.training.residue import compute_backbone_coords
 
 
 class StructureModuleLayer(nn.Module):
@@ -95,14 +94,14 @@ class StructureModule(nn.Module):
     def from_config(cls, config):
         return cls(**cls.get_args(config))
 
-    def forward(self, single, pair, sequence, frames_truth=None):
-        len_seq = single.shape[0]
+    def forward(self, single, pair, local_coords, frames_truth=None):
+        batch_dims = single.shape[:-1]
         single = self.single_layer_norm(single)
         pair = self.pair_layer_norm(pair)
         single = self.single_linear(single)
         frames = Frame(
-            rotations=torch.eye(3).unsqueeze(0).repeat(len_seq, 1, 1),
-            translations=torch.zeros(len_seq, 3),
+            rotations=torch.eye(3).unsqueeze(0).repeat(*batch_dims, 1, 1),
+            translations=torch.zeros(*batch_dims, 3),
         )
 
         aux_losses = []
@@ -120,6 +119,7 @@ class StructureModule(nn.Module):
             if (frames_truth is not None)
             else None
         )
-        coords = compute_backbone_coords(frames, sequence)
+        batched_frames = Frame(frames.rotations.unsqueeze(-3), frames.translations.unsqueeze(-2))
+        coords = Frame.apply(batched_frames, local_coords)
 
         return coords, fape_loss, aux_loss

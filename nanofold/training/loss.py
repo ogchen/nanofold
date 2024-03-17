@@ -16,10 +16,14 @@ def compute_fape_loss(
         clamp (float): The maximum value for a pairwise loss.
     """
     inverse = Frame.inverse(frames)
+    inverse.rotations = inverse.rotations.unsqueeze(-3)
+    inverse.translations = inverse.translations.unsqueeze(-2)
     inverse_truth = Frame.inverse(frames_truth)
-    globals = Frame.apply(inverse.unsqueeze(1), coords)
-    globals_truth = Frame.apply(inverse_truth.unsqueeze(1), coords_truth)
+    inverse_truth.rotations = inverse_truth.rotations.unsqueeze(-3)
+    inverse_truth.translations = inverse_truth.translations.unsqueeze(-2)
+    globals = Frame.apply(inverse, coords.unsqueeze(-3))
+    globals_truth = Frame.apply(inverse_truth, coords_truth.unsqueeze(-3))
     difference = globals - globals_truth
     squared_norm = difference.unsqueeze(-2) @ difference.unsqueeze(-1)
-    norm = torch.sqrt(squared_norm + eps).clamp(max=clamp)
+    norm = torch.sqrt(squared_norm + eps).clamp(max=clamp).squeeze(-1).squeeze(-1)
     return (1 / length_scale) * norm.mean()

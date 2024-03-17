@@ -1,5 +1,6 @@
 import argparse
 import configparser
+import logging
 import mlflow
 import os
 import tempfile
@@ -7,23 +8,21 @@ import torch
 import torchinfo
 from pathlib import Path
 
-from nanofold.data_processing.mmcif import list_available_mmcif
-from nanofold.data_processing.mmcif import load_model
-from nanofold.data_processing.mmcif import parse_chains
+from nanofold.training.chain_dataset import ChainDataset
 from nanofold.training.frame import Frame
-from nanofold.training.model.input import encode_one_hot
 from nanofold.training.model.input import InputEmbedding
 from nanofold.training.model.structure import StructureModule
-from nanofold.training.util import accept_chain
-from nanofold.training.util import crop_chain
-from nanofold.training.util import randint
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", help="Configuration file for training")
-    parser.add_argument("-m", "--mmcif", help="Directory containing mmcif files")
     parser.add_argument("-f", "--fasta", help="File containing FASTA sequences")
+    parser.add_argument(
+        "-i", "--input", help="Input chain training data in Arrow IPC file format", type=Path
+    )
+    parser.add_argument("-l", "--logging", help="Logging level", default="INFO")
+
     return parser.parse_args()
 
 
@@ -31,35 +30,30 @@ def load_config(filepath):
     config = configparser.ConfigParser()
     with open(filepath) as f:
         config.read_file(f)
+    if config.get("General", "device") == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available")
     return config
 
 
-def load(filepath):
-    model = load_model(filepath)
-    return parse_chains(model)
-
-
-def get_next_chain(files, max_iter, crop_size=32):
-    epoch = 0
-    while epoch < max_iter:
-        index = randint(0, len(files))
-        chains = load(files[index])
-        if len(chains) == 0:
-            continue
-        chain = chains[randint(0, len(chains))]
-        if accept_chain(chain):
-            chain = crop_chain(chain, crop_size)
-            yield chain
-            epoch += 1
+def get_dataloaders(args, config):
+    train_data, test_data = ChainDataset.construct_datasets(
+        args.input,
+        config.getfloat("General", "train_split"),
+        config.getint("General", "residue_crop_size"),
+    )
+    return torch.utils.data.DataLoader(
+        train_data, batch_size=config.getint("General", "batch_size")
+    ), torch.utils.data.DataLoader(test_data, batch_size=config.getint("General", "batch_size"))
 
 
 def main():
     args = parse_args()
+    logging.basicConfig(level=getattr(logging, args.logging.upper()))
     config = load_config(args.config)
-    if config.get("General", "device") == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError("CUDA is not available")
+    train_loader, test_loader = get_dataloaders(args, config)
+
     mlflow.set_tracking_uri(uri=os.getenv("MLFLOW_SERVER_URI"))
-    available = list_available_mmcif(args.mmcif)
+
     input_embedder = InputEmbedding.from_config(config)
     params = StructureModule.get_args(config)
     model = StructureModule(**params)
@@ -75,23 +69,24 @@ def main():
         mlflow.log_params(params)
         with tempfile.TemporaryDirectory() as tmp_dir:
             model_summary = Path(tmp_dir) / "model_summary.txt"
-            model_summary.write_text(str(torchinfo.summary(model)))
+            model_summary.write_text(str(torchinfo.summary(model, verbose=0)))
             mlflow.log_artifact(model_summary)
 
         epoch = 0
-        for chain in get_next_chain(available, max_iter=10):
-            target_feat = encode_one_hot(chain.sequence)
-            pair_representations = input_embedder(target_feat, torch.tensor(chain.positions))
+        for batch in train_loader:
+            if epoch == 100:
+                break
+            pair_representations = input_embedder(batch["target_feat"], batch["positions"])
             single_representations = torch.zeros(
-                len(chain.sequence), config.getint("General", "single_embedding_size")
+                *batch["positions"].shape, config.getint("General", "single_embedding_size")
             )
             coords, fape_loss, aux_loss = model(
                 single_representations,
                 pair_representations,
-                chain.sequence,
+                batch["local_coords"],
                 Frame(
-                    rotations=torch.from_numpy(chain.rotations),
-                    translations=torch.from_numpy(chain.translations),
+                    rotations=batch["rotations"],
+                    translations=batch["translations"],
                 ),
             )
             loss = fape_loss + aux_loss
