@@ -104,16 +104,16 @@ class StructureModule(nn.Module):
             translations=torch.zeros(*batch_dims, 3),
         )
 
-        aux_losses = None
+        aux_losses = []
         for i, layer in enumerate(self.layers):
             single, frames, loss = layer(single, pair, frames, frames_truth)
-            if loss is not None:
-                aux_losses = torch.empty(0) if aux_losses is None else aux_losses
-                aux_losses = torch.cat([aux_losses, loss.unsqueeze(-1)], dim=-1)
+            aux_losses.append(loss)
             if i < len(self.layers) - 1:
                 frames.rotations = frames.rotations.detach()
 
-        aux_loss = aux_losses.mean(dim=-1) if aux_losses is not None else None
+        aux_loss = (
+            torch.stack(aux_losses).mean() if all(l is not None for l in aux_losses) else None
+        )
         fape_loss = (
             compute_fape_loss(frames, frames.translations, frames_truth, frames_truth.translations)
             if (frames_truth is not None)

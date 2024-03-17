@@ -56,7 +56,7 @@ class TestStructureModuleLayer:
             assert torch.allclose(s, batch_s[i], atol=1e-3)
             assert torch.allclose(f.rotations, batch_f.rotations[i], atol=1e-3)
             assert torch.allclose(f.translations, batch_f.translations[i], atol=1e-3)
-            assert torch.allclose(loss, batch_loss[i], atol=1e-3)
+        assert torch.allclose(loss, batch_loss, atol=1e-3)
 
 
 class TestStructureModule:
@@ -113,7 +113,7 @@ class TestStructureModule:
                 translations=torch.stack([self.frames_truth.translations] * 2),
             ),
         )
-        for i in range(2):
-            assert torch.allclose(coords, batch_coords[i], atol=1e-3)
-            assert torch.allclose(aux_loss, batch_aux_loss[i], atol=1e-3)
-            assert torch.allclose(fape_loss, batch_fape_loss[i], atol=1e-3)
+        assert torch.allclose(coords, batch_coords[0], atol=1e-3)
+        assert torch.allclose(coords, batch_coords[1], atol=1e-3)
+        assert torch.allclose(aux_loss, batch_aux_loss, atol=1e-3)
+        assert torch.allclose(fape_loss, batch_fape_loss, atol=1e-3)

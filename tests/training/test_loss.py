@@ -57,5 +57,4 @@ def test_loss_fape():
         clamp=clamp,
     )
 
-    assert torch.allclose(loss, batched[0], atol=1e-3)
-    assert torch.allclose(loss, batched[1], atol=1e-3)
+    assert torch.allclose(loss, batched, atol=1e-3)
