@@ -40,6 +40,7 @@ def get_dataloaders(args, config):
         args.input,
         config.getfloat("General", "train_split"),
         config.getint("General", "residue_crop_size"),
+        config.get("General", "device"),
     )
     return torch.utils.data.DataLoader(
         train_data, batch_size=config.getint("General", "batch_size")
@@ -55,6 +56,7 @@ def main():
     mlflow.set_tracking_uri(uri=os.getenv("MLFLOW_SERVER_URI"))
 
     input_embedder = InputEmbedding.from_config(config)
+    input_embedder.to(config.get("General", "device"))
     params = StructureModule.get_args(config)
     model = StructureModule(**params)
     model = model.to(config.get("General", "device"))
@@ -78,7 +80,9 @@ def main():
                 break
             pair_representations = input_embedder(batch["target_feat"], batch["positions"])
             single_representations = torch.zeros(
-                *batch["positions"].shape, config.getint("General", "single_embedding_size")
+                *batch["positions"].shape,
+                config.getint("General", "single_embedding_size"),
+                device=config.get("General", "device")
             )
             coords, fape_loss, aux_loss = model(
                 single_representations,
