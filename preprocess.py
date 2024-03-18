@@ -25,16 +25,16 @@ def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
     ids_path = args.output / "processed_ids.arrow"
-    pdb_data_path = args.output / "pdb_data.arrow"
+    mmcif_data_path = args.output / "mmcif_data.arrow"
 
     with ProcessPoolExecutor() as executor:
-        data_table = load_table(pdb_data_path)
+        data_table = load_table(mmcif_data_path)
         ids_table = load_table(ids_path)
         write_tables, data_table, ids_table = process_mmcif_files(
             executor, ids_table, data_table, args.mmcif, args.batch
         )
         if write_tables:
-            write_table(pdb_data_path, data_table, ChainRecord.SCHEMA)
+            write_table(mmcif_data_path, data_table, ChainRecord.SCHEMA)
             write_table(ids_path, ids_table, IDS_SCHEMA)
 
 
