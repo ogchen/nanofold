@@ -1,9 +1,6 @@
 import argparse
-import pyarrow as pa
-import pyarrow.compute as pc
 import logging
 from concurrent.futures import ProcessPoolExecutor
-from itertools import batched
 from pathlib import Path
 
 from nanofold.data_processing.chain_record import ChainRecord
