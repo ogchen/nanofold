@@ -13,7 +13,7 @@ def test_chain_dataset(arrow_file):
     train_split = 0.8
     residue_crop_size = 32
     train_data, test_data = ChainDataset.construct_datasets(
-        arrow_file, train_split, residue_crop_size
+        arrow_file, train_split, residue_crop_size, device="cpu"
     )
     assert len(train_data.df) == 8
     assert len(test_data.df) == 2

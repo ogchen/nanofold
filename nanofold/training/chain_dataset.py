@@ -24,14 +24,12 @@ class ChainDataset(IterableDataset):
     @classmethod
     def construct_datasets(cls, arrow_file, train_split, *args, **kwargs):
         df = pl.read_ipc(arrow_file, columns=["rotations", "translations", "sequence", "positions"])
-        logging.info(f"Dataframe loaded, estimated size {df.estimated_size(unit="mb"):.2f} MB")
+        logging.info(f"Dataframe loaded, estimated size {df.estimated_size(unit='mb'):.2f} MB")
         train_size = int(train_split * len(df))
         if train_size <= 0 or train_split >= len(df):
             raise ValueError(f"train_size must be between 0 and len(df), got {train_size}")
         df = df.sample(fraction=1)
-        return cls(df.head(train_size), *args, **kwargs), cls(
-            df.tail(-train_size), *args, **kwargs
-        )
+        return cls(df.head(train_size), *args, **kwargs), cls(df.tail(-train_size), *args, **kwargs)
 
     def __iter__(self):
         while True:
@@ -58,6 +56,7 @@ class ChainDataset(IterableDataset):
         row["positions"] = torch.tensor(row["positions"], device=self.device)
         row["target_feat"] = encode_one_hot(row["sequence"]).to(self.device)
         row["local_coords"] = torch.tensor(
-            [[a[1] for a in BACKBONE_POSITIONS[RESIDUE_LOOKUP_1L[r]]] for r in row["sequence"]], device=self.device
+            [[a[1] for a in BACKBONE_POSITIONS[RESIDUE_LOOKUP_1L[r]]] for r in row["sequence"]],
+            device=self.device,
         )
         return row
