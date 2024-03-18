@@ -1,5 +1,5 @@
 import pytest
-from nanofold.training.fasta import FastaParser
+from nanofold.common.fasta import FastaParser
 
 
 @pytest.fixture
