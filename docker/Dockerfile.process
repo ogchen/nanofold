@@ -5,6 +5,7 @@ RUN apt-get update \
         cmake \
         build-essential \
         git \
+        hmmer \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
