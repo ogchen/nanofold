@@ -1,5 +1,5 @@
 import pytest
-from nanofold.data_processing import mmcif
+from nanofold.data_processing import mmcif_parser
 
 
 @pytest.mark.parametrize(
@@ -40,7 +40,7 @@ from nanofold.data_processing import mmcif
     indirect=["model"],
 )
 def test_parse_chains(model, valid_chains, num_residues, sequence):
-    chains = mmcif.parse_chains(model)
+    chains = mmcif_parser.parse_chains(model)
     assert len(chains) == valid_chains
     if len(chains) > 0:
         assert chains[0].model_id == model.id
@@ -56,7 +56,7 @@ def test_parse_chains(model, valid_chains, num_residues, sequence):
 def test_get_residue(model, num_chains, num_residues):
     chains = list(model.get_chains())
     assert len(chains) == num_chains
-    metadata, rotations, translations = mmcif.get_residues(chains[0])
+    metadata, rotations, translations = mmcif_parser.get_residues(chains[0])
     assert len(metadata) == num_residues
     assert len(rotations) == num_residues
     assert len(translations) == num_residues

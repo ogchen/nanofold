@@ -1,8 +1,9 @@
 import difflib
-import glob
-import os
+import logging
 import numpy as np
 from Bio.PDB import MMCIFParser
+from Bio.PDB.PDBExceptions import PDBConstructionException
+from pathlib import Path
 
 from nanofold.common.residue_definitions import BACKBONE_ATOMS
 from nanofold.common.residue_definitions import RESIDUE_LOOKUP_3L
@@ -10,9 +11,17 @@ from nanofold.data_processing.chain_record import ChainRecord
 from nanofold.data_processing.residue import compute_residue_frames
 
 
-def list_available_mmcif(mmcif_dir):
-    search_glob = os.path.join(mmcif_dir, "*.cif")
-    return glob.glob(search_glob)
+def get_model_id(filepath):
+    return Path(filepath).stem.lower()
+
+
+def parse_pdb_file(filepath):
+    try:
+        model = load_model(filepath)
+    except PDBConstructionException as e:
+        logging.warning(f"Got PDB construction error for file={filepath}, error={e}")
+        return []
+    return parse_chains(model)
 
 
 def load_model(filepath):
