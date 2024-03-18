@@ -13,15 +13,19 @@ class StructureModuleLayer(nn.Module):
         single_embedding_size,
         pair_embedding_size,
         dropout,
-        *args,
-        **kwargs,
+        ipa_embedding_size,
+        num_query_points,
+        num_value_points,
+        num_heads,
     ):
         super().__init__()
         self.invariant_point_attention = InvariantPointAttention(
-            single_embedding_size=single_embedding_size,
-            pair_embedding_size=pair_embedding_size,
-            *args,
-            **kwargs,
+            single_embedding_size,
+            pair_embedding_size,
+            ipa_embedding_size,
+            num_query_points,
+            num_value_points,
+            num_heads,
         )
         self.backbone_update = BackboneUpdate(single_embedding_size)
         self.dropout = nn.Dropout(dropout)
@@ -40,10 +44,6 @@ class StructureModuleLayer(nn.Module):
             "pair_embedding_size": config.getint("InputEmbedding", "pair_embedding_size"),
             "dropout": config.getfloat("StructureModule", "dropout"),
         }
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**cls.get_args(config))
 
     def forward(self, single, pair, frames, frames_truth=None):
         single = single + self.invariant_point_attention(single, pair, frames)
@@ -64,15 +64,28 @@ class StructureModuleLayer(nn.Module):
 
 
 class StructureModule(nn.Module):
-    def __init__(self, num_layers, single_embedding_size, pair_embedding_size, *args, **kwargs):
+    def __init__(
+        self,
+        num_layers,
+        single_embedding_size,
+        pair_embedding_size,
+        dropout,
+        ipa_embedding_size,
+        num_query_points,
+        num_value_points,
+        num_heads,
+    ):
         super().__init__()
         self.layers = nn.ModuleList(
             [
                 StructureModuleLayer(
-                    single_embedding_size=single_embedding_size,
-                    pair_embedding_size=pair_embedding_size,
-                    *args,
-                    **kwargs,
+                    single_embedding_size,
+                    pair_embedding_size,
+                    dropout,
+                    ipa_embedding_size,
+                    num_query_points,
+                    num_value_points,
+                    num_heads,
                 )
                 for _ in range(num_layers)
             ]
@@ -80,19 +93,6 @@ class StructureModule(nn.Module):
         self.single_layer_norm = nn.LayerNorm(single_embedding_size)
         self.pair_layer_norm = nn.LayerNorm(pair_embedding_size)
         self.single_linear = nn.Linear(single_embedding_size, single_embedding_size)
-
-    @staticmethod
-    def get_args(config):
-        return {
-            **StructureModuleLayer.get_args(config),
-            "num_layers": config.getint("StructureModule", "num_layers"),
-            "single_embedding_size": config.getint("General", "single_embedding_size"),
-            "pair_embedding_size": config.getint("InputEmbedding", "pair_embedding_size"),
-        }
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**cls.get_args(config))
 
     def forward(self, single, pair, local_coords, frames_truth=None):
         batch_dims = single.shape[:-1]
