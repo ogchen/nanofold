@@ -58,21 +58,6 @@ class InvariantPointAttention(nn.Module):
         self.scale_single_rep = 1 / math.sqrt(ipa_embedding_size)
         self.scale_frame = -1 / math.sqrt(18 * self.num_query_points)
 
-    @staticmethod
-    def get_args(config):
-        return {
-            "single_embedding_size": config.getint("General", "single_embedding_size"),
-            "pair_embedding_size": config.getint("InputEmbedding", "pair_embedding_size"),
-            "ipa_embedding_size": config.getint("InvariantPointAttention", "embedding_size"),
-            "num_query_points": config.getint("InvariantPointAttention", "num_query_points"),
-            "num_value_points": config.getint("InvariantPointAttention", "num_value_points"),
-            "num_heads": config.getint("InvariantPointAttention", "num_heads"),
-        }
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**cls.get_args(config))
-
     def single_rep_weight(self, single_rep):
         q = self.query(single_rep)
         k = self.key(single_rep)
@@ -90,8 +75,12 @@ class InvariantPointAttention(nn.Module):
     def frame_weight(self, frames, single_rep):
         qp = self.query_points(single_rep)
         kp = self.key_points(single_rep)
-        local_qp = Frame.apply(frames, qp.transpose(-4, -2))
-        local_kp = Frame.apply(frames, kp.transpose(-4, -2))
+        batched_frames = Frame(
+            frames.rotations.unsqueeze(-4).unsqueeze(-4),
+            frames.translations.unsqueeze(-3).unsqueeze(-3),
+        )
+        local_qp = Frame.apply(batched_frames, qp.transpose(-4, -2))
+        local_kp = Frame.apply(batched_frames, kp.transpose(-4, -2))
         difference = local_qp.unsqueeze(-2) - local_kp.unsqueeze(-3)
         squared_distance = difference.unsqueeze(-2) @ difference.unsqueeze(-1)
         squared_distance = squared_distance.squeeze(-1).squeeze(-1)
@@ -129,7 +118,6 @@ class InvariantPointAttention(nn.Module):
         )
         weight = nn.functional.softmax(weight, dim=-1)
 
-        len_seq = single_rep.shape[0]
         single_rep_attention = self.single_rep_attention(weight, single_rep)
         pair_rep_attention = self.pair_rep_attention(weight, pair_rep)
         frame_attention = self.frame_attention(weight, frames, single_rep)

@@ -1,17 +1,14 @@
 import argparse
 import configparser
 import logging
-import mlflow
 import os
-import tempfile
 import torch
-import torchinfo
 from pathlib import Path
 
 from nanofold.training.chain_dataset import ChainDataset
-from nanofold.training.frame import Frame
-from nanofold.training.model.input import InputEmbedding
-from nanofold.training.model.structure import StructureModule
+from nanofold.training.logging import Logger
+from nanofold.training.logging import MLFlowLogger
+from nanofold.training.trainer import Trainer
 
 
 def parse_args():
@@ -42,69 +39,34 @@ def get_dataloaders(args, config):
         config.getint("General", "residue_crop_size"),
         config.get("General", "device"),
     )
-    return torch.utils.data.DataLoader(
-        train_data, batch_size=config.getint("General", "batch_size")
-    ), torch.utils.data.DataLoader(test_data, batch_size=config.getint("General", "batch_size"))
+    eval_dataloaders = {
+        "train": torch.utils.data.DataLoader(
+            train_data, batch_size=config.getint("General", "eval_batch_size")
+        ),
+        "test": torch.utils.data.DataLoader(
+            test_data, batch_size=config.getint("General", "eval_batch_size")
+        ),
+    }
+    return (
+        torch.utils.data.DataLoader(train_data, batch_size=config.getint("General", "batch_size")),
+        eval_dataloaders,
+    )
 
 
 def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
     config = load_config(args.config)
-    train_loader, test_loader = get_dataloaders(args, config)
-
-    mlflow.set_tracking_uri(uri=os.getenv("MLFLOW_SERVER_URI"))
-
-    input_embedder = InputEmbedding.from_config(config)
-    input_embedder.to(config.get("General", "device"))
-    params = StructureModule.get_args(config)
-    model = StructureModule(**params)
-    model = model.to(config.get("General", "device"))
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=config.getfloat("Optimizer", "learning_rate"),
-        betas=(config.getfloat("Optimizer", "beta1"), config.getfloat("Optimizer", "beta2")),
-        eps=config.getfloat("Optimizer", "eps"),
-    )
-
-    with mlflow.start_run():
-        mlflow.log_params(params)
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            model_summary = Path(tmp_dir) / "model_summary.txt"
-            model_summary.write_text(str(torchinfo.summary(model, verbose=0)))
-            mlflow.log_artifact(model_summary)
-
-        epoch = 0
-        for batch in train_loader:
-            if epoch == 100:
-                break
-            pair_representations = input_embedder(batch["target_feat"], batch["positions"])
-            single_representations = torch.zeros(
-                *batch["positions"].shape,
-                config.getint("General", "single_embedding_size"),
-                device=config.get("General", "device")
-            )
-            coords, fape_loss, aux_loss = model(
-                single_representations,
-                pair_representations,
-                batch["local_coords"],
-                Frame(
-                    rotations=batch["rotations"],
-                    translations=batch["translations"],
-                ),
-            )
-            loss = fape_loss + aux_loss
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            mlflow.log_metric("fape_loss", fape_loss.detach().item(), step=epoch)
-            mlflow.log_metric("aux_loss", aux_loss.detach().item(), step=epoch)
-            mlflow.log_metric("total_loss", loss.detach().item(), step=epoch)
-            epoch += 1
-
-        mlflow.pytorch.log_model(
-            model, "model", pip_requirements="requirements/requirements.train.txt"
-        )
+    train_loader, eval_loaders = get_dataloaders(args, config)
+    loggers = [
+        MLFlowLogger(
+            uri=os.getenv("MLFLOW_SERVER_URI"),
+            pip_requirements="requirements/requirements.train.txt",
+        ),
+        Logger(),
+    ]
+    trainer = Trainer(config, loggers, log_every_n_epoch=100)
+    trainer.fit(train_loader, eval_loaders, config.getint("General", "max_epoch"))
 
 
 if __name__ == "__main__":
