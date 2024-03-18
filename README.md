@@ -43,7 +43,7 @@ docker run -it --rm data_processing pytest tests/data_processing
 ### Training
 Process downloaded PDB files:
 ```bash
-docker-compose run --rm data_processing python process_pdb.py -m /data/pdb/ -o /db/
+docker-compose run --rm data_processing python preprocess.py -m /data/pdb/ -o /db/
 ```
 
 Run the training script:

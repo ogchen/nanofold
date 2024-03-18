@@ -7,7 +7,7 @@ from concurrent.futures import ProcessPoolExecutor
 from itertools import batched
 from pathlib import Path
 
-from nanofold.common.chain_record import ChainRecord
+from nanofold.data_processing.chain_record import ChainRecord
 from nanofold.data_processing.mmcif import list_available_mmcif
 from nanofold.data_processing.mmcif import load_model
 from nanofold.data_processing.mmcif import parse_chains
@@ -97,22 +97,26 @@ def write_table(filepath, table, schema):
             writer.write_table(table)
 
 
+def process_pdb_files(executor, processed_ids_path, pdb_data_path, mmcif_dir, batch_size):
+    processed_ids, pdb_data = load_tables(processed_ids_path, pdb_data_path)
+    pdb_files = get_files_to_process(mmcif_dir, processed_ids)
+
+    if len(pdb_files) != 0:
+        pdb_data = compute_pdb_data(executor, pdb_files, batch_size, pdb_data)
+        processed_ids = compute_processed_ids(pdb_files, processed_ids)
+        write_table(pdb_data_path, pdb_data, ChainRecord.SCHEMA)
+        write_table(processed_ids_path, processed_ids, PROCESSED_SCHEMA)
+    logging.info(f"Finished processing {len(pdb_files)} files")
+
+
 def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
     processed_ids_path = args.output / "processed_ids.arrow"
     pdb_data_path = args.output / "pdb_data.arrow"
 
-    processed_ids, pdb_data = load_tables(processed_ids_path, pdb_data_path)
-    pdb_files = get_files_to_process(args.mmcif, processed_ids)
-
     with ProcessPoolExecutor() as executor:
-        if len(pdb_files) != 0:
-            pdb_data = compute_pdb_data(executor, pdb_files, args.batch, pdb_data)
-            processed_ids = compute_processed_ids(pdb_files, processed_ids)
-            write_table(pdb_data_path, pdb_data, ChainRecord.SCHEMA)
-            write_table(processed_ids_path, processed_ids, PROCESSED_SCHEMA)
-        logging.info(f"Finished processing {len(pdb_files)} files")
+        process_pdb_files(executor, processed_ids_path, pdb_data_path, args.mmcif, args.batch)
 
 
 if __name__ == "__main__":

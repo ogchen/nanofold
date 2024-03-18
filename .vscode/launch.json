@@ -16,7 +16,7 @@
             "name": "Process PDB",
             "type": "debugpy",
             "request": "launch",
-            "program": "process_pdb.py",
+            "program": "preprocess.py",
             "console": "integratedTerminal",
             "args": "-m /data/pdb/ -o /db/"
         }

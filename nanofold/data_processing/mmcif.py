@@ -6,7 +6,7 @@ from Bio.PDB import MMCIFParser
 
 from nanofold.common.residue_definitions import BACKBONE_ATOMS
 from nanofold.common.residue_definitions import RESIDUE_LOOKUP_3L
-from nanofold.common.chain_record import ChainRecord
+from nanofold.data_processing.chain_record import ChainRecord
 from nanofold.data_processing.residue import compute_residue_frames
 
 
