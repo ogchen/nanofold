@@ -9,3 +9,4 @@ data
 .dockerignore
 docker/**
 README.md
+.github/**
