@@ -18,7 +18,7 @@
             "request": "launch",
             "program": "process_pdb.py",
             "console": "integratedTerminal",
-            "args": "-m /data/pdb/ -o /db/pdb_data.arrow"
+            "args": "-m /data/pdb/ -o /db/"
         }
     ]
 }

@@ -43,10 +43,10 @@ docker run -it --rm data_processing pytest tests/data_processing
 ### Training
 Process downloaded PDB files:
 ```bash
-docker-compose run --rm data_processing python process_pdb.py -m /data/pdb/ -o /db/pdb_data.arrow
+docker-compose run --rm data_processing python process_pdb.py -m /data/pdb/ -o /db/
 ```
 
 Run the training script:
 ```bash
-docker-compose run --rm train python train.py -c config/config.ini -f /data/pdb_seqres.txt -i /db/pdb_data.arrow
+docker-compose run --rm train python train.py -c config/config.ini -f /data/pdb_seqres.txt -i /db/pdb_data.arrow --mlflow
 ```
