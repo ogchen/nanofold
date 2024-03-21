@@ -3,10 +3,7 @@ import logging
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-from nanofold.data_processing.chain_record import ChainRecord
-from nanofold.data_processing.ipc import load_table
-from nanofold.data_processing.ipc import write_table
-from nanofold.data_processing.mmcif_processor import IDS_SCHEMA
+from nanofold.data_processing.db import DBManager
 from nanofold.data_processing.mmcif_processor import process_mmcif_files
 
 
@@ -24,18 +21,10 @@ def parse_args():
 def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
-    ids_path = args.output / "processed_ids.arrow"
-    mmcif_data_path = args.output / "mmcif_data.arrow"
+    db_manager = DBManager(uri=os.getenv("MONGODB_URI"))
 
     with ProcessPoolExecutor() as executor:
-        data_table = load_table(mmcif_data_path)
-        ids_table = load_table(ids_path)
-        write_tables, data_table, ids_table = process_mmcif_files(
-            executor, ids_table, data_table, args.mmcif, args.batch
-        )
-        if write_tables:
-            write_table(mmcif_data_path, data_table, ChainRecord.SCHEMA)
-            write_table(ids_path, ids_table, IDS_SCHEMA)
+        process_mmcif_files(db_manager, executor, args.mmcif, args.batch)
 
 
 if __name__ == "__main__":
