@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.dev.ini -f /data/pdb_seqres.txt -i /preprocess/pdb_data.arrow"
+            "args": "-c /workspace/config/config.dev.ini -i /preprocess/pdb_data.arrow"
         },
         {
             "name": "Process PDB",
@@ -18,7 +18,7 @@
             "request": "launch",
             "program": "preprocess.py",
             "console": "integratedTerminal",
-            "args": "-m /data/pdb/ -o /preprocess/ -f /data/pdb_seqres.txt --small_bfd /data/bfd-first_non_consensus_sequences.fasta"
+            "args": "-m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta"
         }
     ]
 }
