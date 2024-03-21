@@ -11,11 +11,8 @@ class DBManager:
             raise RuntimeError(f"Could not connect to MongoDB at {uri}")
         self.db = self.client.data_processing
 
-    def insert_processed_mmcif_files(self, ids):
-        self.db.processed_mmcif_files.insert_many(ids)
+    def processed_mmcif_files(self):
+        return self.db.processed_mmcif_files
 
-    def find_processed_mmcif_files(self):
-        return self.db.processed_mmcif_files.find()
-
-    def insert_chains(self, chains):
-        self.db.chains.insert_many(chains)
+    def chains(self):
+        return self.db.chains

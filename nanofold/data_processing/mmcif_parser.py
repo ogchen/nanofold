@@ -27,7 +27,7 @@ def parse_mmcif_file(filepath, capture_errors):
 def parse_structure(structure):
     models = list(structure.get_models())
     if len(models) != 1:
-        raise ValueError(f"Expected 1 model, got {len(models)} for {structure.header['idcode']}")
+        raise ValueError(f"Multi model mmCIF files are not supported, got {len(models)}")
     result = [parse_chain(chain) for chain in models[0]]
     return [c for c in result if len(c["sequence"]) > 0]
 
