@@ -20,8 +20,13 @@ RESIDUE_LIST = [
     ("Y", "TYR"),
     ("V", "VAL"),
 ]
-RESIDUE_LOOKUP_1L = dict(RESIDUE_LIST)
-RESIDUE_LOOKUP_3L = {r[1]: r[0] for r in RESIDUE_LIST}
+UNKNOWN_RESIDUE = "?"
+
+
+def get_1l_res_code(resname):
+    lookup = {r[1]: r[0] for r in RESIDUE_LIST}
+    return lookup.get(resname, UNKNOWN_RESIDUE)
+
 
 BACKBONE_ATOMS = ["N", "CA", "C"]
 BACKBONE_POSITIONS = {

@@ -1,17 +1,25 @@
 import pytest
 from nanofold.data_processing import mmcif_parser
+from nanofold.data_processing.mmcif_processor import list_available_mmcif
+
+
+@pytest.fixture
+def test_file(request, data_dir):
+    identifiers = list_available_mmcif(data_dir)
+    matched = [i for i in identifiers if request.param in i]
+    assert len(matched) == 1
+    return matched[0]
 
 
 @pytest.mark.parametrize(
-    "model, valid_chains, num_residues, sequence",
+    "test_file, num_chains, num_residues, sequence",
     [
         (
             "1A00",
-            2,
+            4,
             141,
             "VLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSFPTTKTYFPHFDLSHGSAQVKGHGKKVADALTNAVAHVDDMPNALSALSDLHAHKLRVDPVNFKLLSHCLLVTLAAHLPAEFTPAVHASLDKFLASVSTVLTSKYR",
         ),
-        ("1YUJ", 1, 54, "PKAKRAKHPPGTEKPRSRSQSEQPATCPICYAVIRQSRNLRRHLELRHFAKPGV"),
         (
             "115L",
             1,
@@ -20,15 +28,15 @@ from nanofold.data_processing import mmcif_parser
         ),
         (
             "1ENX",
-            1,
-            189,
-            "TIQPGTGYNNGYFYSYWNDGHGGVTYTNGPGGQFSVNWSNSGNFVGGKGWQPGTKNKVINFSGSYNPNGNSYLSVYGWSRNPLIEYYIVENFGTYNPSTGATKLGEVTSDGSVYDIYRTQRVNQPSIIGTATFYQYWSVRRNHRSSGSVNTANHFNAWAQQGLTLGTMDYQIVAVEGYFSSGSASITVS",
+            2,
+            190,
+            "?TIQPGTGYNNGYFYSYWNDGHGGVTYTNGPGGQFSVNWSNSGNFVGGKGWQPGTKNKVINFSGSYNPNGNSYLSVYGWSRNPLIEYYIVENFGTYNPSTGATKLGEVTSDGSVYDIYRTQRVNQPSIIGTATFYQYWSVRRNHRSSGSVNTANHFNAWAQQGLTLGTMDYQIVAVEGYFSSGSASITVS",
         ),
         (
             "1RNL",
             1,
-            138,
-            "EPATILLIDDHPMLRTGVKQLISMAPDITVVGEASNGEQGIELAESLDPDLILLDLNMPGMNGLETLDKLREKSLSGRIVVFSVSNHEEDVVTALKRGADGYLLKDMEPEDLLKALHQAAAGEMVLSEALTPVLAASL",
+            200,
+            "EPATILLIDDHPMLRTGVKQLISMAPDITVVGEASNGEQGIELAESLDPDLILLDLNMPGMNGLETLDKLREKSLSGRIVVFSVSNHEEDVVTALKRGADGYLLKDMEPEDLLKALHQAAAGEMVLSEALTPVLAASLQLTPRERDILKLIAQGLPNKMIARRLDITESTVKVHVKHMLKKMKLKSRVEAAVWVHQERIF",
         ),
         (
             "1AGA",
@@ -37,26 +45,23 @@ from nanofold.data_processing import mmcif_parser
             None,
         ),
     ],
-    indirect=["model"],
+    indirect=["test_file"],
 )
-def test_parse_chains(model, valid_chains, num_residues, sequence):
-    chains = mmcif_parser.parse_chains(model)
-    assert len(chains) == valid_chains
+def test_parse_mmcif_file(test_file, num_chains, num_residues, sequence):
+    chains = mmcif_parser.parse_mmcif_file(test_file, capture_errors=False)
+    assert len(chains) == num_chains
     if len(chains) > 0:
-        assert chains[0].model_id == model.id
-        assert len(chains[0]) == num_residues
-        assert chains[0].sequence == sequence
+        assert len(chains[0]["sequence"]) == num_residues
+        assert len(chains[0]["translations"]) == num_residues
+        assert len(chains[0]["positions"]) == num_residues
+        assert chains[0]["sequence"] == sequence
 
 
 @pytest.mark.parametrize(
-    "model, num_chains, num_residues",
-    [("1A00", 4, 141), ("1YUJ", 3, 0)],
-    indirect=["model"],
+    "test_file",
+    ["1YUJ"],
+    indirect=["test_file"],
 )
-def test_get_residue(model, num_chains, num_residues):
-    chains = list(model.get_chains())
-    assert len(chains) == num_chains
-    metadata, rotations, translations = mmcif_parser.get_residues(chains[0])
-    assert len(metadata) == num_residues
-    assert len(rotations) == num_residues
-    assert len(translations) == num_residues
+def test_parse_mmcif_file_with_error(test_file):
+    with pytest.raises(Exception):
+        mmcif_parser.parse_mmcif_file(test_file, capture_errors=False)
