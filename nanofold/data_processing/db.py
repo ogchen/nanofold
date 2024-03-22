@@ -11,6 +11,9 @@ class DBManager:
             raise RuntimeError(f"Could not connect to MongoDB at {uri}")
         self.db = self.client.data_processing
 
+    def __del__(self):
+        self.client.close()
+
     def processed_mmcif_files(self):
         return self.db.processed_mmcif_files
 
