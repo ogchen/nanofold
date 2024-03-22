@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from nanofold.data_processing.db import DBManager
+from nanofold.data_processing.ipc import dump_to_ipc
 from nanofold.data_processing.mmcif_processor import process_mmcif_files
 from nanofold.data_processing.msa_builder import build_msa
 from nanofold.data_processing.msa_runner import MSARunner
@@ -27,6 +28,7 @@ def parse_args():
 def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
+    ipc_output_path = args.output / "features.arrow"
     jackhmmer_results_path = args.output / "small_bfd_cache"
     jackhmmer_results_path.mkdir(exist_ok=True)
 
@@ -44,6 +46,7 @@ def main():
 
     with ThreadPoolExecutor() as executor:
         build_msa(msa_runner, db_manager, executor)
+    dump_to_ipc(db_manager, ipc_output_path)
 
 
 if __name__ == "__main__":
