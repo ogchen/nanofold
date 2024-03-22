@@ -17,7 +17,7 @@ def get_files_to_process(db_manager, mmcif_dir):
     pdb_files = list_available_mmcif(mmcif_dir)
     processed = [r["_id"] for r in db_manager.processed_mmcif_files().find()]
     pdb_files = [f for f in pdb_files if get_model_id(f) not in processed]
-    logging.info(f"Found {len(pdb_files)} files to parse, {len(processed)} processed files")
+    logging.info(f"Found {len(pdb_files)} files to parse, {len(processed)} processed mmCIF files")
     return pdb_files
 
 

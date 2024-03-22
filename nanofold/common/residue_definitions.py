@@ -20,7 +20,7 @@ RESIDUE_LIST = [
     ("Y", "TYR"),
     ("V", "VAL"),
 ]
-UNKNOWN_RESIDUE = "?"
+UNKNOWN_RESIDUE = "X"
 
 
 def get_1l_res_code(resname):

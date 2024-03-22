@@ -36,12 +36,15 @@ docker run -it --rm data_processing pytest tests/data_processing
 ```
 
 ### Training
-Process downloaded PDB files:
+Preprocess training data by parsing downloaded mmCIF files and building multiple sequence alignments:
 ```bash
-docker-compose run --rm data_processing python preprocess.py -m /data/pdb/ -o /db/
+docker-compose run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta
 ```
 
 Run the training script:
 ```bash
 docker-compose run --rm train python train.py -c config/config.ini -i /db/pdb_data.arrow --mlflow
 ```
+
+# Todo
+1) Quantization

@@ -14,7 +14,6 @@ from nanofold.training.trainer import Trainer
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", help="Configuration file for training")
-    parser.add_argument("-f", "--fasta", help="File containing FASTA sequences")
     parser.add_argument(
         "-i", "--input", help="Input chain training data in Arrow IPC file format", type=Path
     )
