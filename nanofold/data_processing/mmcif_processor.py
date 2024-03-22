@@ -28,8 +28,8 @@ def to_chains_document(chains):
                 "structure_id": c["structure_id"],
                 "chain_id": c["chain_id"],
             },
-            "rotations": c["rotations"].flatten().tolist(),
-            "translations": c["translations"].flatten().tolist(),
+            "rotations": c["rotations"].tolist(),
+            "translations": c["translations"].tolist(),
             "sequence": c["sequence"],
             "positions": c["positions"],
         }
