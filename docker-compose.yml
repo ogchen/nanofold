@@ -27,8 +27,7 @@ services:
               count: 1
               capabilities: [gpu]
     volumes:
-      - db:/db
-      - /home/ogchen/data:/data
+      - preprocess:/preprocess
     environment:
       - MLFLOW_SERVER_URI=http://mlflow-server:8000
 

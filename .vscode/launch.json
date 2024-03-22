@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.dev.ini -i /preprocess/pdb_data.arrow"
+            "args": "-c /workspace/config/config.dev.ini -i /preprocess/features.arrow"
         },
         {
             "name": "Process PDB",
