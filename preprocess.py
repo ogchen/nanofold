@@ -21,6 +21,7 @@ def parse_args():
     parser.add_argument("-m", "--mmcif", help="Directory containing mmcif files", type=Path)
     parser.add_argument("-o", "--output", help="Directory to store output files", type=Path)
     parser.add_argument("-s", "--small_bfd", help="Small BFD file", type=Path)
+    parser.add_argument("--dump-only", help="Dump IPC file only", action="store_true")
     parser.add_argument("-l", "--logging", help="Logging level", default="INFO")
     return parser.parse_args()
 
@@ -41,11 +42,12 @@ def main():
         max_sequences=5000,
     )
 
-    with ProcessPoolExecutor() as executor:
-        process_mmcif_files(db_manager, executor, args.mmcif, args.batch)
+    if not args.dump_only:
+        with ProcessPoolExecutor() as executor:
+            process_mmcif_files(db_manager, executor, args.mmcif, args.batch)
 
-    with ThreadPoolExecutor() as executor:
-        build_msa(msa_runner, db_manager, executor)
+        with ThreadPoolExecutor() as executor:
+            build_msa(msa_runner, db_manager, executor)
     dump_to_ipc(db_manager, ipc_output_path)
 
 

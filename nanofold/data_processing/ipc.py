@@ -1,3 +1,4 @@
+import logging
 import pyarrow as pa
 
 
@@ -20,3 +21,4 @@ def dump_to_ipc(db_manager, output):
     with pa.OSFile(str(output), mode="w") as f:
         with pa.ipc.new_file(f, table.schema) as writer:
             writer.write_table(table)
+    logging.info(f"Wrote {len(chains)} chains to {output}")
