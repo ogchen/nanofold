@@ -2,6 +2,7 @@ import torch
 from torch import nn
 
 from nanofold.training.frame import Frame
+from nanofold.training.model.evoformer import Evoformer
 from nanofold.training.model.input import InputEmbedding
 from nanofold.training.model.structure import StructureModule
 
@@ -21,8 +22,8 @@ class Nanofold(nn.Module):
         num_heads,
     ):
         super().__init__()
-        self.single_embedding_size = single_embedding_size
         self.input_embedder = InputEmbedding(pair_embedding_size, msa_embedding_size, position_bins)
+        self.evoformer = Evoformer(single_embedding_size, msa_embedding_size)
         self.structure_module = StructureModule(
             num_layers,
             single_embedding_size,
@@ -54,15 +55,13 @@ class Nanofold(nn.Module):
         return cls(**cls.get_args(config))
 
     def forward(self, batch):
-        pair_representations = self.input_embedder(
+        msa_rep, pair_rep = self.input_embedder(
             batch["target_feat"], batch["positions"], batch["msa_feat"]
         )
-        single_representations = torch.zeros(
-            *batch["positions"].shape, self.single_embedding_size, device=batch["positions"].device
-        )
+        single_rep = self.evoformer(msa_rep, pair_rep)
         coords, fape_loss, aux_loss = self.structure_module(
-            single_representations,
-            pair_representations,
+            single_rep,
+            pair_rep,
             batch["local_coords"],
             Frame(
                 rotations=batch["rotations"],
