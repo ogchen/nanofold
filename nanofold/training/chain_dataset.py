@@ -10,6 +10,7 @@ from nanofold.common.residue_definitions import get_atom_positions
 from nanofold.common.residue_definitions import MSA_GAP
 from nanofold.common.residue_definitions import RESIDUE_INDEX
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
+from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 
 
 SAMPLE_SIZE = 100
@@ -26,7 +27,7 @@ def encode_one_hot_alignments(alignments):
     one_hot = torch.zeros(len(alignments), len(alignments[0]), len(RESIDUE_INDEX_MSA))
     for i, alignment in enumerate(alignments):
         for j, residue in enumerate(alignment):
-            one_hot[i, j, RESIDUE_INDEX_MSA[residue]] = 1
+            one_hot[i, j, RESIDUE_INDEX_MSA.get(residue, RESIDUE_INDEX_MSA[UNKNOWN_RESIDUE[0]])] = 1
     return one_hot
 
 
