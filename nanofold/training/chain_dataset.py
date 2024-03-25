@@ -22,7 +22,7 @@ def encode_one_hot(seq):
     return one_hot
 
 
-def encode_one_hot_msa(alignments):
+def encode_one_hot_alignments(alignments):
     one_hot = torch.zeros(len(alignments), len(alignments[0]), len(RESIDUE_INDEX_MSA))
     for i, alignment in enumerate(alignments):
         for j, residue in enumerate(alignment):
@@ -35,6 +35,12 @@ def encode_deletion_matrix(deletion_matrix):
     has_deletion = counts > 0
     deletion_value = 2 / math.pi * torch.arctan(counts / 3)
     return torch.cat((has_deletion.unsqueeze(-1), deletion_value.unsqueeze(-1)), dim=-1)
+
+
+def encode_msa(msa):
+    alignments_one_hot = encode_one_hot_alignments([m[0] for m in msa])
+    deletion_feat = encode_deletion_matrix([m[1] for m in msa])
+    return torch.cat((alignments_one_hot, deletion_feat), dim=-1)
 
 
 def preprocess_msa(msa, num_msa):
@@ -103,10 +109,7 @@ class ChainDataset(IterableDataset):
             )
             for a, d in zip(row["msa"]["alignments"], row["msa"]["deletion_matrix"])
         ]
-        msa = preprocess_msa(msa, self.num_msa)
-        msa_one_hot = encode_one_hot_msa([m[0] for m in msa])
-        deletion_feat = encode_deletion_matrix([m[1] for m in msa])
-        return torch.cat((msa_one_hot, deletion_feat), dim=-1)
+        return encode_msa(preprocess_msa(msa, self.num_msa))
 
     def parse_features(self, row):
         features = {
