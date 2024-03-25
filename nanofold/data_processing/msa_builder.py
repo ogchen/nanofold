@@ -37,5 +37,8 @@ def build_msa(msa_runner, db_manager, executor):
     total_num_chains = db_manager.chains().count_documents({})
     logging.info(f"Found {len(chains)}/{total_num_chains} chains missing MSA")
     for chain, sto_contents in get_sto_contents(msa_runner, executor, chains):
-        msa = parse_msa(StringIO(sto_contents), num_samples=125)
-        db_manager.chains().update_one({"_id": chain["_id"]}, {"$set": {"msa": msa}})
+        try:
+            msa = parse_msa(StringIO(sto_contents), num_samples=125)
+            db_manager.chains().update_one({"_id": chain["_id"]}, {"$set": {"msa": msa}})
+        except Exception as e:
+            logging.error(f"Failed to build msa for chain {chain['_id']}: {e}")
