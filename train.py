@@ -37,6 +37,7 @@ def get_dataloaders(args, config):
         args.input,
         config.getfloat("General", "train_split"),
         config.getint("General", "residue_crop_size"),
+        config.getint("General", "num_msa"),
         config.get("General", "device"),
     )
     eval_dataloaders = {
