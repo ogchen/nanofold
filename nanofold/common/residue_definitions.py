@@ -20,8 +20,23 @@ RESIDUE_LIST = [
     ("Y", "TYR"),
     ("V", "VAL"),
 ]
-RESIDUE_LOOKUP_1L = dict(RESIDUE_LIST)
-RESIDUE_LOOKUP_3L = {r[1]: r[0] for r in RESIDUE_LIST}
+UNKNOWN_RESIDUE = ("X", "UNK")
+RESIDUE_INDEX = {r[0]: i for i, r in enumerate(RESIDUE_LIST)} | {
+    UNKNOWN_RESIDUE[0]: len(RESIDUE_LIST)
+}
+MSA_GAP = "-"
+RESIDUE_INDEX_MSA = RESIDUE_INDEX | {MSA_GAP: len(RESIDUE_INDEX)}
+
+
+def get_1l_res_code(resname):
+    lookup = {r[1]: r[0] for r in RESIDUE_LIST}
+    return lookup.get(resname, UNKNOWN_RESIDUE[0])
+
+
+def get_3l_res_name(res_code):
+    lookup = dict(RESIDUE_LIST)
+    return lookup.get(res_code, UNKNOWN_RESIDUE[1])
+
 
 BACKBONE_ATOMS = ["N", "CA", "C"]
 BACKBONE_POSITIONS = {
@@ -125,4 +140,14 @@ BACKBONE_POSITIONS = {
         ("CA", [0.000, 0.000, 0.000]),
         ("C", [1.527, -0.000, -0.000]),
     ],
+    "UNK": [
+        ("N", [0.000, 0.000, 0.000]),
+        ("CA", [0.000, 0.000, 0.000]),
+        ("C", [0.000, 0.000, 0.000]),
+    ],
 }
+
+
+def get_atom_positions(rescode):
+    resname = get_3l_res_name(rescode)
+    return BACKBONE_POSITIONS[resname]

@@ -1,5 +1,10 @@
 version: '3.8'
 services:
+  db:
+    image: mongo:7.0
+    volumes:
+      - db:/data/db
+
   mlflow-server:
     image: ghcr.io/mlflow/mlflow:v2.11.1
     command: mlflow server --host 0.0.0.0 --port 8000
@@ -22,8 +27,7 @@ services:
               count: 1
               capabilities: [gpu]
     volumes:
-      - db:/db
-      - /home/ogchen/data:/data
+      - preprocess:/preprocess
     environment:
       - MLFLOW_SERVER_URI=http://mlflow-server:8000
 
@@ -32,10 +36,15 @@ services:
       context: .
       dockerfile: docker/Dockerfile.process
     image: data_processing
+    depends_on:
+      - db
     volumes:
-      - db:/db
+      - preprocess:/preprocess
       - /home/ogchen/data:/data
+    environment:
+      - MONGODB_URI=mongodb://db:27017
 
 volumes:
   db:
+  preprocess:
   mlflow:

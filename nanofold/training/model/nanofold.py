@@ -53,7 +53,9 @@ class Nanofold(nn.Module):
 
     def forward(self, batch):
         pair_representations = self.input_embedder(batch["target_feat"], batch["positions"])
-        single_representations = torch.zeros(*batch["positions"].shape, self.single_embedding_size)
+        single_representations = torch.zeros(
+            *batch["positions"].shape, self.single_embedding_size, device=batch["positions"].device
+        )
         coords, fape_loss, aux_loss = self.structure_module(
             single_representations,
             pair_representations,

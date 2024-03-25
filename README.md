@@ -14,11 +14,6 @@ Download and unzip `mmCIF` files that were deposited before a specified date wit
 gzip -d ~/data/pdb/*.cif.gz
 ```
 
-Download sequences in FASTA format:
-1) Download [`pdb_seqres.txt`](https://files.rcsb.org/pub/pdb/derived_data/pdb_seqres.txt),
-a file containing all PDB protein sequences in FASTA format.
-2) Run `python scripts/process_pdb_seqres.py $SEQRES_FILE` to process the file.
-
 Download and unzip small BFD (17GB) with
 ```bash
 wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_non_consensus_sequences.fasta.gz
@@ -41,7 +36,12 @@ docker run -it --rm data_processing pytest tests/data_processing
 ```
 
 ### Training
-Process downloaded PDB files using Spark
+Preprocess training data by parsing downloaded mmCIF files and building multiple sequence alignments:
 ```bash
-docker-compose run --rm data_processing python process_pdb.py -m /data/pdb/ -o /db/pdb_data.arrow
+docker-compose run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta
+```
+
+Run the training script:
+```bash
+docker-compose run --rm train python train.py -c config/config.ini -i /preprocess/features.arrow --mlflow
 ```

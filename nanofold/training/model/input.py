@@ -1,17 +1,6 @@
-import torch
 from torch import nn
 
-from nanofold.common.residue_definitions import RESIDUE_LOOKUP_1L
-
-
-def encode_one_hot(seq):
-    """Convert a sequence to one-hot encoding."""
-    res_map = {res: i for i, res in enumerate(RESIDUE_LOOKUP_1L.keys())}
-    seq = seq.upper()
-    one_hot = torch.zeros(len(seq), len(res_map))
-    for i, residue in enumerate(seq):
-        one_hot[i, res_map[residue]] = 1
-    return one_hot
+from nanofold.common.residue_definitions import RESIDUE_INDEX
 
 
 class InputEmbedding(nn.Module):
@@ -19,7 +8,7 @@ class InputEmbedding(nn.Module):
         super().__init__()
         self.embedding_size = embedding_size
         self.bins = position_bins
-        input_size = len(RESIDUE_LOOKUP_1L)
+        input_size = len(RESIDUE_INDEX)
         self.linear_a = nn.Linear(input_size, self.embedding_size)
         self.linear_b = nn.Linear(input_size, self.embedding_size)
         self.linear_position = nn.Linear(2 * self.bins + 1, self.embedding_size)

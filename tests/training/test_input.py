@@ -1,21 +1,7 @@
-from nanofold.training.model import input
 import torch
 
-
-def test_encode_one_hot():
-    seq = "ADHIAA"
-    one_hot = input.encode_one_hot(seq)
-    expected = torch.tensor(
-        [
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ]
-    )
-    assert torch.equal(one_hot, expected)
+from nanofold.training.chain_dataset import encode_one_hot
+from nanofold.training.model import input
 
 
 def test_input_embedder():
@@ -24,7 +10,7 @@ def test_input_embedder():
     embedder = input.InputEmbedding(embedding_size, position_bins)
 
     seq = "ADHIAAAA"
-    target_feat = input.encode_one_hot(seq)
+    target_feat = encode_one_hot(seq)
     residue_index = torch.arange(len(seq))
 
     x = embedder(target_feat, residue_index)
@@ -34,7 +20,7 @@ def test_input_embedder():
 def test_input_embedder_batched():
     embedder = input.InputEmbedding(5, 3)
     seq = "ADHIAAAA"
-    target_feat = input.encode_one_hot(seq)
+    target_feat = encode_one_hot(seq)
     residue_index = torch.arange(len(seq))
     x = embedder(target_feat, residue_index)
     batched = embedder(

@@ -1,29 +1,76 @@
 from torch.utils.data import IterableDataset
 import logging
+import math
 import numpy as np
 import polars as pl
+import random
 import torch
 
-from nanofold.common.residue_definitions import BACKBONE_POSITIONS
-from nanofold.common.residue_definitions import RESIDUE_LOOKUP_1L
-from nanofold.training.model.input import encode_one_hot
+from nanofold.common.residue_definitions import get_atom_positions
+from nanofold.common.residue_definitions import MSA_GAP
+from nanofold.common.residue_definitions import RESIDUE_INDEX
+from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
 
 
 SAMPLE_SIZE = 100
 
 
+def encode_one_hot(seq):
+    one_hot = torch.zeros(len(seq), len(RESIDUE_INDEX))
+    for i, residue in enumerate(seq):
+        one_hot[i, RESIDUE_INDEX[residue]] = 1
+    return one_hot
+
+
+def encode_one_hot_msa(alignments):
+    one_hot = torch.zeros(len(alignments), len(alignments[0]), len(RESIDUE_INDEX_MSA))
+    for i, alignment in enumerate(alignments):
+        for j, residue in enumerate(alignment):
+            one_hot[i, j, RESIDUE_INDEX_MSA[residue]] = 1
+    return one_hot
+
+
+def encode_deletion_matrix(deletion_matrix):
+    counts = torch.tensor(deletion_matrix, dtype=torch.float32)
+    has_deletion = counts > 0
+    deletion_value = 2 / math.pi * torch.arctan(counts / 3)
+    return torch.cat((has_deletion.unsqueeze(-1), deletion_value.unsqueeze(-1)), dim=-1)
+
+
+def preprocess_msa(msa, num_msa):
+    msa = [m for m in msa if not all(c == MSA_GAP for c in m[0])]
+    query = msa[0]
+
+    # Deduplicate MSA
+    hashable_msa = [(a, tuple(d)) for a, d in msa[1:]]
+    deduplicated = [(a, list(d)) for a, d in set(hashable_msa)]
+
+    # Shuffle MSA
+    random.shuffle(deduplicated)
+
+    # Pad or truncate MSA
+    msa = [query, *[m for m in deduplicated if m[0] != query]][:num_msa]
+    for _ in range(num_msa - len(msa)):
+        msa.append((MSA_GAP * len(query[0]), [0] * len(query[1])))
+
+    return msa
+
+
 class ChainDataset(IterableDataset):
-    def __init__(self, df, residue_crop_size, device):
+    def __init__(self, df, residue_crop_size, num_msa, device):
         super().__init__()
         self.residue_crop_size = residue_crop_size
+        self.num_msa = num_msa
         self.device = device
         self.df = df
         self.df = self.df.with_columns(length=pl.col("sequence").str.len_chars())
         self.df = self.df.filter(pl.col("length") >= self.residue_crop_size)
 
     @classmethod
-    def construct_datasets(cls, arrow_file, train_split, *args, **kwargs):
-        df = pl.read_ipc(arrow_file, columns=["rotations", "translations", "sequence", "positions"])
+    def construct_datasets(cls, features_file, train_split, *args, **kwargs):
+        df = pl.read_ipc(
+            features_file, columns=["rotations", "translations", "sequence", "positions", "msa"]
+        )
         logging.info(f"Dataframe loaded, estimated size {df.estimated_size(unit='mb'):.2f} MB")
         train_size = int(train_split * len(df))
         if train_size <= 0 or train_split >= len(df):
@@ -41,22 +88,35 @@ class ChainDataset(IterableDataset):
                 positions=pl.col("positions").list.slice(pl.col("start"), self.residue_crop_size),
                 sequence=pl.col("sequence").str.slice(pl.col("start"), self.residue_crop_size),
                 translations=pl.col("translations").list.slice(
-                    pl.col("start") * 3, self.residue_crop_size * 3
+                    pl.col("start"), self.residue_crop_size
                 ),
-                rotations=pl.col("rotations").list.slice(
-                    pl.col("start") * 3 * 3, self.residue_crop_size * 3 * 3
-                ),
+                rotations=pl.col("rotations").list.slice(pl.col("start"), self.residue_crop_size),
             )
             for row in sample.iter_rows(named=True):
-                yield self.process_row(row)
+                yield self.parse_features(row)
 
-    def process_row(self, row):
-        row["rotations"] = torch.tensor(row["rotations"], device=self.device).reshape(-1, 3, 3)
-        row["translations"] = torch.tensor(row["translations"], device=self.device).reshape(-1, 3)
-        row["positions"] = torch.tensor(row["positions"], device=self.device)
-        row["target_feat"] = encode_one_hot(row["sequence"]).to(self.device)
-        row["local_coords"] = torch.tensor(
-            [[a[1] for a in BACKBONE_POSITIONS[RESIDUE_LOOKUP_1L[r]]] for r in row["sequence"]],
-            device=self.device,
-        )
-        return row
+    def parse_msa_features(self, row):
+        msa = [
+            (
+                a[row["start"] : row["start"] + self.residue_crop_size],
+                d[row["start"] : row["start"] + self.residue_crop_size],
+            )
+            for a, d in zip(row["msa"]["alignments"], row["msa"]["deletion_matrix"])
+        ]
+        msa = preprocess_msa(msa, self.num_msa)
+        msa_one_hot = encode_one_hot_msa([m[0] for m in msa])
+        deletion_feat = encode_deletion_matrix([m[1] for m in msa])
+        return torch.cat((msa_one_hot, deletion_feat), dim=-1)
+
+    def parse_features(self, row):
+        features = {
+            "rotations": torch.tensor(row["rotations"], device=self.device),
+            "translations": torch.tensor(row["translations"], device=self.device),
+            "local_coords": torch.tensor(
+                [[p[1] for p in get_atom_positions(r)] for r in row["sequence"]], device=self.device
+            ),
+            "target_feat": encode_one_hot(row["sequence"]).to(self.device),
+            "msa_feat": self.parse_msa_features(row).to(self.device),
+            "positions": torch.tensor(row["positions"], device=self.device),
+        }
+        return features

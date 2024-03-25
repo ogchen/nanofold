@@ -14,11 +14,11 @@ from nanofold.training.trainer import Trainer
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", help="Configuration file for training")
-    parser.add_argument("-f", "--fasta", help="File containing FASTA sequences")
     parser.add_argument(
         "-i", "--input", help="Input chain training data in Arrow IPC file format", type=Path
     )
     parser.add_argument("-l", "--logging", help="Logging level", default="INFO")
+    parser.add_argument("--mlflow", help="Log to MLFlow", action="store_true")
 
     return parser.parse_args()
 
@@ -37,6 +37,7 @@ def get_dataloaders(args, config):
         args.input,
         config.getfloat("General", "train_split"),
         config.getint("General", "residue_crop_size"),
+        config.getint("General", "num_msa"),
         config.get("General", "device"),
     )
     eval_dataloaders = {
@@ -59,12 +60,15 @@ def main():
     config = load_config(args.config)
     train_loader, eval_loaders = get_dataloaders(args, config)
     loggers = [
-        MLFlowLogger(
-            uri=os.getenv("MLFLOW_SERVER_URI"),
-            pip_requirements="requirements/requirements.train.txt",
-        ),
         Logger(),
     ]
+    if args.mlflow:
+        loggers.append(
+            MLFlowLogger(
+                uri=os.getenv("MLFLOW_SERVER_URI"),
+                pip_requirements="requirements/requirements.train.txt",
+            )
+        )
     trainer = Trainer(config, loggers, log_every_n_epoch=100)
     trainer.fit(train_loader, eval_loaders, config.getint("General", "max_epoch"))
 
