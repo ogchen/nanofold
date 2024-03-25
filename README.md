@@ -43,8 +43,5 @@ docker-compose run --rm data_processing python preprocess.py -m /data/pdb/ -o /p
 
 Run the training script:
 ```bash
-docker-compose run --rm train python train.py -c config/config.ini -i /db/pdb_data.arrow --mlflow
+docker-compose run --rm train python train.py -c config/config.ini -i /db/features.arrow --mlflow
 ```
-
-# Todo
-1) Quantization
