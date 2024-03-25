@@ -72,7 +72,10 @@ def compute_deletion_matrix(alignments):
 def parse_msa(input, num_samples=None):
     alignments = extract_alignments(input)
     if num_samples is not None and len(alignments) > num_samples:
-        alignments = [alignments[0], *np.random.choice(alignments, num_samples - 1).tolist()]
+        alignments = [
+            alignments[0],
+            *np.random.choice(alignments, num_samples - 1, replace=False).tolist(),
+        ]
     compressed_alignments = compress_alignment_gaps(alignments)
     deletion_matrix = compute_deletion_matrix(alignments)
     return {
