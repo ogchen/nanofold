@@ -15,6 +15,9 @@ class Nanofold(nn.Module):
         pair_embedding_size,
         msa_embedding_size,
         position_bins,
+        num_evoformer_blocks,
+        num_evoformer_heads,
+        num_evoformer_channels,
         dropout,
         ipa_embedding_size,
         num_query_points,
@@ -23,7 +26,14 @@ class Nanofold(nn.Module):
     ):
         super().__init__()
         self.input_embedder = InputEmbedding(pair_embedding_size, msa_embedding_size, position_bins)
-        self.evoformer = Evoformer(single_embedding_size, msa_embedding_size)
+        self.evoformer = Evoformer(
+            single_embedding_size,
+            pair_embedding_size,
+            msa_embedding_size,
+            num_evoformer_blocks,
+            num_evoformer_heads,
+            num_evoformer_channels,
+        )
         self.structure_module = StructureModule(
             num_layers,
             single_embedding_size,
@@ -43,6 +53,9 @@ class Nanofold(nn.Module):
             "pair_embedding_size": config.getint("General", "pair_embedding_size"),
             "msa_embedding_size": config.getint("General", "msa_embedding_size"),
             "position_bins": config.getint("General", "position_bins"),
+            "num_evoformer_blocks": config.getint("Evoformer", "num_blocks"),
+            "num_evoformer_heads": config.getint("Evoformer", "num_heads"),
+            "num_evoformer_channels": config.getint("Evoformer", "num_channels"),
             "dropout": config.getfloat("StructureModule", "dropout"),
             "ipa_embedding_size": config.getint("InvariantPointAttention", "embedding_size"),
             "num_query_points": config.getint("InvariantPointAttention", "num_query_points"),
