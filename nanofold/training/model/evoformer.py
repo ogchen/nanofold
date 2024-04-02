@@ -1,6 +1,7 @@
 from torch import nn
 import torch
 
+from nanofold.training.model.outer_product_mean import OuterProductMean
 from nanofold.training.model.msa_attention import MSAColumnAttention
 from nanofold.training.model.msa_attention import MSARowAttentionWithPairBias
 
@@ -10,8 +11,10 @@ class EvoformerBlock(nn.Module):
         self,
         pair_embedding_size,
         msa_embedding_size,
+        product_embedding_size,
         num_heads,
         num_channels,
+        transition_multiplier,
         p_msa_dropout=0.15,
         p_pair_dropout=0.25,
     ):
@@ -22,6 +25,15 @@ class EvoformerBlock(nn.Module):
         self.msa_col_attention = MSAColumnAttention(msa_embedding_size, num_heads, num_channels)
         self.msa_dropout = nn.Dropout(p=p_msa_dropout)
         self.pair_dropout = nn.Dropout(p=p_pair_dropout)
+        self.msa_transition = nn.Sequential(
+            nn.LayerNorm(msa_embedding_size),
+            nn.Linear(msa_embedding_size, msa_embedding_size * transition_multiplier),
+            nn.ReLU(),
+            nn.Linear(msa_embedding_size * transition_multiplier, msa_embedding_size),
+        )
+        self.outer_product_mean = OuterProductMean(
+            pair_embedding_size, msa_embedding_size, product_embedding_size
+        )
 
     def forward(self, msa_rep, pair_rep):
         row_attention = self.msa_row_attention(msa_rep, pair_rep)
@@ -30,7 +42,9 @@ class EvoformerBlock(nn.Module):
         )
         msa_rep = msa_rep + row_attention
         msa_rep = msa_rep + self.msa_col_attention(msa_rep)
+        msa_rep = msa_rep + self.msa_transition(msa_rep)
 
+        pair_rep = pair_rep + self.outer_product_mean(msa_rep)
         return msa_rep, pair_rep
 
 
@@ -40,15 +54,24 @@ class Evoformer(nn.Module):
         single_embedding_size,
         pair_embedding_size,
         msa_embedding_size,
+        product_embedding_size,
         num_blocks,
         num_heads,
         num_channels,
+        evoformer_transition_multiplier,
     ):
         super().__init__()
         self.linear_single = nn.Linear(msa_embedding_size, single_embedding_size)
         self.blocks = nn.ModuleList(
             [
-                EvoformerBlock(pair_embedding_size, msa_embedding_size, num_heads, num_channels)
+                EvoformerBlock(
+                    pair_embedding_size,
+                    msa_embedding_size,
+                    product_embedding_size,
+                    num_heads,
+                    num_channels,
+                    evoformer_transition_multiplier,
+                )
                 for _ in range(num_blocks)
             ]
         )
