@@ -35,3 +35,31 @@ class MSARowAttentionWithPairBias(nn.Module):
             attention.view((*attention.shape[:-2], self.num_channels * self.num_heads))
         )
         return msa_rep
+
+
+class MSAColumnAttention(nn.Module):
+    def __init__(self, msa_embedding_size, num_heads, num_channels):
+        super().__init__()
+        self.num_heads = num_heads
+        self.num_channels = num_channels
+        self.layer_norm = nn.LayerNorm(msa_embedding_size)
+        self.linear = LinearWithView(msa_embedding_size, (num_heads, num_channels))
+        self.query = LinearWithView(msa_embedding_size, (num_heads, num_channels), bias=False)
+        self.key = LinearWithView(msa_embedding_size, (num_heads, num_channels), bias=False)
+        self.value = LinearWithView(msa_embedding_size, (num_heads, num_channels), bias=False)
+        self.projection = nn.Linear(num_heads * num_channels, msa_embedding_size)
+
+    def forward(self, msa_rep):
+        msa_rep = self.layer_norm(msa_rep)
+        q = self.query(msa_rep)
+        k = self.key(msa_rep)
+        v = self.value(msa_rep)
+        gates = torch.sigmoid(self.linear(msa_rep))
+
+        weights = (q.movedim(-4, -2) @ k.movedim(-4, -1)) / math.sqrt(self.num_channels)
+        weights = nn.functional.softmax(weights, dim=-1)
+        attention = gates * (weights @ v.movedim(-4, -2)).movedim(-2, -4)
+        msa_rep = self.projection(
+            attention.view((*attention.shape[:-2], self.num_channels * self.num_heads))
+        )
+        return msa_rep
