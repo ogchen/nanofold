@@ -13,7 +13,7 @@
             "args": "-c /workspace/config/config.dev.ini -i /preprocess/features.arrow"
         },
         {
-            "name": "Process PDB",
+            "name": "Preprocess",
             "type": "debugpy",
             "request": "launch",
             "program": "preprocess.py",

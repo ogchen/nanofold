@@ -64,14 +64,13 @@ def preprocess_msa(msa, num_msa):
 
 
 class ChainDataset(IterableDataset):
-    def __init__(self, df, residue_crop_size, num_msa, device):
+    def __init__(self, df, indices, residue_crop_size, num_msa, device):
         super().__init__()
         self.residue_crop_size = residue_crop_size
         self.num_msa = num_msa
         self.device = device
-        self.df = df
-        self.df = self.df.with_columns(length=pl.col("sequence").str.len_chars())
-        self.df = self.df.filter(pl.col("length") >= self.residue_crop_size)
+        self.df = df.with_row_count("index").with_columns(length=pl.col("sequence").str.len_chars())
+        self.indices = indices
 
     @classmethod
     def construct_datasets(cls, features_file, train_split, *args, **kwargs):
@@ -82,16 +81,21 @@ class ChainDataset(IterableDataset):
         train_size = int(train_split * len(df))
         if train_size <= 0 or train_split >= len(df):
             raise ValueError(f"train_size must be between 0 and len(df), got {train_size}")
-        df = df.sample(fraction=1)
-        return cls(df.head(train_size), *args, **kwargs), cls(df.tail(-train_size), *args, **kwargs)
+        indices = np.arange(len(df))
+        np.random.shuffle(indices)
+        return cls(df, indices[:train_size], *args, **kwargs), cls(
+            df, indices[train_size:], *args, **kwargs
+        )
 
     def __iter__(self):
         while True:
-            sample = self.df.sample(SAMPLE_SIZE, with_replacement=True, shuffle=True)
-            sample = sample.with_columns(
-                start=pl.lit(np.random.randint(sample["length"] - self.residue_crop_size + 1)),
+            sampled_indices = np.random.choice(self.indices, SAMPLE_SIZE, replace=False)
+            sample = self.df.filter(pl.col("index").is_in(sampled_indices)).filter(
+                pl.col("length") >= self.residue_crop_size
             )
             sample = sample.with_columns(
+                start=pl.lit(np.random.randint(sample["length"] - self.residue_crop_size + 1)),
+            ).with_columns(
                 positions=pl.col("positions").list.slice(pl.col("start"), self.residue_crop_size),
                 sequence=pl.col("sequence").str.slice(pl.col("start"), self.residue_crop_size),
                 translations=pl.col("translations").list.slice(
@@ -99,6 +103,7 @@ class ChainDataset(IterableDataset):
                 ),
                 rotations=pl.col("rotations").list.slice(pl.col("start"), self.residue_crop_size),
             )
+
             for row in sample.iter_rows(named=True):
                 yield self.parse_features(row)
 
