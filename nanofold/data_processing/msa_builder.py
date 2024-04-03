@@ -14,7 +14,7 @@ def get_chains_to_process(db_manager):
 
 def get_msa(msa_runner, chain):
     with NamedTemporaryFile(mode="w") as tmp:
-        id = f"{chain['_id']['structure_id'].lower()}_{chain['_id']['chain_id'].upper()}"
+        id = f"{chain['_id']['structure_id'].lower()}_{chain['_id']['chain_id']}"
         fasta = f">{id}\n{chain['sequence']}"
         tmp.writelines(fasta)
         tmp.flush()
