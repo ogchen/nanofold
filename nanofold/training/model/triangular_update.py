@@ -9,16 +9,16 @@ class UpdateDirection(enum.Enum):
 
 
 class TriangleMultiplicationUpdate(nn.Module):
-    def __init__(self, pair_embedding_size, triangle_embedding_size, direction):
+    def __init__(self, pair_embedding_size, triangular_update_embedding_size, direction):
         super().__init__()
         self.layer_norm_pair = nn.LayerNorm(pair_embedding_size)
-        self.layer_norm_update = nn.LayerNorm(triangle_embedding_size)
-        self.linear_a1 = nn.Linear(pair_embedding_size, triangle_embedding_size)
-        self.linear_a2 = nn.Linear(pair_embedding_size, triangle_embedding_size)
-        self.linear_b1 = nn.Linear(pair_embedding_size, triangle_embedding_size)
-        self.linear_b2 = nn.Linear(pair_embedding_size, triangle_embedding_size)
+        self.layer_norm_update = nn.LayerNorm(triangular_update_embedding_size)
+        self.linear_a1 = nn.Linear(pair_embedding_size, triangular_update_embedding_size)
+        self.linear_a2 = nn.Linear(pair_embedding_size, triangular_update_embedding_size)
+        self.linear_b1 = nn.Linear(pair_embedding_size, triangular_update_embedding_size)
+        self.linear_b2 = nn.Linear(pair_embedding_size, triangular_update_embedding_size)
         self.linear_g = nn.Linear(pair_embedding_size, pair_embedding_size)
-        self.linear_update = nn.Linear(triangle_embedding_size, pair_embedding_size)
+        self.linear_update = nn.Linear(triangular_update_embedding_size, pair_embedding_size)
         self.params = {
             UpdateDirection.OUTGOING: {"a_dim": -3, "b_dim": -4, "sum_dim": -2},
             UpdateDirection.INCOMING: {"a_dim": -2, "b_dim": -3, "sum_dim": -4},
