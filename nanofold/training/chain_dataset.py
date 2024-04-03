@@ -64,11 +64,10 @@ def preprocess_msa(msa, num_msa):
 
 
 class ChainDataset(IterableDataset):
-    def __init__(self, df, indices, residue_crop_size, num_msa, device):
+    def __init__(self, df, indices, residue_crop_size, num_msa):
         super().__init__()
         self.residue_crop_size = residue_crop_size
         self.num_msa = num_msa
-        self.device = device
         self.df = df.with_row_count("index").with_columns(length=pl.col("sequence").str.len_chars())
         self.indices = indices
 
@@ -119,13 +118,13 @@ class ChainDataset(IterableDataset):
 
     def parse_features(self, row):
         features = {
-            "rotations": torch.tensor(row["rotations"], device=self.device),
-            "translations": torch.tensor(row["translations"], device=self.device),
+            "rotations": torch.tensor(row["rotations"]),
+            "translations": torch.tensor(row["translations"]),
             "local_coords": torch.tensor(
-                [[p[1] for p in get_atom_positions(r)] for r in row["sequence"]], device=self.device
+                [[p[1] for p in get_atom_positions(r)] for r in row["sequence"]]
             ),
-            "target_feat": encode_one_hot(row["sequence"]).to(self.device),
-            "msa_feat": self.parse_msa_features(row).to(self.device),
-            "positions": torch.tensor(row["positions"], device=self.device),
+            "target_feat": encode_one_hot(row["sequence"]),
+            "msa_feat": self.parse_msa_features(row),
+            "positions": torch.tensor(row["positions"]),
         }
         return features

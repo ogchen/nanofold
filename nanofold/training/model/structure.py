@@ -100,8 +100,8 @@ class StructureModule(nn.Module):
         pair = self.pair_layer_norm(pair)
         single = self.single_linear(single)
         frames = Frame(
-            rotations=torch.eye(3, device=single.device).unsqueeze(0).repeat(*batch_dims, 1, 1),
-            translations=torch.zeros(*batch_dims, 3, device=single.device),
+            rotations=torch.eye(3).unsqueeze(0).repeat(*batch_dims, 1, 1),
+            translations=torch.zeros(*batch_dims, 3),
         )
 
         aux_losses = []
