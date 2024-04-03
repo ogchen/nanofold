@@ -1,9 +1,12 @@
 from torch import nn
 import torch
 
-from nanofold.training.model.outer_product_mean import OuterProductMean
 from nanofold.training.model.msa_attention import MSAColumnAttention
 from nanofold.training.model.msa_attention import MSARowAttentionWithPairBias
+from nanofold.training.model.outer_product_mean import OuterProductMean
+from nanofold.training.model.triangular_update import TriangleMultiplicationUpdate
+from nanofold.training.model.triangular_update import UpdateDirection
+from nanofold.training.model.util import DropoutByDimension
 
 
 class EvoformerBlock(nn.Module):
@@ -11,6 +14,7 @@ class EvoformerBlock(nn.Module):
         self,
         pair_embedding_size,
         msa_embedding_size,
+        triangle_embedding_size,
         product_embedding_size,
         num_heads,
         num_channels,
@@ -23,8 +27,8 @@ class EvoformerBlock(nn.Module):
             pair_embedding_size, msa_embedding_size, num_heads, num_channels
         )
         self.msa_col_attention = MSAColumnAttention(msa_embedding_size, num_heads, num_channels)
-        self.msa_dropout = nn.Dropout(p=p_msa_dropout)
-        self.pair_dropout = nn.Dropout(p=p_pair_dropout)
+        self.msa_dropout = DropoutByDimension(p_msa_dropout)
+        self.pair_dropout = DropoutByDimension(p_pair_dropout)
         self.msa_transition = nn.Sequential(
             nn.LayerNorm(msa_embedding_size),
             nn.Linear(msa_embedding_size, msa_embedding_size * transition_multiplier),
@@ -34,17 +38,21 @@ class EvoformerBlock(nn.Module):
         self.outer_product_mean = OuterProductMean(
             pair_embedding_size, msa_embedding_size, product_embedding_size
         )
+        self.triangle_update_outgoing = TriangleMultiplicationUpdate(
+            pair_embedding_size, triangle_embedding_size, UpdateDirection.OUTGOING
+        )
+        self.triangle_update_incoming = TriangleMultiplicationUpdate(
+            pair_embedding_size, triangle_embedding_size, UpdateDirection.INCOMING
+        )
 
     def forward(self, msa_rep, pair_rep):
-        row_attention = self.msa_row_attention(msa_rep, pair_rep)
-        row_attention = row_attention * self.msa_dropout(
-            torch.ones_like(row_attention[..., :1, :, :])
-        )
-        msa_rep = msa_rep + row_attention
+        msa_rep = msa_rep + self.msa_dropout(self.msa_row_attention(msa_rep, pair_rep), dim=-3)
         msa_rep = msa_rep + self.msa_col_attention(msa_rep)
         msa_rep = msa_rep + self.msa_transition(msa_rep)
 
         pair_rep = pair_rep + self.outer_product_mean(msa_rep)
+        pair_rep = pair_rep + self.pair_dropout(self.triangle_update_outgoing(pair_rep), dim=-3)
+        pair_rep = pair_rep + self.pair_dropout(self.triangle_update_incoming(pair_rep), dim=-3)
         return msa_rep, pair_rep
 
 
@@ -54,6 +62,7 @@ class Evoformer(nn.Module):
         single_embedding_size,
         pair_embedding_size,
         msa_embedding_size,
+        triangle_embedding_size,
         product_embedding_size,
         num_blocks,
         num_heads,
@@ -67,6 +76,7 @@ class Evoformer(nn.Module):
                 EvoformerBlock(
                     pair_embedding_size,
                     msa_embedding_size,
+                    triangle_embedding_size,
                     product_embedding_size,
                     num_heads,
                     num_channels,

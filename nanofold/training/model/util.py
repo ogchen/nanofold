@@ -1,5 +1,6 @@
-from torch import nn
 import math
+import torch
+from torch import nn
 
 
 class LinearWithView(nn.Module):
@@ -11,3 +12,14 @@ class LinearWithView(nn.Module):
     def forward(self, x):
         out = self.linear(x)
         return out.view(*out.shape[:-1], *self.out_features)
+
+
+class DropoutByDimension(nn.Module):
+    def __init__(self, p):
+        super().__init__()
+        self.dropout = nn.Dropout(p=p)
+
+    def forward(self, x, dim):
+        shape = [d for d in x.shape]
+        shape[dim] = 1
+        return x * self.dropout(torch.ones(shape))
