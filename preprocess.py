@@ -39,7 +39,7 @@ def main():
         args.small_bfd,
         jackhmmer_results_path,
         num_cpus=1,
-        max_sequences=5000,
+        max_sequences=500,
     )
 
     if not args.dump_only:
