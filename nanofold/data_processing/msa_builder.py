@@ -24,12 +24,16 @@ def get_msa(msa_runner, chain):
 def get_sto_contents(msa_runner, executor, chains, batch_size=100):
     get_result = partial(get_msa, msa_runner)
     for i, batch in enumerate(batched(chains, batch_size)):
-        result = list(executor.map(get_result, batch))
+        result = executor.map(get_result, batch)
         logging.info(
             f"Fetched small BFD alignments for {i * batch_size + len(batch)}/{len(chains)} chains"
         )
-        for chain, r in zip(batch, result):
-            yield chain, r
+        for chain in batch:
+            try:
+                yield chain, next(result)
+            except Exception as e:
+                logging.error(f"Failure fetching alignment contents for chain {chain['_id']}: {e}")
+                continue
 
 
 def build_msa(msa_runner, db_manager, executor):
@@ -39,6 +43,9 @@ def build_msa(msa_runner, db_manager, executor):
     for chain, sto_contents in get_sto_contents(msa_runner, executor, chains):
         try:
             msa = parse_msa(StringIO(sto_contents), num_samples=125)
+            if msa["alignments"][0] != chain["sequence"]:
+                logging.error(f"Chain {chain['_id']} has a mismatching sequence and alignment")
+                continue
             db_manager.chains().update_one({"_id": chain["_id"]}, {"$set": {"msa": msa}})
         except Exception as e:
             logging.error(f"Failed to build msa for chain {chain['_id']}: {e}")
