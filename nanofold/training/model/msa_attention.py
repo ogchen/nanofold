@@ -31,9 +31,7 @@ class MSARowAttentionWithPairBias(nn.Module):
         weights = weights + b.movedim(-1, -3).unsqueeze(-4)
         weights = nn.functional.softmax(weights, dim=-1)
         attention = gates * (weights @ v.transpose(-2, -3)).transpose(-2, -3)
-        msa_rep = self.projection(
-            attention.view((*attention.shape[:-2], self.num_channels * self.num_heads))
-        )
+        msa_rep = self.projection(attention.flatten(start_dim=-2))
         return msa_rep
 
 
@@ -59,7 +57,5 @@ class MSAColumnAttention(nn.Module):
         weights = (q.movedim(-4, -2) @ k.movedim(-4, -1)) / math.sqrt(self.num_channels)
         weights = nn.functional.softmax(weights, dim=-1)
         attention = gates * (weights @ v.movedim(-4, -2)).movedim(-2, -4)
-        msa_rep = self.projection(
-            attention.view((*attention.shape[:-2], self.num_channels * self.num_heads))
-        )
+        msa_rep = self.projection(attention.flatten(start_dim=-2))
         return msa_rep
