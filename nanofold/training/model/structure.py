@@ -31,10 +31,13 @@ class StructureModuleLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.layer_norm1 = nn.LayerNorm(single_embedding_size)
         self.layer_norm2 = nn.LayerNorm(single_embedding_size)
-        self.relu = nn.ReLU()
-        self.linear1 = nn.Linear(single_embedding_size, single_embedding_size)
-        self.linear2 = nn.Linear(single_embedding_size, single_embedding_size)
-        self.linear3 = nn.Linear(single_embedding_size, single_embedding_size)
+        self.transition = nn.Sequential(
+            nn.Linear(single_embedding_size, single_embedding_size),
+            nn.ReLU(),
+            nn.Linear(single_embedding_size, single_embedding_size),
+            nn.ReLU(),
+            nn.Linear(single_embedding_size, single_embedding_size),
+        )
 
     @staticmethod
     def get_args(config):
@@ -48,7 +51,7 @@ class StructureModuleLayer(nn.Module):
     def forward(self, single, pair, frames, frames_truth=None):
         single = single + self.invariant_point_attention(single, pair, frames)
         single = self.layer_norm1(self.dropout(single))
-        single = single + self.linear3(self.relu(self.linear2(self.relu(self.linear1(single)))))
+        single = single + self.transition(single)
         single = self.layer_norm2(self.dropout(single))
         frames = Frame.compose(frames, self.backbone_update(single))
 
