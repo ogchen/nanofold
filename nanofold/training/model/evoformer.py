@@ -16,8 +16,8 @@ class EvoformerBlock(nn.Module):
         self,
         pair_embedding_size,
         msa_embedding_size,
-        triangular_update_embedding_size,
-        triangular_attention_embedding_size,
+        num_triangular_update_channels,
+        num_triangular_attention_channels,
         product_embedding_size,
         num_msa_heads,
         num_pair_heads,
@@ -43,16 +43,16 @@ class EvoformerBlock(nn.Module):
             pair_embedding_size, msa_embedding_size, product_embedding_size
         )
         self.triangle_update_outgoing = TriangleMultiplicationUpdate(
-            pair_embedding_size, triangular_update_embedding_size, UpdateDirection.OUTGOING
+            pair_embedding_size, num_triangular_update_channels, UpdateDirection.OUTGOING
         )
         self.triangle_update_incoming = TriangleMultiplicationUpdate(
-            pair_embedding_size, triangular_update_embedding_size, UpdateDirection.INCOMING
+            pair_embedding_size, num_triangular_update_channels, UpdateDirection.INCOMING
         )
         self.triangle_attention_starting = TriangleAttentionStartingNode(
-            pair_embedding_size, triangular_attention_embedding_size, num_pair_heads
+            pair_embedding_size, num_pair_heads, num_triangular_attention_channels
         )
         self.triangle_attention_ending = TriangleAttentionEndingNode(
-            pair_embedding_size, triangular_attention_embedding_size, num_pair_heads
+            pair_embedding_size, num_pair_heads, num_triangular_attention_channels
         )
         self.pair_transition = nn.Sequential(
             nn.LayerNorm(pair_embedding_size),
@@ -81,8 +81,8 @@ class Evoformer(nn.Module):
         single_embedding_size,
         pair_embedding_size,
         msa_embedding_size,
-        triangular_update_embedding_size,
-        triangular_attention_embedding_size,
+        num_triangular_update_channels,
+        num_triangular_attention_channels,
         product_embedding_size,
         num_blocks,
         num_msa_heads,
@@ -97,8 +97,8 @@ class Evoformer(nn.Module):
                 EvoformerBlock(
                     pair_embedding_size,
                     msa_embedding_size,
-                    triangular_update_embedding_size,
-                    triangular_attention_embedding_size,
+                    num_triangular_update_channels,
+                    num_triangular_attention_channels,
                     product_embedding_size,
                     num_msa_heads,
                     num_pair_heads,

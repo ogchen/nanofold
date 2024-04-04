@@ -17,8 +17,8 @@ class Nanofold(nn.Module):
         single_embedding_size,
         pair_embedding_size,
         msa_embedding_size,
-        triangular_update_embedding_size,
-        triangular_attention_embedding_size,
+        num_triangular_update_channels,
+        num_triangular_attention_channels,
         product_embedding_size,
         position_bins,
         num_evoformer_blocks,
@@ -42,8 +42,8 @@ class Nanofold(nn.Module):
             single_embedding_size,
             pair_embedding_size,
             msa_embedding_size,
-            triangular_update_embedding_size,
-            triangular_attention_embedding_size,
+            num_triangular_update_channels,
+            num_triangular_attention_channels,
             product_embedding_size,
             num_evoformer_blocks,
             num_evoformer_msa_heads,
@@ -72,11 +72,11 @@ class Nanofold(nn.Module):
             "pair_embedding_size": config.getint("General", "pair_embedding_size"),
             "msa_embedding_size": config.getint("General", "msa_embedding_size"),
             "position_bins": config.getint("General", "position_bins"),
-            "triangular_update_embedding_size": config.getint(
-                "Evoformer", "triangular_update_embedding_size"
+            "num_triangular_update_channels": config.getint(
+                "Evoformer", "num_triangular_update_channels"
             ),
-            "triangular_attention_embedding_size": config.getint(
-                "Evoformer", "triangular_attention_embedding_size"
+            "num_triangular_attention_channels": config.getint(
+                "Evoformer", "num_triangular_attention_channels"
             ),
             "product_embedding_size": config.getint("Evoformer", "product_embedding_size"),
             "num_evoformer_blocks": config.getint("Evoformer", "num_blocks"),
