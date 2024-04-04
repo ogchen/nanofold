@@ -114,4 +114,4 @@ class Evoformer(nn.Module):
             msa_rep, pair_rep = block(msa_rep, pair_rep)
 
         single_rep = self.linear_single(msa_rep[..., 0, :, :])
-        return single_rep
+        return msa_rep, pair_rep, single_rep

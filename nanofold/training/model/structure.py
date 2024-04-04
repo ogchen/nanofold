@@ -104,7 +104,7 @@ class StructureModule(nn.Module):
         for i in range(self.num_layers):
             single, frames, loss = self.structure_module_layer(single, pair, frames, frames_truth)
             aux_losses.append(loss)
-            if i < len(self.layers) - 1:
+            if i < self.num_layers - 1:
                 frames.rotations = frames.rotations.detach()
 
         aux_loss = (
