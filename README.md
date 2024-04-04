@@ -52,8 +52,3 @@ docker-compose run --rm train python profiler.py -c config/config.ini -i /prepro
 ```
 
 Refer to [this Github comment](https://github.com/pytorch/pytorch/issues/99615#issuecomment-1827386273) if the profiler is complaining with `CUPTI_ERROR_NOT_INITIALIZED`.
-
-# Todo
-* https://pytorch.org/blog/understanding-gpu-memory-1/
-* Read 1.11.8 Reducing the memory consumption
-* Quantization
