@@ -41,12 +41,9 @@ class MSARowAttentionWithPairBias(nn.Module):
         return msa_rep
 
 
-class MSAColumnAttention(nn.Module):
+class MSAColumnAttention(MSARowAttentionWithPairBias):
     def __init__(self, msa_embedding_size, num_heads, num_channels):
-        super().__init__()
-        self.row_attention = MSARowAttentionWithPairBias(
-            None, msa_embedding_size, num_heads, num_channels
-        )
+        super().__init__(None, msa_embedding_size, num_heads, num_channels)
 
     def forward(self, msa_rep):
-        return self.row_attention(msa_rep.transpose(-2, -3)).transpose(-2, -3)
+        return super().forward(msa_rep.transpose(-2, -3)).transpose(-2, -3)
