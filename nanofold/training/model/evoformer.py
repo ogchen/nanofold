@@ -6,8 +6,8 @@ from nanofold.training.model.msa_attention import MSARowAttentionWithPairBias
 from nanofold.training.model.outer_product_mean import OuterProductMean
 from nanofold.training.model.triangular_attention import TriangleAttentionStartingNode
 from nanofold.training.model.triangular_attention import TriangleAttentionEndingNode
-from nanofold.training.model.triangular_update import TriangleMultiplicationUpdate
-from nanofold.training.model.triangular_update import UpdateDirection
+from nanofold.training.model.triangular_update import TriangleMultiplicationOutgoing
+from nanofold.training.model.triangular_update import TriangleMultiplicationIncoming
 from nanofold.training.model.util import DropoutByDimension
 
 
@@ -42,11 +42,11 @@ class EvoformerBlock(nn.Module):
         self.outer_product_mean = OuterProductMean(
             pair_embedding_size, msa_embedding_size, product_embedding_size
         )
-        self.triangle_update_outgoing = TriangleMultiplicationUpdate(
-            pair_embedding_size, num_triangular_update_channels, UpdateDirection.OUTGOING
+        self.triangle_update_outgoing = TriangleMultiplicationOutgoing(
+            pair_embedding_size, num_triangular_update_channels
         )
-        self.triangle_update_incoming = TriangleMultiplicationUpdate(
-            pair_embedding_size, num_triangular_update_channels, UpdateDirection.INCOMING
+        self.triangle_update_incoming = TriangleMultiplicationIncoming(
+            pair_embedding_size, num_triangular_update_channels
         )
         self.triangle_attention_starting = TriangleAttentionStartingNode(
             pair_embedding_size, num_pair_heads, num_triangular_attention_channels
