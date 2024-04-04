@@ -71,6 +71,8 @@ def compute_deletion_matrix(alignments):
 
 def parse_msa(input, num_samples=None):
     alignments = extract_alignments(input)
+    if not all([len(a) == len(alignments[0]) for a in alignments]):
+        raise ValueError("MSA sequences are not of equal length")
     if num_samples is not None and len(alignments) > num_samples:
         alignments = [
             alignments[0],

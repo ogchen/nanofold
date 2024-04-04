@@ -16,10 +16,13 @@ def test_chain_dataset(arrow_file):
     residue_crop_size = 32
     num_msa = 16
     train_data, test_data = ChainDataset.construct_datasets(
-        arrow_file, train_split, residue_crop_size, num_msa, device="cpu"
+        arrow_file, train_split, residue_crop_size, num_msa
     )
-    assert len(train_data.df) == 7
-    assert len(test_data.df) == 1
+    assert len(train_data.df) == 10
+    assert len(test_data.df) == 10
+
+    assert len(train_data.indices) == 8
+    assert len(test_data.indices) == 2
 
     batch = next(iter(train_data))
     assert batch["rotations"].shape == (residue_crop_size, 3, 3)

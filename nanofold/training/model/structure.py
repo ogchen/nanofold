@@ -31,10 +31,13 @@ class StructureModuleLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.layer_norm1 = nn.LayerNorm(single_embedding_size)
         self.layer_norm2 = nn.LayerNorm(single_embedding_size)
-        self.relu = nn.ReLU()
-        self.linear1 = nn.Linear(single_embedding_size, single_embedding_size)
-        self.linear2 = nn.Linear(single_embedding_size, single_embedding_size)
-        self.linear3 = nn.Linear(single_embedding_size, single_embedding_size)
+        self.transition = nn.Sequential(
+            nn.Linear(single_embedding_size, single_embedding_size),
+            nn.ReLU(),
+            nn.Linear(single_embedding_size, single_embedding_size),
+            nn.ReLU(),
+            nn.Linear(single_embedding_size, single_embedding_size),
+        )
 
     @staticmethod
     def get_args(config):
@@ -48,7 +51,7 @@ class StructureModuleLayer(nn.Module):
     def forward(self, single, pair, frames, frames_truth=None):
         single = single + self.invariant_point_attention(single, pair, frames)
         single = self.layer_norm1(self.dropout(single))
-        single = single + self.linear3(self.relu(self.linear2(self.relu(self.linear1(single)))))
+        single = single + self.transition(single)
         single = self.layer_norm2(self.dropout(single))
         frames = Frame.compose(frames, self.backbone_update(single))
 
@@ -76,20 +79,16 @@ class StructureModule(nn.Module):
         num_heads,
     ):
         super().__init__()
-        self.layers = nn.ModuleList(
-            [
-                StructureModuleLayer(
-                    single_embedding_size,
-                    pair_embedding_size,
-                    dropout,
-                    ipa_embedding_size,
-                    num_query_points,
-                    num_value_points,
-                    num_heads,
-                )
-                for _ in range(num_layers)
-            ]
+        self.structure_module_layer = StructureModuleLayer(
+            single_embedding_size,
+            pair_embedding_size,
+            dropout,
+            ipa_embedding_size,
+            num_query_points,
+            num_value_points,
+            num_heads,
         )
+        self.num_layers = num_layers
         self.single_layer_norm = nn.LayerNorm(single_embedding_size)
         self.pair_layer_norm = nn.LayerNorm(pair_embedding_size)
         self.single_linear = nn.Linear(single_embedding_size, single_embedding_size)
@@ -100,15 +99,15 @@ class StructureModule(nn.Module):
         pair = self.pair_layer_norm(pair)
         single = self.single_linear(single)
         frames = Frame(
-            rotations=torch.eye(3, device=single.device).unsqueeze(0).repeat(*batch_dims, 1, 1),
-            translations=torch.zeros(*batch_dims, 3, device=single.device),
+            rotations=torch.eye(3).unsqueeze(0).repeat(*batch_dims, 1, 1),
+            translations=torch.zeros(*batch_dims, 3),
         )
 
         aux_losses = []
-        for i, layer in enumerate(self.layers):
-            single, frames, loss = layer(single, pair, frames, frames_truth)
+        for i in range(self.num_layers):
+            single, frames, loss = self.structure_module_layer(single, pair, frames, frames_truth)
             aux_losses.append(loss)
-            if i < len(self.layers) - 1:
+            if i < self.num_layers - 1:
                 frames.rotations = frames.rotations.detach()
 
         aux_loss = (
