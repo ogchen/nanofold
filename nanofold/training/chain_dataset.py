@@ -88,7 +88,7 @@ class ChainDataset(IterableDataset):
 
     def __iter__(self):
         while True:
-            sampled_indices = np.random.choice(self.indices, SAMPLE_SIZE, replace=False)
+            sampled_indices = np.random.choice(self.indices, SAMPLE_SIZE)
             sample = self.df.filter(pl.col("index").is_in(sampled_indices)).filter(
                 pl.col("length") >= self.residue_crop_size
             )
