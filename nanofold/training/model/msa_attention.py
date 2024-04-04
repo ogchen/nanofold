@@ -1,6 +1,5 @@
 from torch import nn
 import math
-import torch
 
 from nanofold.training.model.util import LinearWithView
 
@@ -10,27 +9,34 @@ class MSARowAttentionWithPairBias(nn.Module):
         super().__init__()
         self.num_heads = num_heads
         self.num_channels = num_channels
-        self.layer_norm_msa = nn.LayerNorm(msa_embedding_size)
-        self.layer_norm_pair = nn.LayerNorm(pair_embedding_size)
-        self.linear_msa = LinearWithView(msa_embedding_size, (num_heads, num_channels))
-        self.linear_pair = nn.Linear(pair_embedding_size, num_heads)
+        self.layer_norm = nn.LayerNorm(msa_embedding_size)
+        self.gate = nn.Sequential(
+            LinearWithView(msa_embedding_size, (num_heads, num_channels)),
+            nn.Sigmoid(),
+        )
         self.projection = nn.Linear(num_heads * num_channels, msa_embedding_size)
         self.query = LinearWithView(msa_embedding_size, (num_heads, num_channels), bias=False)
         self.key = LinearWithView(msa_embedding_size, (num_heads, num_channels), bias=False)
         self.value = LinearWithView(msa_embedding_size, (num_heads, num_channels), bias=False)
+        if pair_embedding_size is not None:
+            self.bias = nn.Sequential(
+                nn.LayerNorm(pair_embedding_size),
+                nn.Linear(pair_embedding_size, num_heads),
+            )
 
-    def forward(self, msa_rep, pair_rep):
-        msa_rep = self.layer_norm_msa(msa_rep)
+    def forward(self, msa_rep, pair_rep=None):
+        msa_rep = self.layer_norm(msa_rep)
         q = self.query(msa_rep)
         k = self.key(msa_rep)
         v = self.value(msa_rep)
-        b = self.linear_pair(self.layer_norm_pair(pair_rep))
-        gates = torch.sigmoid(self.linear_msa(msa_rep))
+        b = self.bias(pair_rep) if pair_rep is not None else None
+        g = self.gate(msa_rep)
 
         weights = (q.transpose(-2, -3) @ k.movedim(-3, -1)) / math.sqrt(self.num_channels)
-        weights = weights + b.movedim(-1, -3).unsqueeze(-4)
+        if b is not None:
+            weights = weights + b.movedim(-1, -3).unsqueeze(-4)
         weights = nn.functional.softmax(weights, dim=-1)
-        attention = gates * (weights @ v.transpose(-2, -3)).transpose(-2, -3)
+        attention = g * (weights @ v.transpose(-2, -3)).transpose(-2, -3)
         msa_rep = self.projection(attention.flatten(start_dim=-2))
         return msa_rep
 
@@ -38,24 +44,9 @@ class MSARowAttentionWithPairBias(nn.Module):
 class MSAColumnAttention(nn.Module):
     def __init__(self, msa_embedding_size, num_heads, num_channels):
         super().__init__()
-        self.num_heads = num_heads
-        self.num_channels = num_channels
-        self.layer_norm = nn.LayerNorm(msa_embedding_size)
-        self.linear = LinearWithView(msa_embedding_size, (num_heads, num_channels))
-        self.query = LinearWithView(msa_embedding_size, (num_heads, num_channels), bias=False)
-        self.key = LinearWithView(msa_embedding_size, (num_heads, num_channels), bias=False)
-        self.value = LinearWithView(msa_embedding_size, (num_heads, num_channels), bias=False)
-        self.projection = nn.Linear(num_heads * num_channels, msa_embedding_size)
+        self.row_attention = MSARowAttentionWithPairBias(
+            None, msa_embedding_size, num_heads, num_channels
+        )
 
     def forward(self, msa_rep):
-        msa_rep = self.layer_norm(msa_rep)
-        q = self.query(msa_rep)
-        k = self.key(msa_rep)
-        v = self.value(msa_rep)
-        gates = torch.sigmoid(self.linear(msa_rep))
-
-        weights = (q.movedim(-4, -2) @ k.movedim(-4, -1)) / math.sqrt(self.num_channels)
-        weights = nn.functional.softmax(weights, dim=-1)
-        attention = gates * (weights @ v.movedim(-4, -2)).movedim(-2, -4)
-        msa_rep = self.projection(attention.flatten(start_dim=-2))
-        return msa_rep
+        return self.row_attention(msa_rep.transpose(-2, -3)).transpose(-2, -3)

@@ -20,7 +20,7 @@ def test_msa_row_attention_with_pair_bias():
 
     for b in range(batch):
         for s in range(num_msa):
-            m = model.layer_norm_msa(msa_rep[b, s])
+            m = model.layer_norm(msa_rep[b, s])
             for i in range(num_res):
                 o = []
                 for h in range(num_heads):
@@ -28,14 +28,14 @@ def test_msa_row_attention_with_pair_bias():
                     a = []
                     for j in range(num_res):
                         k = model.key(m[j])[h]
-                        bias = model.linear_pair(model.layer_norm_pair(pair_rep[b, i, j]))[h]
+                        bias = model.bias(pair_rep[b, i, j])[h]
                         a.append((q.T @ k) / math.sqrt(model.num_channels) + bias)
 
                     a = torch.nn.functional.softmax(torch.stack(a))
                     sum = 0
                     for j in range(num_res):
                         sum += a[j] * model.value(m[j])[h]
-                    g = torch.sigmoid(model.linear_msa(m[i])[h])
+                    g = model.gate(m[i])[h]
                     o.append(g * sum)
                 o = torch.stack(o).reshape(-1)
                 assert torch.allclose(result[b][s][i], model.projection(o), atol=1e-3)
@@ -51,7 +51,7 @@ def test_msa_col_attention():
     msa_rep = torch.rand([batch, num_msa, num_res, msa_embedding_size])
     result = model(msa_rep)
 
-    msa_rep = model.layer_norm(msa_rep)
+    msa_rep = model.row_attention.layer_norm(msa_rep)
     for b in range(batch):
         for s in range(num_msa):
             for i in range(num_res):
@@ -59,14 +59,14 @@ def test_msa_col_attention():
                 for h in range(num_heads):
                     a = []
                     for t in range(num_msa):
-                        q = model.query(msa_rep[b, s, i])[h]
-                        k = model.key(msa_rep[b, t, i])[h]
-                        a.append((q.T @ k) / math.sqrt(model.num_channels))
+                        q = model.row_attention.query(msa_rep[b, s, i])[h]
+                        k = model.row_attention.key(msa_rep[b, t, i])[h]
+                        a.append((q.T @ k) / math.sqrt(model.row_attention.num_channels))
                     a = torch.nn.functional.softmax(torch.stack(a))
                     sum = 0
                     for t in range(num_msa):
-                        sum += a[t] * model.value(msa_rep[b, t, i])[h]
-                    g = torch.sigmoid(model.linear(msa_rep[b, s, i])[h])
+                        sum += a[t] * model.row_attention.value(msa_rep[b, t, i])[h]
+                    g = model.row_attention.gate(msa_rep[b, s, i])[h]
                     o.append(g * sum)
                 o = torch.stack(o).reshape(-1)
-                assert torch.allclose(result[b][s][i], model.projection(o), atol=1e-3)
+                assert torch.allclose(result[b][s][i], model.row_attention.projection(o), atol=1e-3)
