@@ -97,7 +97,7 @@ class Nanofold(nn.Module):
 
     def forward(self, batch):
         num_recycle = np.random.randint(self.num_recycle) + 1 if self.training else self.num_recycle
-        fape_clamp = 10.0 if np.random.rand() < 0.9 else None
+        fape_clamp = 10.0 if np.random.rand() < 0.9 and self.training else None
 
         s = batch["positions"].shape
         prev_msa_row = torch.zeros((*s, self.msa_embedding_size))
