@@ -16,6 +16,10 @@ from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 SAMPLE_SIZE = 100
 
 
+def accept_chain(row):
+    return np.random.rand() < max(min(row["length"], 512), 256) / 512
+
+
 def encode_one_hot(seq):
     one_hot = torch.zeros(len(seq), len(RESIDUE_INDEX))
     for i, residue in enumerate(seq):
@@ -106,7 +110,8 @@ class ChainDataset(IterableDataset):
             )
 
             for row in sample.iter_rows(named=True):
-                yield self.parse_features(row)
+                if accept_chain(row):
+                    yield self.parse_features(row)
 
     def parse_msa_features(self, row):
         msa = [
