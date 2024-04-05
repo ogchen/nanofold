@@ -25,5 +25,7 @@ def compute_fape_loss(
     globals_truth = Frame.apply(inverse_truth, coords_truth.unsqueeze(-3))
     difference = globals - globals_truth
     squared_norm = difference.unsqueeze(-2) @ difference.unsqueeze(-1)
-    norm = torch.sqrt(squared_norm + eps).clamp(max=clamp).squeeze(-1).squeeze(-1)
+    norm = torch.sqrt(squared_norm + eps).squeeze(-1).squeeze(-1)
+    if clamp is not None:
+        norm = torch.clamp(norm, max=clamp)
     return (1 / length_scale) * norm.mean()
