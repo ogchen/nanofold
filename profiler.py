@@ -15,6 +15,7 @@ def parse_args():
         "-i", "--input", help="Input chain training data in Arrow IPC file format", type=Path
     )
     parser.add_argument("-l", "--logging", help="Logging level", default="INFO")
+    parser.add_argument("--mode", help="Mode of operation", choices=["time", "memory"])
 
     return parser.parse_args()
 
@@ -67,15 +68,22 @@ def main():
     )
     next(iter(data_loader))
 
-    with torch.profiler.profile(
-        activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-        schedule=torch.profiler.schedule(skip_first=10, wait=5, warmup=1, active=5, repeat=1),
-        with_stack=True,
-        profile_memory=True,
-        on_trace_ready=trace_handler,
-    ) as prof:
-        trainer = Trainer(config, loggers=[ProfilerLogger(prof)], log_every_n_epoch=1)
-        trainer.fit(data_loader, {}, max_epoch=40)
+    if args.mode == "time":
+        with torch.profiler.profile(
+            activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+            schedule=torch.profiler.schedule(skip_first=10, wait=5, warmup=1, active=5, repeat=1),
+            with_stack=True,
+            profile_memory=True,
+            on_trace_ready=trace_handler,
+        ) as prof:
+            trainer = Trainer(config, loggers=[ProfilerLogger(prof)], log_every_n_epoch=1)
+            trainer.fit(data_loader, {}, max_epoch=40)
+    elif args.mode == "memory":
+        torch.cuda.memory._record_memory_history(max_entries=100000)
+        trainer = Trainer(config, loggers=[], log_every_n_epoch=1)
+        trainer.fit(data_loader, {}, max_epoch=5)
+        torch.cuda.memory._dump_snapshot("/data/snapshot.pickle")
+        torch.cuda.memory._record_memory_history(enabled=None)
 
 
 if __name__ == "__main__":

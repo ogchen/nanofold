@@ -48,7 +48,10 @@ docker-compose run --rm train python train.py -c config/config.ini -i /preproces
 
 Run the pytorch profiler:
 ```bash
-docker-compose run --rm train python profiler.py -c config/config.ini -i /preprocess/features.arrow
+docker-compose run --rm train python profiler.py -c config/config.ini -i /preprocess/features.arrow --mode time
+docker-compose run --rm train python profiler.py -c config/config.ini -i /preprocess/features.arrow --mode memory
 ```
+The profiler spits out a `trace.json` and `snapshot.pickle` file in the mounted `/data/` volume.
+Load `trace.json` into [chrome://tracing](chrome://tracing/), and `snapshot.pickle` into [pytorch.org/memory_viz](https://pytorch.org/memory_viz).
 
 Refer to [this Github comment](https://github.com/pytorch/pytorch/issues/99615#issuecomment-1827386273) if the profiler is complaining with `CUPTI_ERROR_NOT_INITIALIZED`.

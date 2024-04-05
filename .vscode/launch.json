@@ -26,7 +26,7 @@
             "request": "launch",
             "program": "profiler.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.ini -i /preprocess/features.arrow"
+            "args": "-c /workspace/config/config.ini -i /preprocess/features.arrow --mode memory"
         }
     ]
 }
