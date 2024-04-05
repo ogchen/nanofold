@@ -1,4 +1,6 @@
 import torch
+from torch import nn
+
 from nanofold.training.frame import Frame
 
 
@@ -29,3 +31,55 @@ def compute_fape_loss(
     if clamp is not None:
         norm = torch.clamp(norm, max=clamp)
     return (1 / length_scale) * norm.mean()
+
+
+class LDDTPredictor(nn.Module):
+    def __init__(self, single_embedding_size, num_channels=12):
+        super().__init__()
+        self.bins = torch.arange(1, 100, 2).float()
+        self.activate = nn.Sequential(
+            nn.LayerNorm(single_embedding_size),
+            nn.Linear(single_embedding_size, num_channels),
+            nn.ReLU(),
+            nn.Linear(num_channels, num_channels),
+            nn.ReLU(),
+            nn.Linear(num_channels, len(self.bins)),
+        )
+        self.predict = nn.Sequential(
+            nn.Softmax(dim=-1),
+        )
+
+    def compute_per_residue_LDDT(self, coords, coords_truth, cutoff=15.0, eps=1e-10):
+        distance_mat = torch.norm(coords.unsqueeze(-2) - coords.unsqueeze(-3), dim=-1)
+        distance_mat_truth = torch.norm(
+            coords_truth.unsqueeze(-2) - coords_truth.unsqueeze(-3), dim=-1
+        )
+        difference = torch.abs(distance_mat - distance_mat_truth)
+        score_mask = distance_mat_truth < cutoff
+        torch.diagonal(score_mask, dim1=-1).zero_()
+        score_mat = 0.25 * (
+            (difference < 0.5).float()
+            + (difference < 1.0).float()
+            + (difference < 2.0).float()
+            + (difference < 4.0).float()
+        )
+        scale_factor = 1 / (torch.sum(score_mask, dim=-1) + eps)
+        score = scale_factor * (torch.sum(score_mask * score_mat, dim=-1) + eps)
+        return score
+
+    def forward(self, single, residue_LDDT_truth=None):
+        logits = self.activate(single)
+        conf_loss, chain_plddt = None, None
+
+        if not self.training:
+            chain_plddt = torch.mean(nn.functional.softmax(logits, dim=-1) @ self.bins, dim=-1)
+
+        if residue_LDDT_truth is not None:
+            index = (
+                torch.floor(len(self.bins) * residue_LDDT_truth)
+                .long()
+                .clamp(max=len(self.bins) - 1)
+            )
+            conf_loss = nn.functional.cross_entropy(logits.transpose(-1, -2), index)
+
+        return conf_loss, chain_plddt

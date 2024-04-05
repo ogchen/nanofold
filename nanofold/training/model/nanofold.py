@@ -120,7 +120,7 @@ class Nanofold(nn.Module):
 
             msa_rep, pair_rep, single_rep = self.evoformer(msa_rep, pair_rep)
 
-            coords, fape_loss, aux_loss = self.structure_module(
+            coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss = self.structure_module(
                 single_rep,
                 pair_rep,
                 batch["local_coords"],
@@ -137,4 +137,4 @@ class Nanofold(nn.Module):
             prev_msa_row = msa_rep[..., 0, :, :]
             prev_pair_rep = pair_rep
             prev_ca_coords = coords[..., 1, :]
-        return coords, fape_loss, aux_loss
+        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss

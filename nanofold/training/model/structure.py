@@ -2,6 +2,7 @@ import torch
 from torch import nn
 
 from nanofold.training.loss import compute_fape_loss
+from nanofold.training.loss import LDDTPredictor
 from nanofold.training.frame import Frame
 from nanofold.training.model.backbone_update import BackboneUpdate
 from nanofold.training.model.invariant_point_attention import InvariantPointAttention
@@ -97,6 +98,7 @@ class StructureModule(nn.Module):
         self.single_layer_norm = nn.LayerNorm(single_embedding_size)
         self.pair_layer_norm = nn.LayerNorm(pair_embedding_size)
         self.single_linear = nn.Linear(single_embedding_size, single_embedding_size)
+        self.lddt_predictor = LDDTPredictor(single_embedding_size)
 
     def forward(self, single, pair, local_coords, frames_truth=None, fape_clamp=None):
         batch_dims = single.shape[:-1]
@@ -134,4 +136,20 @@ class StructureModule(nn.Module):
         batched_frames = Frame(frames.rotations.unsqueeze(-3), frames.translations.unsqueeze(-2))
         coords = Frame.apply(batched_frames, local_coords)
 
-        return coords, fape_loss, aux_loss
+        chain_lddt, chain_plddt, fape_loss, conf_loss, aux_loss = None, None, None, None, None
+        if frames_truth is not None:
+            aux_loss = torch.stack(aux_losses).mean()
+            fape_loss = compute_fape_loss(
+                frames,
+                frames.translations,
+                frames_truth,
+                frames_truth.translations,
+                clamp=fape_clamp,
+            )
+            residue_LDDT_truth = self.lddt_predictor.compute_per_residue_LDDT(
+                frames.translations, frames_truth.translations
+            )
+            conf_loss, chain_plddt = self.lddt_predictor(single, residue_LDDT_truth)
+            chain_lddt = residue_LDDT_truth.mean(dim=-1)
+
+        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss
