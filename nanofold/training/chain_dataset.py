@@ -21,10 +21,8 @@ def accept_chain(row):
 
 
 def encode_one_hot(seq):
-    one_hot = torch.zeros(len(seq), len(RESIDUE_INDEX))
-    for i, residue in enumerate(seq):
-        one_hot[i, RESIDUE_INDEX[residue]] = 1
-    return one_hot
+    indices = torch.tensor([RESIDUE_INDEX[residue] for residue in seq])
+    return torch.nn.functional.one_hot(indices, num_classes=len(RESIDUE_INDEX)).float()
 
 
 def encode_one_hot_alignments(alignments):
