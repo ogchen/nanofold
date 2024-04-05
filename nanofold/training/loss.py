@@ -33,6 +33,27 @@ def compute_fape_loss(
     return (1 / length_scale) * norm.mean()
 
 
+class DistogramLoss(nn.Module):
+    def __init__(self, pair_embedding_size, num_channels=12):
+        super().__init__()
+        self.bins = torch.arange(2, 22, 20 / 64)
+        self.projection = nn.Sequential(
+            nn.LayerNorm(pair_embedding_size),
+            nn.Linear(pair_embedding_size, num_channels),
+            nn.ReLU(),
+            nn.Linear(num_channels, num_channels),
+            nn.ReLU(),
+            nn.Linear(num_channels, len(self.bins)),
+        )
+
+    def forward(self, pair_rep, coords_truth):
+        logits = self.projection(pair_rep)
+        distance_mat = torch.norm(coords_truth.unsqueeze(-2) - coords_truth.unsqueeze(-3), dim=-1)
+        index = torch.argmin(torch.abs(distance_mat.unsqueeze(-1) - self.bins), dim=-1)
+        loss = nn.functional.cross_entropy(logits.transpose(-1, 1), index)
+        return loss
+
+
 class LDDTPredictor(nn.Module):
     def __init__(self, single_embedding_size, num_channels=12):
         super().__init__()
@@ -44,9 +65,6 @@ class LDDTPredictor(nn.Module):
             nn.Linear(num_channels, num_channels),
             nn.ReLU(),
             nn.Linear(num_channels, len(self.bins)),
-        )
-        self.predict = nn.Sequential(
-            nn.Softmax(dim=-1),
         )
 
     def compute_per_residue_LDDT(self, coords, coords_truth, cutoff=15.0, eps=1e-10):
@@ -80,6 +98,6 @@ class LDDTPredictor(nn.Module):
                 .long()
                 .clamp(max=len(self.bins) - 1)
             )
-            conf_loss = nn.functional.cross_entropy(logits.transpose(-1, -2), index)
+            conf_loss = nn.functional.cross_entropy(logits.transpose(-1, 1), index)
 
         return conf_loss, chain_plddt

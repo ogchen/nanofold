@@ -22,19 +22,21 @@ class Trainer:
             eps=config.getfloat("Optimizer", "eps"),
         )
 
-    def get_total_loss(self, fape_loss, conf_loss, aux_loss):
-        return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss
+    def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss):
+        return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss
 
     def training_loop(self, batch):
-        _, _, _, fape_loss, conf_loss, aux_loss = self.model(batch)
+        _, _, _, fape_loss, conf_loss, aux_loss, dist_loss = self.model(batch)
         self.optimizer.zero_grad()
-        self.get_total_loss(fape_loss, conf_loss, aux_loss).backward()
+        self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss).backward()
         self.optimizer.step()
 
     @torch.no_grad()
     def evaluate(self, loader):
         self.model.eval()
-        _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss = self.model(next(iter(loader)))
+        _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss = self.model(
+            next(iter(loader))
+        )
         self.model.train()
         return {
             "chain_plddt": chain_plddt.mean().item(),
@@ -42,7 +44,8 @@ class Trainer:
             "fape_loss": fape_loss.item(),
             "conf_loss": conf_loss.item(),
             "aux_loss": aux_loss.item(),
-            "total_loss": self.get_total_loss(fape_loss, conf_loss, aux_loss).item(),
+            "dist_loss": dist_loss.item(),
+            "total_loss": self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss).item(),
         }
 
     def log_epoch(self, epoch, eval_loaders):

@@ -3,6 +3,7 @@ import torch
 from torch import nn
 
 from nanofold.training.frame import Frame
+from nanofold.training.loss import DistogramLoss
 from nanofold.training.model.evoformer import Evoformer
 from nanofold.training.model.input import InputEmbedding
 from nanofold.training.model.recycle import RecyclingEmbedder
@@ -62,6 +63,7 @@ class Nanofold(nn.Module):
             num_heads,
         )
         self.recycling_embedder = RecyclingEmbedder(pair_embedding_size, msa_embedding_size)
+        self.distogram_loss = DistogramLoss(pair_embedding_size)
 
     @staticmethod
     def get_args(config):
@@ -129,7 +131,7 @@ class Nanofold(nn.Module):
                         rotations=batch["rotations"],
                         translations=batch["translations"],
                     )
-                    if i == num_recycle - 1
+                    if i == num_recycle - 1 and "translations" in batch
                     else None
                 ),
                 fape_clamp,
@@ -137,4 +139,11 @@ class Nanofold(nn.Module):
             prev_msa_row = msa_rep[..., 0, :, :]
             prev_pair_rep = pair_rep
             prev_ca_coords = coords[..., 1, :]
-        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss
+
+        dist_loss = (
+            self.distogram_loss(pair_rep, batch["translations"])
+            if "translations" in batch
+            else None
+        )
+
+        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss
