@@ -34,9 +34,9 @@ def compute_fape_loss(
 
 
 class DistogramLoss(nn.Module):
-    def __init__(self, pair_embedding_size, num_channels=12):
+    def __init__(self, pair_embedding_size, num_bins, num_channels):
         super().__init__()
-        self.bins = torch.arange(2, 22, 20 / 64)
+        self.bins = torch.arange(2, 22, 20 / num_bins)
         self.projection = nn.Sequential(
             nn.LayerNorm(pair_embedding_size),
             nn.Linear(pair_embedding_size, num_channels),
@@ -55,9 +55,9 @@ class DistogramLoss(nn.Module):
 
 
 class LDDTPredictor(nn.Module):
-    def __init__(self, single_embedding_size, num_channels=12):
+    def __init__(self, single_embedding_size, num_bins, num_channels):
         super().__init__()
-        self.bins = torch.arange(1, 100, 2).float()
+        self.bins = torch.arange(1, 100, 100 / num_bins)
         self.activate = nn.Sequential(
             nn.LayerNorm(single_embedding_size),
             nn.Linear(single_embedding_size, num_channels),

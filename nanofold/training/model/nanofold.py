@@ -32,6 +32,10 @@ class Nanofold(nn.Module):
         num_query_points,
         num_value_points,
         num_heads,
+        num_distogram_bins,
+        num_distogram_channels,
+        num_lddt_bins,
+        num_lddt_channels,
     ):
         super().__init__()
         self.num_recycle = num_recycle
@@ -61,9 +65,13 @@ class Nanofold(nn.Module):
             num_query_points,
             num_value_points,
             num_heads,
+            num_lddt_bins,
+            num_lddt_channels,
         )
         self.recycling_embedder = RecyclingEmbedder(pair_embedding_size, msa_embedding_size)
-        self.distogram_loss = DistogramLoss(pair_embedding_size)
+        self.distogram_loss = DistogramLoss(
+            pair_embedding_size, num_distogram_bins, num_distogram_channels
+        )
 
     @staticmethod
     def get_args(config):
@@ -91,6 +99,10 @@ class Nanofold(nn.Module):
             "num_query_points": config.getint("InvariantPointAttention", "num_query_points"),
             "num_value_points": config.getint("InvariantPointAttention", "num_value_points"),
             "num_heads": config.getint("InvariantPointAttention", "num_heads"),
+            "num_distogram_bins": config.getint("Loss", "num_distogram_bins"),
+            "num_distogram_channels": config.getint("Loss", "num_distogram_channels"),
+            "num_lddt_bins": config.getint("Loss", "num_lddt_bins"),
+            "num_lddt_channels": config.getint("Loss", "num_lddt_channels"),
         }
 
     @classmethod

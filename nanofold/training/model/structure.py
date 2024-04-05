@@ -83,6 +83,8 @@ class StructureModule(nn.Module):
         num_query_points,
         num_value_points,
         num_heads,
+        num_lddt_bins,
+        num_lddt_channels,
     ):
         super().__init__()
         self.structure_module_layer = StructureModuleLayer(
@@ -98,7 +100,7 @@ class StructureModule(nn.Module):
         self.single_layer_norm = nn.LayerNorm(single_embedding_size)
         self.pair_layer_norm = nn.LayerNorm(pair_embedding_size)
         self.single_linear = nn.Linear(single_embedding_size, single_embedding_size)
-        self.lddt_predictor = LDDTPredictor(single_embedding_size)
+        self.lddt_predictor = LDDTPredictor(single_embedding_size, num_lddt_bins, num_lddt_channels)
 
     def forward(self, single, pair, local_coords, frames_truth=None, fape_clamp=None):
         batch_dims = single.shape[:-1]
