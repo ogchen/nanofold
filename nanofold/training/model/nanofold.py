@@ -137,4 +137,4 @@ class Nanofold(nn.Module):
             prev_msa_row = msa_rep[..., 0, :, :]
             prev_pair_rep = pair_rep
             prev_ca_coords = coords[..., 1, :]
-        return coords, fape_loss + aux_loss
+        return coords, fape_loss, aux_loss

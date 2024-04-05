@@ -22,23 +22,34 @@ class Trainer:
             eps=config.getfloat("Optimizer", "eps"),
         )
 
+    def get_total_loss(self, fape_loss, aux_loss):
+        return 0.5 * fape_loss + 0.5 * aux_loss
+
     def training_loop(self, batch):
-        _, loss = self.model(batch)
+        _, fape_loss, aux_loss = self.model(batch)
         self.optimizer.zero_grad()
-        loss.backward()
+        self.get_total_loss(fape_loss, aux_loss).backward()
         self.optimizer.step()
 
     @torch.no_grad()
     def evaluate(self, loader):
         self.model.eval()
-        _, loss = self.model(next(iter(loader)))
+        _, fape_loss, aux_loss = self.model(next(iter(loader)))
         self.model.train()
-        return loss.item()
+        return {
+            "fape_loss": fape_loss.item(),
+            "aux_loss": aux_loss.item(),
+            "total_loss": self.get_total_loss(fape_loss, aux_loss).item(),
+        }
 
     def log_epoch(self, epoch, eval_loaders):
         if epoch % self.log_every_n_epoch != 0 or len(self.loggers) == 0:
             return
-        metrics = {k: self.evaluate(v) for k, v in eval_loaders.items()}
+        metrics = {
+            f"{k}_{metric_name}": metric
+            for k, v in eval_loaders.items()
+            for metric_name, metric in self.evaluate(v).items()
+        }
         [l.log_epoch(epoch, metrics) for l in self.loggers]
 
     def fit(self, train_loader, eval_loaders, max_epoch):
