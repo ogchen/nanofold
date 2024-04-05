@@ -48,7 +48,7 @@ class StructureModuleLayer(nn.Module):
             "dropout": config.getfloat("StructureModule", "dropout"),
         }
 
-    def forward(self, single, pair, frames, frames_truth=None):
+    def forward(self, single, pair, frames, frames_truth=None, fape_clamp=None):
         single = single + self.invariant_point_attention(single, pair, frames)
         single = self.layer_norm1(self.dropout(single))
         single = single + self.transition(single)
@@ -57,7 +57,12 @@ class StructureModuleLayer(nn.Module):
 
         loss = (
             compute_fape_loss(
-                frames, frames.translations, frames_truth, frames_truth.translations, eps=1e-12
+                frames,
+                frames.translations,
+                frames_truth,
+                frames_truth.translations,
+                eps=1e-12,
+                clamp=fape_clamp,
             )
             if frames_truth is not None
             else None
@@ -93,7 +98,7 @@ class StructureModule(nn.Module):
         self.pair_layer_norm = nn.LayerNorm(pair_embedding_size)
         self.single_linear = nn.Linear(single_embedding_size, single_embedding_size)
 
-    def forward(self, single, pair, local_coords, frames_truth=None):
+    def forward(self, single, pair, local_coords, frames_truth=None, fape_clamp=None):
         batch_dims = single.shape[:-1]
         single = self.single_layer_norm(single)
         pair = self.pair_layer_norm(pair)
@@ -105,7 +110,9 @@ class StructureModule(nn.Module):
 
         aux_losses = []
         for i in range(self.num_layers):
-            single, frames, loss = self.structure_module_layer(single, pair, frames, frames_truth)
+            single, frames, loss = self.structure_module_layer(
+                single, pair, frames, frames_truth, fape_clamp
+            )
             aux_losses.append(loss)
             if i < self.num_layers - 1:
                 frames.rotations = frames.rotations.detach()
@@ -114,7 +121,13 @@ class StructureModule(nn.Module):
             torch.stack(aux_losses).mean() if all(l is not None for l in aux_losses) else None
         )
         fape_loss = (
-            compute_fape_loss(frames, frames.translations, frames_truth, frames_truth.translations)
+            compute_fape_loss(
+                frames,
+                frames.translations,
+                frames_truth,
+                frames_truth.translations,
+                clamp=fape_clamp,
+            )
             if (frames_truth is not None)
             else None
         )
