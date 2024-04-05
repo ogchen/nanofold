@@ -24,11 +24,13 @@ def encode_one_hot(seq):
 
 
 def encode_one_hot_alignments(alignments):
-    one_hot = torch.zeros(len(alignments), len(alignments[0]), len(RESIDUE_INDEX_MSA))
-    for i, alignment in enumerate(alignments):
-        for j, residue in enumerate(alignment):
-            one_hot[i, j, RESIDUE_INDEX_MSA.get(residue, RESIDUE_INDEX_MSA[UNKNOWN_RESIDUE[0]])] = 1
-    return one_hot
+    indices = torch.tensor(
+        [
+            [RESIDUE_INDEX_MSA.get(r, RESIDUE_INDEX_MSA[UNKNOWN_RESIDUE[0]]) for r in a]
+            for a in alignments
+        ]
+    )
+    return torch.nn.functional.one_hot(indices, num_classes=len(RESIDUE_INDEX_MSA)).float()
 
 
 def encode_deletion_matrix(deletion_matrix):

@@ -36,8 +36,8 @@ class Trainer:
         return loss.item()
 
     def log_epoch(self, epoch, eval_loaders):
-        if epoch % self.log_every_n_epoch != 0:
-            return []
+        if epoch % self.log_every_n_epoch != 0 or len(self.loggers) == 0:
+            return
         metrics = {k: self.evaluate(v) for k, v in eval_loaders.items()}
         [l.log_epoch(epoch, metrics) for l in self.loggers]
 
