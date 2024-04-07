@@ -74,7 +74,7 @@ class LDDTPredictor(nn.Module):
         )
         difference = torch.abs(distance_mat - distance_mat_truth)
         score_mask = distance_mat_truth < cutoff
-        torch.diagonal(score_mask, dim1=-1).zero_()
+        torch.diagonal(score_mask, dim1=-2, dim2=-1).zero_()
         score_mat = 0.25 * (
             (difference < 0.5).float()
             + (difference < 1.0).float()
