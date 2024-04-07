@@ -23,28 +23,45 @@ class Trainer:
             eps=config.getfloat("Optimizer", "eps"),
         )
 
+    def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss):
+        return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss
+
     def load_batch(self, batch):
         return {
             k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()
         }
 
     def training_loop(self, batch):
-        _, loss = self.model(batch)
+        _, _, _, fape_loss, conf_loss, aux_loss, dist_loss = self.model(batch)
         self.optimizer.zero_grad()
-        loss.backward()
+        self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss).backward()
         self.optimizer.step()
 
     @torch.no_grad()
     def evaluate(self, loader):
         self.model.eval()
-        _, loss = self.model(self.load_batch(next(iter(loader))))
+        _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss = self.model(
+            self.load_batch(next(iter(loader)))
+        )
         self.model.train()
-        return loss.item()
+        return {
+            "chain_plddt": chain_plddt.mean().item(),
+            "chain_lddt": chain_lddt.mean().item(),
+            "fape_loss": fape_loss.item(),
+            "conf_loss": conf_loss.item(),
+            "aux_loss": aux_loss.item(),
+            "dist_loss": dist_loss.item(),
+            "total_loss": self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss).item(),
+        }
 
     def log_epoch(self, epoch, eval_loaders):
         if epoch % self.log_every_n_epoch != 0 or len(self.loggers) == 0:
             return
-        metrics = {k: self.evaluate(v) for k, v in eval_loaders.items()}
+        metrics = {
+            f"{k}_{metric_name}": metric
+            for k, v in eval_loaders.items()
+            for metric_name, metric in self.evaluate(v).items()
+        }
         [l.log_epoch(epoch, metrics) for l in self.loggers]
 
     def fit(self, train_loader, eval_loaders, max_epoch):

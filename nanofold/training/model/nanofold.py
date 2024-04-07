@@ -3,6 +3,7 @@ import torch
 from torch import nn
 
 from nanofold.training.frame import Frame
+from nanofold.training.loss import DistogramLoss
 from nanofold.training.model.evoformer import Evoformer
 from nanofold.training.model.input import InputEmbedding
 from nanofold.training.model.recycle import RecyclingEmbedder
@@ -31,6 +32,10 @@ class Nanofold(nn.Module):
         num_query_points,
         num_value_points,
         num_heads,
+        num_distogram_bins,
+        num_distogram_channels,
+        num_lddt_bins,
+        num_lddt_channels,
         device,
     ):
         super().__init__()
@@ -63,7 +68,12 @@ class Nanofold(nn.Module):
             num_query_points,
             num_value_points,
             num_heads,
+            num_lddt_bins,
+            num_lddt_channels,
             device,
+        )
+        self.distogram_loss = DistogramLoss(
+            pair_embedding_size, num_distogram_bins, num_distogram_channels, device
         )
 
     @staticmethod
@@ -92,6 +102,10 @@ class Nanofold(nn.Module):
             "num_query_points": config.getint("InvariantPointAttention", "num_query_points"),
             "num_value_points": config.getint("InvariantPointAttention", "num_value_points"),
             "num_heads": config.getint("InvariantPointAttention", "num_heads"),
+            "num_distogram_bins": config.getint("Loss", "num_distogram_bins"),
+            "num_distogram_channels": config.getint("Loss", "num_distogram_channels"),
+            "num_lddt_bins": config.getint("Loss", "num_lddt_bins"),
+            "num_lddt_channels": config.getint("Loss", "num_lddt_channels"),
             "device": config.get("General", "device"),
         }
 
@@ -124,7 +138,7 @@ class Nanofold(nn.Module):
 
             msa_rep, pair_rep, single_rep = self.evoformer(msa_rep, pair_rep)
 
-            coords, fape_loss, aux_loss = self.structure_module(
+            coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss = self.structure_module(
                 single_rep,
                 pair_rep,
                 batch["local_coords"],
@@ -133,7 +147,7 @@ class Nanofold(nn.Module):
                         rotations=batch["rotations"],
                         translations=batch["translations"],
                     )
-                    if i == num_recycle - 1
+                    if i == num_recycle - 1 and "translations" in batch
                     else None
                 ),
                 fape_clamp,
@@ -141,4 +155,11 @@ class Nanofold(nn.Module):
             prev_msa_row = msa_rep[..., 0, :, :]
             prev_pair_rep = pair_rep
             prev_ca_coords = coords[..., 1, :]
-        return coords, fape_loss + aux_loss
+
+        dist_loss = (
+            self.distogram_loss(pair_rep, batch["translations"])
+            if "translations" in batch
+            else None
+        )
+
+        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss

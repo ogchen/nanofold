@@ -73,6 +73,8 @@ class TestStructureModule:
             num_value_points=3,
             num_heads=2,
             dropout=0.1,
+            num_lddt_bins=3,
+            num_lddt_channels=2,
             device="cpu",
         )
         self.len_seq = 5
@@ -88,24 +90,32 @@ class TestStructureModule:
         )
 
     def test_structure_module(self):
-        coords, _, _ = self.model(self.single, self.pair, self.local_coords)
+        coords, _, _, _, _, _ = self.model(self.single, self.pair, self.local_coords)
         assert coords.shape == (self.len_seq, 3, 3)
 
     def test_structure_module_loss(self):
-        _, aux_loss, fape_loss = self.model(
+        _, _, _, fape_loss, conf_loss, aux_loss = self.model(
             self.single, self.pair, self.local_coords, self.frames_truth
         )
         assert aux_loss is not None
         assert fape_loss is not None
+        assert conf_loss is not None
         # Check no exception raised when we traverse the graph
-        (aux_loss + fape_loss).backward()
+        (aux_loss + fape_loss + conf_loss).backward()
 
     def test_structure_module_batched(self):
         self.model.eval()  # Ensure dropout is not applied
-        coords, aux_loss, fape_loss = self.model(
+        coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss = self.model(
             self.single, self.pair, self.local_coords, self.frames_truth
         )
-        batch_coords, batch_aux_loss, batch_fape_loss = self.model(
+        (
+            batch_coords,
+            batch_chain_plddt,
+            batch_chain_lddt,
+            batch_fape_loss,
+            batch_conf_loss,
+            batch_aux_loss,
+        ) = self.model(
             torch.stack([self.single] * 2),
             torch.stack([self.pair] * 2),
             torch.stack([self.local_coords] * 2),
@@ -116,5 +126,8 @@ class TestStructureModule:
         )
         assert torch.allclose(coords, batch_coords[0], atol=1e-3)
         assert torch.allclose(coords, batch_coords[1], atol=1e-3)
+        assert torch.allclose(chain_plddt, batch_chain_plddt, atol=1e-3)
+        assert torch.allclose(chain_lddt, batch_chain_lddt, atol=1e-3)
         assert torch.allclose(aux_loss, batch_aux_loss, atol=1e-3)
         assert torch.allclose(fape_loss, batch_fape_loss, atol=1e-3)
+        assert torch.allclose(conf_loss, batch_conf_loss, atol=1e-3)
