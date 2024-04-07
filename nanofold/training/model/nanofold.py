@@ -73,7 +73,7 @@ class Nanofold(nn.Module):
             device,
         )
         self.distogram_loss = DistogramLoss(
-            pair_embedding_size, num_distogram_bins, num_distogram_channels
+            pair_embedding_size, num_distogram_bins, num_distogram_channels, device
         )
 
     @staticmethod
