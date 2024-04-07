@@ -31,13 +31,15 @@ class Nanofold(nn.Module):
         num_query_points,
         num_value_points,
         num_heads,
+        device,
     ):
         super().__init__()
+        self.device = device
         self.num_recycle = num_recycle
         self.msa_embedding_size = msa_embedding_size
         self.pair_embedding_size = pair_embedding_size
         self.input_embedder = InputEmbedding(pair_embedding_size, msa_embedding_size, position_bins)
-        self.recycling_embedder = RecyclingEmbedder(pair_embedding_size, msa_embedding_size)
+        self.recycling_embedder = RecyclingEmbedder(pair_embedding_size, msa_embedding_size, device)
         self.evoformer = Evoformer(
             single_embedding_size,
             pair_embedding_size,
@@ -50,6 +52,7 @@ class Nanofold(nn.Module):
             num_evoformer_pair_heads,
             num_evoformer_channels,
             evoformer_transition_multiplier,
+            device,
         )
         self.structure_module = StructureModule(
             num_structure_layers,
@@ -60,8 +63,8 @@ class Nanofold(nn.Module):
             num_query_points,
             num_value_points,
             num_heads,
+            device,
         )
-        self.recycling_embedder = RecyclingEmbedder(pair_embedding_size, msa_embedding_size)
 
     @staticmethod
     def get_args(config):
@@ -89,6 +92,7 @@ class Nanofold(nn.Module):
             "num_query_points": config.getint("InvariantPointAttention", "num_query_points"),
             "num_value_points": config.getint("InvariantPointAttention", "num_value_points"),
             "num_heads": config.getint("InvariantPointAttention", "num_heads"),
+            "device": config.get("General", "device"),
         }
 
     @classmethod
@@ -100,9 +104,9 @@ class Nanofold(nn.Module):
         fape_clamp = 10.0 if np.random.rand() < 0.9 and self.training else None
 
         s = batch["positions"].shape
-        prev_msa_row = torch.zeros((*s, self.msa_embedding_size))
-        prev_ca_coords = torch.zeros((*s, 3))
-        prev_pair_rep = torch.zeros((*s, s[-1], self.pair_embedding_size))
+        prev_msa_row = torch.zeros((*s, self.msa_embedding_size), device=self.device)
+        prev_ca_coords = torch.zeros((*s, 3), device=self.device)
+        prev_pair_rep = torch.zeros((*s, s[-1], self.pair_embedding_size), device=self.device)
 
         for i in range(num_recycle):
             prev_msa_row = prev_msa_row.detach()

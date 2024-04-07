@@ -23,7 +23,7 @@ class InputEmbedding(nn.Module):
 
         d = residue_index.unsqueeze(-1) - residue_index.unsqueeze(-2)
         d = d.clamp(min=-self.bins, max=self.bins) + self.bins
-        p = nn.functional.one_hot(d, num_classes=2 * self.bins + 1).float()
+        p = nn.functional.one_hot(d.long(), num_classes=2 * self.bins + 1).float()
         z = z + self.linear_position(p)
 
         m = self.linear_msa(msa_feat) + self.linear_c(target_feat.unsqueeze(-3))

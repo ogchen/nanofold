@@ -5,12 +5,13 @@ from nanofold.training.model import Nanofold
 
 class Trainer:
     def __init__(self, config, loggers, log_every_n_epoch):
+        self.device = config.get("General", "device")
         self.loggers = loggers
         self.log_every_n_epoch = log_every_n_epoch
         params = Nanofold.get_args(config)
         [l.log_params(params) for l in self.loggers]
         self.model = Nanofold(**params)
-        self.model = self.model.to(config.get("General", "device"))
+        self.model = self.model.to(self.device)
         [l.log_model_summary(self.model) for l in self.loggers]
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),
@@ -22,6 +23,11 @@ class Trainer:
             eps=config.getfloat("Optimizer", "eps"),
         )
 
+    def load_batch(self, batch):
+        return {
+            k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()
+        }
+
     def training_loop(self, batch):
         _, loss = self.model(batch)
         self.optimizer.zero_grad()
@@ -31,7 +37,7 @@ class Trainer:
     @torch.no_grad()
     def evaluate(self, loader):
         self.model.eval()
-        _, loss = self.model(next(iter(loader)))
+        _, loss = self.model(self.load_batch(next(iter(loader))))
         self.model.train()
         return loss.item()
 
@@ -46,7 +52,7 @@ class Trainer:
         for batch in train_loader:
             if epoch == max_epoch:
                 break
-            self.training_loop(batch)
+            self.training_loop(self.load_batch(batch))
             self.log_epoch(epoch, eval_loaders)
             epoch += 1
         [l.log_model(self.model) for l in self.loggers]
