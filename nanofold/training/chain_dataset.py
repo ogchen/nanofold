@@ -39,7 +39,7 @@ def encode_one_hot_alignments(alignments):
 
 
 def encode_deletion_matrix(deletion_matrix):
-    counts = torch.from_numpy(np.vstack(deletion_matrix))
+    counts = torch.stack(deletion_matrix)
     has_deletion = counts > 0
     deletion_value = 2 / math.pi * torch.arctan(counts / 3)
     return torch.cat((has_deletion.unsqueeze(-1), deletion_value.unsqueeze(-1)), dim=-1)
@@ -54,7 +54,7 @@ def encode_msa(msa):
 def preprocess_msa(msa, num_msa):
     msa = zip(*msa.values())
     msa = [m for m in msa if not all(c == MSA_GAP for c in m[0])]
-    query = msa[0]
+    query = (msa[0][0], torch.tensor(msa[0][1]))
 
     # Deduplicate MSA
     deduplicated = list(set([(a, torch.tensor(d)) for a, d in msa[1:]]))
@@ -86,8 +86,8 @@ class ChainDataset(IterableDataset):
         table_size = table.get_total_buffer_size() / (1024**2)
         logging.info(f"Features table loaded, size {table_size:.2f} MB")
         train_size = int(train_split * table.num_rows)
-        if train_size <= 0 or train_size >= table.num_rows:
-            raise ValueError(f"train_size must be between 0 and len(df), got {train_size}")
+        if train_size <= 0 or train_size > table.num_rows:
+            raise ValueError(f"train_size must be between 0 and {table.num_rows}, got {train_size}")
         indices = np.arange(table.num_rows)
         np.random.shuffle(indices)
         table = table.append_column(
@@ -137,15 +137,14 @@ class ChainDataset(IterableDataset):
         return encode_msa(preprocess_msa(msa, self.num_msa))
 
     def parse_features(self, row):
-        pass
         features = {
-            "rotations": torch.from_numpy(np.stack(np.vstack(row.rotations.tolist()).tolist())),
-            "translations": torch.from_numpy(np.vstack(row.translations.tolist())),
+            "rotations": torch.tensor(np.stack(np.vstack(row.rotations.tolist()).tolist())),
+            "translations": torch.tensor(np.vstack(row.translations.tolist())),
             "local_coords": torch.tensor(
                 [[p[1] for p in get_atom_positions(r)] for r in row.sequence]
             ),
             "target_feat": encode_one_hot(row.sequence),
             "msa_feat": self.parse_msa_features(row.msa),
-            "positions": torch.from_numpy(row.positions),
+            "positions": torch.tensor(row.positions),
         }
         return features
