@@ -41,14 +41,23 @@ def get_dataloaders(args, config):
     )
     eval_dataloaders = {
         "train": torch.utils.data.DataLoader(
-            train_data, batch_size=config.getint("General", "eval_batch_size")
+            train_data,
+            batch_size=config.getint("General", "eval_batch_size"),
+            pin_memory=True,
         ),
         "test": torch.utils.data.DataLoader(
-            test_data, batch_size=config.getint("General", "eval_batch_size")
+            test_data,
+            batch_size=config.getint("General", "eval_batch_size"),
+            pin_memory=True,
         ),
     }
     return (
-        torch.utils.data.DataLoader(train_data, batch_size=config.getint("General", "batch_size")),
+        torch.utils.data.DataLoader(
+            train_data,
+            batch_size=config.getint("General", "batch_size"),
+            pin_memory=True,
+            num_workers=4,
+        ),
         eval_dataloaders,
     )
 
@@ -57,7 +66,6 @@ def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
     config = load_config(args.config)
-    torch.set_default_device(config.get("General", "device"))
     train_loader, eval_loaders = get_dataloaders(args, config)
     loggers = [
         Logger(),

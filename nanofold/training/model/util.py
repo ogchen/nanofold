@@ -15,11 +15,12 @@ class LinearWithView(nn.Module):
 
 
 class DropoutByDimension(nn.Module):
-    def __init__(self, p):
+    def __init__(self, p, device):
         super().__init__()
         self.dropout = nn.Dropout(p=p)
+        self.device = device
 
     def forward(self, x, dim):
         shape = [d for d in x.shape]
         shape[dim] = 1
-        return x * self.dropout(torch.ones(shape))
+        return x * self.dropout(torch.ones(shape, device=self.device))

@@ -23,6 +23,7 @@ class EvoformerBlock(nn.Module):
         num_pair_heads,
         num_channels,
         transition_multiplier,
+        device,
         p_msa_dropout=0.15,
         p_pair_dropout=0.25,
     ):
@@ -31,8 +32,8 @@ class EvoformerBlock(nn.Module):
             pair_embedding_size, msa_embedding_size, num_msa_heads, num_channels
         )
         self.msa_col_attention = MSAColumnAttention(msa_embedding_size, num_msa_heads, num_channels)
-        self.msa_dropout = DropoutByDimension(p_msa_dropout)
-        self.pair_dropout = DropoutByDimension(p_pair_dropout)
+        self.msa_dropout = DropoutByDimension(p_msa_dropout, device)
+        self.pair_dropout = DropoutByDimension(p_pair_dropout, device)
         self.msa_transition = nn.Sequential(
             nn.LayerNorm(msa_embedding_size),
             nn.Linear(msa_embedding_size, msa_embedding_size * transition_multiplier),
@@ -89,6 +90,7 @@ class Evoformer(nn.Module):
         num_pair_heads,
         num_channels,
         evoformer_transition_multiplier,
+        device,
     ):
         super().__init__()
         self.linear_single = nn.Linear(msa_embedding_size, single_embedding_size)
@@ -104,6 +106,7 @@ class Evoformer(nn.Module):
                     num_pair_heads,
                     num_channels,
                     evoformer_transition_multiplier,
+                    device,
                 )
                 for _ in range(num_blocks)
             ]

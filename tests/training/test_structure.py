@@ -73,6 +73,7 @@ class TestStructureModule:
             num_value_points=3,
             num_heads=2,
             dropout=0.1,
+            device="cpu",
         )
         self.len_seq = 5
         self.sequence = ["MET", "PHE", "PRO", "SER", "THR"]
