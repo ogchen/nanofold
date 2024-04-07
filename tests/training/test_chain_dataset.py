@@ -18,8 +18,8 @@ def test_chain_dataset(arrow_file):
     train_data, test_data = ChainDataset.construct_datasets(
         arrow_file, train_split, residue_crop_size, num_msa
     )
-    assert len(train_data.df) == 10
-    assert len(test_data.df) == 10
+    assert train_data.table.num_rows == 10
+    assert test_data.table.num_rows == 10
 
     assert len(train_data.indices) == 8
     assert len(test_data.indices) == 2

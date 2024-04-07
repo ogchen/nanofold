@@ -138,8 +138,10 @@ class ChainDataset(IterableDataset):
 
     def parse_features(self, row):
         features = {
-            "rotations": torch.from_numpy(np.stack(np.vstack(row.rotations.tolist()).tolist())),
-            "translations": torch.from_numpy(np.vstack(row.translations.tolist())),
+            "rotations": torch.from_numpy(
+                np.stack(np.vstack(row.rotations.tolist()).tolist())
+            ).float(),
+            "translations": torch.from_numpy(np.vstack(row.translations.tolist())).float(),
             "local_coords": torch.tensor(
                 [[p[1] for p in get_atom_positions(r)] for r in row.sequence]
             ),
