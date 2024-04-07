@@ -56,7 +56,6 @@ def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
     config = load_config(args.config)
-    torch.set_default_device(config.get("General", "device"))
     dataset, _ = ChainDataset.construct_datasets(
         args.input,
         1.0,

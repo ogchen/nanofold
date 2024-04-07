@@ -82,6 +82,7 @@ class StructureModule(nn.Module):
         num_query_points,
         num_value_points,
         num_heads,
+        device,
     ):
         super().__init__()
         self.structure_module_layer = StructureModuleLayer(
@@ -97,6 +98,7 @@ class StructureModule(nn.Module):
         self.single_layer_norm = nn.LayerNorm(single_embedding_size)
         self.pair_layer_norm = nn.LayerNorm(pair_embedding_size)
         self.single_linear = nn.Linear(single_embedding_size, single_embedding_size)
+        self.device = device
 
     def forward(self, single, pair, local_coords, frames_truth=None, fape_clamp=None):
         batch_dims = single.shape[:-1]
@@ -104,8 +106,8 @@ class StructureModule(nn.Module):
         pair = self.pair_layer_norm(pair)
         single = self.single_linear(single)
         frames = Frame(
-            rotations=torch.eye(3).unsqueeze(0).repeat(*batch_dims, 1, 1),
-            translations=torch.zeros(*batch_dims, 3),
+            rotations=torch.eye(3, device=self.device).unsqueeze(0).repeat(*batch_dims, 1, 1),
+            translations=torch.zeros(*batch_dims, 3, device=self.device),
         )
 
         aux_losses = []
