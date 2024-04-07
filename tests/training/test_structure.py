@@ -112,9 +112,9 @@ class TestStructureModule:
             batch_coords,
             batch_chain_plddt,
             batch_chain_lddt,
-            batch_aux_loss,
-            batch_conf_loss,
             batch_fape_loss,
+            batch_conf_loss,
+            batch_aux_loss,
         ) = self.model(
             torch.stack([self.single] * 2),
             torch.stack([self.pair] * 2),
