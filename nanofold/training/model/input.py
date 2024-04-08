@@ -1,7 +1,7 @@
 from torch import nn
 
 from nanofold.common.residue_definitions import RESIDUE_INDEX
-from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
+from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
 
 
 class InputEmbedding(nn.Module):
@@ -9,7 +9,7 @@ class InputEmbedding(nn.Module):
         super().__init__()
         self.bins = position_bins
         target_input_size = len(RESIDUE_INDEX)
-        msa_input_size = len(RESIDUE_INDEX_MSA) + 2
+        msa_input_size = len(RESIDUE_INDEX_MSA_WITH_MASK) + 2
         self.linear_a = nn.Linear(target_input_size, pair_embedding_size)
         self.linear_b = nn.Linear(target_input_size, pair_embedding_size)
         self.linear_c = nn.Linear(target_input_size, msa_embedding_size)

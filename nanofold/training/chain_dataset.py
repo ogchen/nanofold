@@ -9,8 +9,9 @@ import torch
 
 from nanofold.common.residue_definitions import get_atom_positions
 from nanofold.common.residue_definitions import MSA_GAP
+from nanofold.common.residue_definitions import MSA_MASK_TOKEN
 from nanofold.common.residue_definitions import RESIDUE_INDEX
-from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
+from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
 from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 
 
@@ -29,11 +30,16 @@ def encode_one_hot(seq):
 def encode_one_hot_alignments(alignments):
     indices = torch.tensor(
         [
-            [RESIDUE_INDEX_MSA.get(r, RESIDUE_INDEX_MSA[UNKNOWN_RESIDUE[0]]) for r in a]
+            [
+                RESIDUE_INDEX_MSA_WITH_MASK.get(r, RESIDUE_INDEX_MSA_WITH_MASK[UNKNOWN_RESIDUE[0]])
+                for r in a
+            ]
             for a in alignments
         ]
     )
-    return torch.nn.functional.one_hot(indices, num_classes=len(RESIDUE_INDEX_MSA)).float()
+    return torch.nn.functional.one_hot(
+        indices, num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK)
+    ).float()
 
 
 def encode_deletion_matrix(deletion_matrix):
@@ -46,7 +52,7 @@ def encode_deletion_matrix(deletion_matrix):
 def encode_msa(msa):
     alignments_one_hot = encode_one_hot_alignments([m[0] for m in msa])
     deletion_feat = encode_deletion_matrix([m[1] for m in msa])
-    return torch.cat((alignments_one_hot, deletion_feat), dim=-1)
+    return alignments_one_hot, deletion_feat
 
 
 def preprocess_msa(msa, num_msa):
@@ -132,7 +138,18 @@ class ChainDataset(IterableDataset):
                     yield self.parse_features(row)
 
     def parse_msa_features(self, msa):
-        return encode_msa(preprocess_msa(msa, self.num_msa))
+        msa = preprocess_msa(msa, self.num_msa)
+        alignments_one_hot, deletion_feat = encode_msa(msa)
+        msa_mask = torch.rand(alignments_one_hot.shape[:-1]) < 0.1
+        encode_one_hot_alignments(MSA_MASK_TOKEN)
+        masked_alignments = (~msa_mask).unsqueeze(-1) * alignments_one_hot + (
+            msa_mask.unsqueeze(-1) * encode_one_hot_alignments(MSA_MASK_TOKEN)
+        )
+        return {
+            "msa_feat": torch.cat((masked_alignments, deletion_feat), dim=-1),
+            "msa_mask": msa_mask,
+            "msa_truth": alignments_one_hot,
+        }
 
     def parse_features(self, row):
         features = {
@@ -144,7 +161,7 @@ class ChainDataset(IterableDataset):
                 [[p[1] for p in get_atom_positions(r)] for r in row.sequence]
             ),
             "target_feat": encode_one_hot(row.sequence),
-            "msa_feat": self.parse_msa_features(row.msa),
             "positions": torch.from_numpy(row.positions),
+            **self.parse_msa_features(row.msa),
         }
         return features

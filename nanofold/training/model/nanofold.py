@@ -6,6 +6,7 @@ from nanofold.training.frame import Frame
 from nanofold.training.loss import DistogramLoss
 from nanofold.training.model.evoformer import Evoformer
 from nanofold.training.model.input import InputEmbedding
+from nanofold.training.model.masked_msa import MaskedMSAPredictor
 from nanofold.training.model.recycle import RecyclingEmbedder
 from nanofold.training.model.structure import StructureModule
 
@@ -76,6 +77,7 @@ class Nanofold(nn.Module):
         self.distogram_loss = DistogramLoss(
             pair_embedding_size, num_distogram_bins, num_distogram_channels, device
         )
+        self.msa_predictor = MaskedMSAPredictor(msa_embedding_size)
         self.use_checkpoint = use_checkpoint
 
     @staticmethod
@@ -168,10 +170,12 @@ class Nanofold(nn.Module):
             prev_pair_rep = pair_rep
             prev_ca_coords = coords[..., 1, :]
 
+        msa_loss = self.msa_predictor(msa_rep, batch["msa_mask"], batch.get("msa_truth"))
+
         dist_loss = (
             self.distogram_loss(pair_rep, batch["translations"])
             if "translations" in batch
             else None
         )
 
-        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss
+        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss
