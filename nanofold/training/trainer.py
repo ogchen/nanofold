@@ -40,8 +40,8 @@ class Trainer:
         self.train_model = compile_model(self.model)
         self.eval_model = compile_model(self.model)
 
-    def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss):
-        return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss
+    def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss):
+        return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss + 2 * msa_loss
 
     def load_batch(self, batch):
         return {
@@ -51,8 +51,8 @@ class Trainer:
     def training_loop(self, batch):
         self.optimizer.zero_grad(set_to_none=True)
         with torch.autocast(self.device, dtype=torch.bfloat16, enabled=self.use_amp):
-            _, _, _, fape_loss, conf_loss, aux_loss, dist_loss = self.train_model(batch)
-            loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss)
+            _, _, _, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss = self.train_model(batch)
+            loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss, msa_loss)
         self.scaler.scale(loss).backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_norm)
         self.scaler.step(self.optimizer)
@@ -62,10 +62,10 @@ class Trainer:
     def evaluate(self, loader):
         self.model.eval()
         with torch.autocast(self.device, dtype=torch.bfloat16, enabled=self.use_amp):
-            _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss = self.eval_model(
-                self.load_batch(next(iter(loader)))
+            _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss = (
+                self.eval_model(self.load_batch(next(iter(loader))))
             )
-            loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss)
+            loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss, msa_loss)
         self.model.train()
         return {
             "chain_plddt": chain_plddt.mean().item(),
@@ -74,6 +74,7 @@ class Trainer:
             "conf_loss": conf_loss.item(),
             "aux_loss": aux_loss.item(),
             "dist_loss": dist_loss.item(),
+            "msa_loss": msa_loss.item(),
             "total_loss": loss.item(),
         }
 
