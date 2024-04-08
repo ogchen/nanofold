@@ -5,7 +5,10 @@ from nanofold.training.model import Nanofold
 
 class Trainer:
     def __init__(self, config, loggers, log_every_n_epoch):
+        detect_anomaly = config.getboolean("General", "detect_anomaly")
+        torch.autograd.set_detect_anomaly(detect_anomaly, check_nan=detect_anomaly)
         self.device = config.get("General", "device")
+        self.use_amp = config.getboolean("General", "use_amp") and self.device == "cuda"
         self.loggers = loggers
         self.log_every_n_epoch = log_every_n_epoch
         params = Nanofold.get_args(config)
@@ -22,6 +25,7 @@ class Trainer:
             ),
             eps=config.getfloat("Optimizer", "eps"),
         )
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
 
     def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss):
         return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss
@@ -32,17 +36,22 @@ class Trainer:
         }
 
     def training_loop(self, batch):
-        _, _, _, fape_loss, conf_loss, aux_loss, dist_loss = self.model(batch)
-        self.optimizer.zero_grad()
-        self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss).backward()
-        self.optimizer.step()
+        self.optimizer.zero_grad(set_to_none=True)
+        with torch.autocast(self.device, dtype=torch.bfloat16, enabled=self.use_amp):
+            _, _, _, fape_loss, conf_loss, aux_loss, dist_loss = self.model(batch)
+            loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss)
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
 
     @torch.no_grad()
     def evaluate(self, loader):
         self.model.eval()
-        _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss = self.model(
-            self.load_batch(next(iter(loader)))
-        )
+        with torch.autocast(self.device, dtype=torch.bfloat16, enabled=self.use_amp):
+            _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss = self.model(
+                self.load_batch(next(iter(loader)))
+            )
+            loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss)
         self.model.train()
         return {
             "chain_plddt": chain_plddt.mean().item(),
@@ -51,7 +60,7 @@ class Trainer:
             "conf_loss": conf_loss.item(),
             "aux_loss": aux_loss.item(),
             "dist_loss": dist_loss.item(),
-            "total_loss": self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss).item(),
+            "total_loss": loss.item(),
         }
 
     def log_epoch(self, epoch, eval_loaders):
