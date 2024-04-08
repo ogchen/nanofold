@@ -4,9 +4,7 @@ from torch import nn
 from nanofold.training.frame import Frame
 
 
-def compute_fape_loss(
-    frames, coords, frames_truth, coords_truth, eps=1e-4, length_scale=10.0, clamp=10.0
-):
+def compute_fape_loss(frames, coords, frames_truth, coords_truth, length_scale=10.0, clamp=10.0):
     """Compute the frame-aligned point error (FAPE) between two sets of frames and coordinates.
     Args:
         frames (Frame): The predicted frames.
@@ -26,8 +24,7 @@ def compute_fape_loss(
     globals = Frame.apply(inverse, coords.unsqueeze(-3))
     globals_truth = Frame.apply(inverse_truth, coords_truth.unsqueeze(-3))
     difference = globals - globals_truth
-    squared_norm = difference.unsqueeze(-2) @ difference.unsqueeze(-1)
-    norm = torch.sqrt(squared_norm + eps).squeeze(-1).squeeze(-1)
+    norm = torch.linalg.vector_norm(difference, dim=-1)
     if clamp is not None:
         norm = torch.clamp(norm, max=clamp)
     return (1 / length_scale) * norm.mean()

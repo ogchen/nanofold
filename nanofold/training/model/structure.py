@@ -62,7 +62,6 @@ class StructureModuleLayer(nn.Module):
                 frames.translations,
                 frames_truth,
                 frames_truth.translations,
-                eps=1e-12,
                 clamp=fape_clamp,
             )
             if frames_truth is not None
