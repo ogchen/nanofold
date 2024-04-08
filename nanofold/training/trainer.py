@@ -12,6 +12,7 @@ class Trainer:
         self.loggers = loggers
         self.log_every_n_epoch = log_every_n_epoch
         self.setup_model(config)
+        self.clip_norm = config.getfloat("Nanofold", "clip_norm")
 
         [l.log_model_summary(self.model) for l in self.loggers]
         self.optimizer = torch.optim.Adam(
@@ -53,6 +54,7 @@ class Trainer:
             _, _, _, fape_loss, conf_loss, aux_loss, dist_loss = self.train_model(batch)
             loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss)
         self.scaler.scale(loss).backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_norm)
         self.scaler.step(self.optimizer)
         self.scaler.update()
 
