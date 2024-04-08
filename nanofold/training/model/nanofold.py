@@ -36,6 +36,7 @@ class Nanofold(nn.Module):
         num_distogram_channels,
         num_lddt_bins,
         num_lddt_channels,
+        use_checkpoint,
         device,
     ):
         super().__init__()
@@ -75,6 +76,7 @@ class Nanofold(nn.Module):
         self.distogram_loss = DistogramLoss(
             pair_embedding_size, num_distogram_bins, num_distogram_channels, device
         )
+        self.use_checkpoint = use_checkpoint
 
     @staticmethod
     def get_args(config):
@@ -106,12 +108,20 @@ class Nanofold(nn.Module):
             "num_distogram_channels": config.getint("Loss", "num_distogram_channels"),
             "num_lddt_bins": config.getint("Loss", "num_lddt_bins"),
             "num_lddt_channels": config.getint("Loss", "num_lddt_channels"),
+            "use_checkpoint": config.get("General", "use_checkpoint"),
             "device": config.get("General", "device"),
         }
 
     @classmethod
     def from_config(cls, config):
         return cls(**cls.get_args(config))
+
+    def run_evoformer(self, *args):
+        if self.use_checkpoint or not self.training:
+            return torch.utils.checkpoint.checkpoint(
+                lambda *inputs: self.evoformer(*inputs), *args, use_reentrant=False
+            )
+        return self.evoformer(*args)
 
     def forward(self, batch):
         num_recycle = (
@@ -138,7 +148,7 @@ class Nanofold(nn.Module):
             msa_rep[..., 0, :, :] = msa_rep[..., 0, :, :] + msa_row_update
             pair_rep = pair_rep + pair_rep_update
 
-            msa_rep, pair_rep, single_rep = self.evoformer(msa_rep, pair_rep)
+            msa_rep, pair_rep, single_rep = self.run_evoformer(msa_rep, pair_rep)
 
             coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss = self.structure_module(
                 single_rep,
