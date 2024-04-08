@@ -35,26 +35,26 @@ def load_config(filepath):
 def get_dataloaders(args, config):
     train_data, test_data = ChainDataset.construct_datasets(
         args.input,
-        config.getfloat("General", "train_split"),
-        config.getint("General", "residue_crop_size"),
-        config.getint("General", "num_msa"),
+        config.getfloat("Nanofold", "train_split"),
+        config.getint("Nanofold", "residue_crop_size"),
+        config.getint("Nanofold", "num_msa"),
     )
     eval_dataloaders = {
         "train": torch.utils.data.DataLoader(
             train_data,
-            batch_size=config.getint("General", "eval_batch_size"),
+            batch_size=config.getint("Nanofold", "eval_batch_size"),
             pin_memory=True,
         ),
         "test": torch.utils.data.DataLoader(
             test_data,
-            batch_size=config.getint("General", "eval_batch_size"),
+            batch_size=config.getint("Nanofold", "eval_batch_size"),
             pin_memory=True,
         ),
     }
     return (
         torch.utils.data.DataLoader(
             train_data,
-            batch_size=config.getint("General", "batch_size"),
+            batch_size=config.getint("Nanofold", "batch_size"),
             pin_memory=True,
             num_workers=4,
         ),
@@ -78,7 +78,7 @@ def main():
             )
         )
     trainer = Trainer(config, loggers, log_every_n_epoch=100)
-    trainer.fit(train_loader, eval_loaders, config.getint("General", "max_epoch"))
+    trainer.fit(train_loader, eval_loaders, config.getint("Nanofold", "max_epoch"))
 
 
 if __name__ == "__main__":

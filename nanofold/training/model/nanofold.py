@@ -79,12 +79,12 @@ class Nanofold(nn.Module):
     @staticmethod
     def get_args(config):
         return {
-            "num_recycle": config.getint("General", "num_recycle"),
+            "num_recycle": config.getint("Nanofold", "num_recycle"),
             "num_structure_layers": config.getint("StructureModule", "num_layers"),
-            "single_embedding_size": config.getint("General", "single_embedding_size"),
-            "pair_embedding_size": config.getint("General", "pair_embedding_size"),
-            "msa_embedding_size": config.getint("General", "msa_embedding_size"),
-            "position_bins": config.getint("General", "position_bins"),
+            "single_embedding_size": config.getint("Nanofold", "single_embedding_size"),
+            "pair_embedding_size": config.getint("Nanofold", "pair_embedding_size"),
+            "msa_embedding_size": config.getint("Nanofold", "msa_embedding_size"),
+            "position_bins": config.getint("Nanofold", "position_bins"),
             "num_triangular_update_channels": config.getint(
                 "Evoformer", "num_triangular_update_channels"
             ),
