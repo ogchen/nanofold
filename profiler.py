@@ -66,6 +66,7 @@ def main():
         dataset, batch_size=config.getint("Nanofold", "batch_size")
     )
     next(iter(data_loader))
+    config["General"]["compile_model"] = "False"
 
     if args.mode == "time":
         with torch.profiler.profile(
