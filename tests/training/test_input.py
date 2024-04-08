@@ -16,7 +16,8 @@ def test_input_embedder():
     seq = "ADHIAAAA"
     target_feat = encode_one_hot(seq)
     msa = {"alignments": [seq], "deletion_matrix": [torch.zeros(len(seq))]}
-    msa_feat = encode_msa(preprocess_msa(msa, num_msa))
+    alignments_one_hot, deletion_feat = encode_msa(preprocess_msa(msa, num_msa))
+    msa_feat = torch.cat((alignments_one_hot, deletion_feat), dim=-1)
     residue_index = torch.arange(len(seq))
 
     msa_rep, pair_rep = embedder(target_feat, residue_index, msa_feat)
@@ -30,7 +31,8 @@ def test_input_embedder_batched():
     seq = "ADHIAAAA"
     target_feat = encode_one_hot(seq)
     msa = {"alignments": [seq], "deletion_matrix": [torch.zeros(len(seq))]}
-    msa_feat = encode_msa(preprocess_msa(msa, 4))
+    alignments_one_hot, deletion_feat = encode_msa(preprocess_msa(msa, 4))
+    msa_feat = torch.cat((alignments_one_hot, deletion_feat), dim=-1)
     residue_index = torch.arange(len(seq))
 
     msa_rep, pair_rep = embedder(target_feat, residue_index, msa_feat)
