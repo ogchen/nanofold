@@ -11,10 +11,8 @@ class Trainer:
         self.use_amp = config.getboolean("General", "use_amp") and self.device == "cuda"
         self.loggers = loggers
         self.log_every_n_epoch = log_every_n_epoch
-        params = Nanofold.get_args(config)
-        [l.log_params(params) for l in self.loggers]
-        self.model = Nanofold(**params)
-        self.model = self.model.to(self.device)
+        self.setup_model(config)
+
         [l.log_model_summary(self.model) for l in self.loggers]
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),
@@ -27,6 +25,20 @@ class Trainer:
         )
         self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
 
+    def setup_model(self, config):
+        params = Nanofold.get_args(config)
+        [l.log_params(params) for l in self.loggers]
+        self.model = Nanofold(**params)
+        self.model = self.model.to(self.device)
+        compile_model = lambda m: torch.compile(
+            m,
+            disable=not config.getboolean("General", "compile_model"),
+            dynamic=False,
+            mode=config.get("General", "compilation_mode", fallback="default"),
+        )
+        self.train_model = compile_model(self.model)
+        self.eval_model = compile_model(self.model)
+
     def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss):
         return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss
 
@@ -38,7 +50,7 @@ class Trainer:
     def training_loop(self, batch):
         self.optimizer.zero_grad(set_to_none=True)
         with torch.autocast(self.device, dtype=torch.bfloat16, enabled=self.use_amp):
-            _, _, _, fape_loss, conf_loss, aux_loss, dist_loss = self.model(batch)
+            _, _, _, fape_loss, conf_loss, aux_loss, dist_loss = self.train_model(batch)
             loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss)
         self.scaler.scale(loss).backward()
         self.scaler.step(self.optimizer)
@@ -48,7 +60,7 @@ class Trainer:
     def evaluate(self, loader):
         self.model.eval()
         with torch.autocast(self.device, dtype=torch.bfloat16, enabled=self.use_amp):
-            _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss = self.model(
+            _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss = self.eval_model(
                 self.load_batch(next(iter(loader)))
             )
             loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss)

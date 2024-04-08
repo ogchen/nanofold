@@ -59,13 +59,14 @@ def main():
     dataset, _ = ChainDataset.construct_datasets(
         args.input,
         1.0,
-        config.getint("General", "residue_crop_size"),
-        config.getint("General", "num_msa"),
+        config.getint("Nanofold", "residue_crop_size"),
+        config.getint("Nanofold", "num_msa"),
     )
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=config.getint("General", "batch_size")
+        dataset, batch_size=config.getint("Nanofold", "batch_size")
     )
     next(iter(data_loader))
+    config["General"]["compile_model"] = "False"
 
     if args.mode == "time":
         with torch.profiler.profile(

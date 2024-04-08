@@ -46,6 +46,7 @@ Run the training script:
 docker-compose run --rm train python train.py -c config/config.ini -i /preprocess/features.arrow --mlflow
 ```
 
+### Profiling
 Run the pytorch profiler:
 ```bash
 docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.ini -i /preprocess/features.arrow --mode time

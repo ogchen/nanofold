@@ -79,12 +79,12 @@ class Nanofold(nn.Module):
     @staticmethod
     def get_args(config):
         return {
-            "num_recycle": config.getint("General", "num_recycle"),
+            "num_recycle": config.getint("Nanofold", "num_recycle"),
             "num_structure_layers": config.getint("StructureModule", "num_layers"),
-            "single_embedding_size": config.getint("General", "single_embedding_size"),
-            "pair_embedding_size": config.getint("General", "pair_embedding_size"),
-            "msa_embedding_size": config.getint("General", "msa_embedding_size"),
-            "position_bins": config.getint("General", "position_bins"),
+            "single_embedding_size": config.getint("Nanofold", "single_embedding_size"),
+            "pair_embedding_size": config.getint("Nanofold", "pair_embedding_size"),
+            "msa_embedding_size": config.getint("Nanofold", "msa_embedding_size"),
+            "position_bins": config.getint("Nanofold", "position_bins"),
             "num_triangular_update_channels": config.getint(
                 "Evoformer", "num_triangular_update_channels"
             ),
@@ -114,8 +114,10 @@ class Nanofold(nn.Module):
         return cls(**cls.get_args(config))
 
     def forward(self, batch):
-        num_recycle = np.random.randint(self.num_recycle) + 1 if self.training else self.num_recycle
-        fape_clamp = 10.0 if np.random.rand() < 0.9 and self.training else None
+        num_recycle = (
+            torch.randint(self.num_recycle, (1,)) + 1 if self.training else self.num_recycle
+        )
+        fape_clamp = 10.0 if torch.rand(1) < 0.9 and self.training else None
 
         s = batch["positions"].shape
         prev_msa_row = torch.zeros((*s, self.msa_embedding_size), device=self.device)
