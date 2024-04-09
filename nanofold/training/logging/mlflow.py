@@ -1,17 +1,18 @@
-from pathlib import Path
 import mlflow
 import tempfile
+import torch
 import torchinfo
+from pathlib import Path
 
 from nanofold.training.logging import Logger
 
 
 class MLFlowLogger(Logger):
-    def __init__(self, uri, pip_requirements):
+    def __init__(self, uri, pip_requirements, run_id=None):
         super().__init__()
         self.pip_requirements = pip_requirements
         mlflow.set_tracking_uri(uri=uri)
-        mlflow.start_run()
+        mlflow.start_run(run_id=run_id)
 
     def __del__(self):
         mlflow.end_run()
@@ -31,3 +32,20 @@ class MLFlowLogger(Logger):
 
     def log_params(self, params):
         mlflow.log_params(params)
+
+    def log_config(self, config_dict):
+        mlflow.log_dict(config_dict, "config.json")
+
+    def log_checkpoint(self, epoch, model, optimizer, scaler):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            filepath = Path(tmp_dir) / f"checkpoint_{epoch}"
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model": model.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "scaler": scaler.state_dict(),
+                },
+                filepath,
+            )
+            mlflow.log_artifact(filepath, artifact_path="checkpoints")

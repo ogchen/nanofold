@@ -4,41 +4,54 @@ from nanofold.training.model import Nanofold
 
 
 class Trainer:
-    def __init__(self, config, loggers, log_every_n_epoch):
-        detect_anomaly = config.getboolean("General", "detect_anomaly")
-        torch.autograd.set_detect_anomaly(detect_anomaly, check_nan=detect_anomaly)
-        self.device = config.get("General", "device")
-        self.use_amp = config.getboolean("General", "use_amp") and self.device == "cuda"
+    def __init__(
+        self,
+        params,
+        loggers,
+        log_every_n_epoch,
+        checkpoint_save_freq,
+        checkpoint=None,
+    ):
+        torch.autograd.set_detect_anomaly(
+            params["detect_anomaly"],
+            check_nan=params["detect_anomaly"],
+        )
+        self.device = params["device"]
+        self.use_amp = params["use_amp"] and self.device == "cuda"
         self.loggers = loggers
         self.log_every_n_epoch = log_every_n_epoch
-        self.setup_model(config)
-        self.clip_norm = config.getfloat("Nanofold", "clip_norm")
-
-        [l.log_model_summary(self.model) for l in self.loggers]
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(),
-            lr=config.getfloat("Optimizer", "learning_rate"),
-            betas=(
-                config.getfloat("Optimizer", "beta1"),
-                config.getfloat("Optimizer", "beta2"),
-            ),
-            eps=config.getfloat("Optimizer", "eps"),
-        )
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
-
-    def setup_model(self, config):
-        params = Nanofold.get_args(config)
+        self.checkpoint_save_freq = checkpoint_save_freq
+        self.setup_model(params, checkpoint)
         [l.log_params(params) for l in self.loggers]
-        self.model = Nanofold(**params)
+        [l.log_config(params) for l in self.loggers]
+        [l.log_model_summary(self.model) for l in self.loggers]
+        self.clip_norm = params["clip_norm"]
+
+    def setup_model(self, params, checkpoint):
+        self.model = Nanofold(**Nanofold.get_args(params))
         self.model = self.model.to(self.device)
         compile_model = lambda m: torch.compile(
             m,
-            disable=not config.getboolean("General", "compile_model"),
+            disable=not params["compile_model"],
             dynamic=False,
-            mode=config.get("General", "compilation_mode", fallback="default"),
+            mode=params.get("compilation_mode", "default"),
         )
         self.train_model = compile_model(self.model)
         self.eval_model = compile_model(self.model)
+
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(),
+            lr=params["learning_rate"],
+            betas=(params["beta1"], params["beta2"]),
+            eps=params["optimizer_eps"],
+        )
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
+        self.epoch = 0
+        if checkpoint is not None:
+            self.epoch = checkpoint["epoch"]
+            self.model.load_state_dict(checkpoint["model"])
+            self.optimizer.load_state_dict(checkpoint["optimizer"])
+            self.scaler.load_state_dict(checkpoint["scaler"])
 
     def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss):
         return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss + 2 * msa_loss
@@ -79,21 +92,23 @@ class Trainer:
         }
 
     def log_epoch(self, epoch, eval_loaders):
-        if epoch % self.log_every_n_epoch != 0 or len(self.loggers) == 0:
+        if len(self.loggers) == 0:
             return
-        metrics = {
-            f"{k}_{metric_name}": metric
-            for k, v in eval_loaders.items()
-            for metric_name, metric in self.evaluate(v).items()
-        }
-        [l.log_epoch(epoch, metrics) for l in self.loggers]
+        if epoch % self.log_every_n_epoch == 0:
+            metrics = {
+                f"{k}_{metric_name}": metric
+                for k, v in eval_loaders.items()
+                for metric_name, metric in self.evaluate(v).items()
+            }
+            [l.log_epoch(epoch, metrics) for l in self.loggers]
+        if epoch % self.checkpoint_save_freq == 0:
+            [l.log_checkpoint(epoch, self.model, self.optimizer, self.scaler) for l in self.loggers]
 
     def fit(self, train_loader, eval_loaders, max_epoch):
-        epoch = 0
         for batch in train_loader:
-            if epoch == max_epoch:
+            if self.epoch >= max_epoch:
                 break
             self.training_loop(self.load_batch(batch))
-            self.log_epoch(epoch, eval_loaders)
-            epoch += 1
+            self.log_epoch(self.epoch, eval_loaders)
+            self.epoch += 1
         [l.log_model(self.model) for l in self.loggers]

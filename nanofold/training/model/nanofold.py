@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from torch import nn
 
@@ -28,16 +27,16 @@ class Nanofold(nn.Module):
         num_evoformer_pair_heads,
         num_evoformer_channels,
         evoformer_transition_multiplier,
-        dropout,
+        structure_dropout,
         ipa_embedding_size,
-        num_query_points,
-        num_value_points,
-        num_heads,
+        num_ipa_query_points,
+        num_ipa_value_points,
+        num_ipa_heads,
         num_distogram_bins,
         num_distogram_channels,
         num_lddt_bins,
         num_lddt_channels,
-        use_checkpoint,
+        use_grad_checkpoint,
         device,
     ):
         super().__init__()
@@ -65,11 +64,11 @@ class Nanofold(nn.Module):
             num_structure_layers,
             single_embedding_size,
             pair_embedding_size,
-            dropout,
+            structure_dropout,
             ipa_embedding_size,
-            num_query_points,
-            num_value_points,
-            num_heads,
+            num_ipa_query_points,
+            num_ipa_value_points,
+            num_ipa_heads,
             num_lddt_bins,
             num_lddt_channels,
             device,
@@ -78,40 +77,36 @@ class Nanofold(nn.Module):
             pair_embedding_size, num_distogram_bins, num_distogram_channels, device
         )
         self.msa_predictor = MaskedMSAPredictor(msa_embedding_size)
-        self.use_checkpoint = use_checkpoint
+        self.use_grad_checkpoint = use_grad_checkpoint
 
     @staticmethod
     def get_args(config):
         return {
-            "num_recycle": config.getint("Nanofold", "num_recycle"),
-            "num_structure_layers": config.getint("StructureModule", "num_layers"),
-            "single_embedding_size": config.getint("Nanofold", "single_embedding_size"),
-            "pair_embedding_size": config.getint("Nanofold", "pair_embedding_size"),
-            "msa_embedding_size": config.getint("Nanofold", "msa_embedding_size"),
-            "position_bins": config.getint("Nanofold", "position_bins"),
-            "num_triangular_update_channels": config.getint(
-                "Evoformer", "num_triangular_update_channels"
-            ),
-            "num_triangular_attention_channels": config.getint(
-                "Evoformer", "num_triangular_attention_channels"
-            ),
-            "product_embedding_size": config.getint("Evoformer", "product_embedding_size"),
-            "num_evoformer_blocks": config.getint("Evoformer", "num_blocks"),
-            "num_evoformer_msa_heads": config.getint("Evoformer", "num_msa_heads"),
-            "num_evoformer_pair_heads": config.getint("Evoformer", "num_pair_heads"),
-            "num_evoformer_channels": config.getint("Evoformer", "num_channels"),
-            "evoformer_transition_multiplier": config.getint("Evoformer", "transition_multiplier"),
-            "dropout": config.getfloat("StructureModule", "dropout"),
-            "ipa_embedding_size": config.getint("InvariantPointAttention", "embedding_size"),
-            "num_query_points": config.getint("InvariantPointAttention", "num_query_points"),
-            "num_value_points": config.getint("InvariantPointAttention", "num_value_points"),
-            "num_heads": config.getint("InvariantPointAttention", "num_heads"),
-            "num_distogram_bins": config.getint("Loss", "num_distogram_bins"),
-            "num_distogram_channels": config.getint("Loss", "num_distogram_channels"),
-            "num_lddt_bins": config.getint("Loss", "num_lddt_bins"),
-            "num_lddt_channels": config.getint("Loss", "num_lddt_channels"),
-            "use_checkpoint": config.get("General", "use_checkpoint"),
-            "device": config.get("General", "device"),
+            "num_recycle": config["num_recycle"],
+            "num_structure_layers": config["num_structure_layers"],
+            "single_embedding_size": config["single_embedding_size"],
+            "pair_embedding_size": config["pair_embedding_size"],
+            "msa_embedding_size": config["msa_embedding_size"],
+            "position_bins": config["position_bins"],
+            "num_triangular_update_channels": config["num_triangular_update_channels"],
+            "num_triangular_attention_channels": config["num_triangular_attention_channels"],
+            "product_embedding_size": config["product_embedding_size"],
+            "num_evoformer_blocks": config["num_evoformer_blocks"],
+            "num_evoformer_msa_heads": config["num_evoformer_msa_heads"],
+            "num_evoformer_pair_heads": config["num_evoformer_pair_heads"],
+            "num_evoformer_channels": config["num_evoformer_channels"],
+            "evoformer_transition_multiplier": config["evoformer_transition_multiplier"],
+            "structure_dropout": config["structure_dropout"],
+            "ipa_embedding_size": config["ipa_embedding_size"],
+            "num_ipa_query_points": config["num_ipa_query_points"],
+            "num_ipa_value_points": config["num_ipa_value_points"],
+            "num_ipa_heads": config["num_ipa_heads"],
+            "num_distogram_bins": config["num_distogram_bins"],
+            "num_distogram_channels": config["num_distogram_channels"],
+            "num_lddt_bins": config["num_lddt_bins"],
+            "num_lddt_channels": config["num_lddt_channels"],
+            "use_grad_checkpoint": config["use_grad_checkpoint"],
+            "device": config["device"],
         }
 
     @classmethod
@@ -119,7 +114,7 @@ class Nanofold(nn.Module):
         return cls(**cls.get_args(config))
 
     def run_evoformer(self, *args):
-        if self.use_checkpoint or not self.training:
+        if self.use_grad_checkpoint or not self.training:
             return torch.utils.checkpoint.checkpoint(
                 lambda *inputs: self.evoformer(*inputs), *args, use_reentrant=False
             )
@@ -170,7 +165,7 @@ class Nanofold(nn.Module):
             prev_pair_rep = pair_rep
             prev_ca_coords = coords[..., 1, :]
 
-        msa_loss = self.msa_predictor(msa_rep, batch["msa_mask"], batch.get("msa_truth"))
+        msa_loss = self.msa_predictor(msa_rep, batch["msa_mask"], batch.get("masked_msa_truth"))
 
         dist_loss = (
             self.distogram_loss(pair_rep, batch["translations"])

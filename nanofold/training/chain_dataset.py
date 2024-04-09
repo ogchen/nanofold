@@ -141,14 +141,16 @@ class ChainDataset(IterableDataset):
         msa = preprocess_msa(msa, self.num_msa)
         alignments_one_hot, deletion_feat = encode_msa(msa)
         msa_mask = torch.rand(alignments_one_hot.shape[:-1]) < 0.1
-        encode_one_hot_alignments(MSA_MASK_TOKEN)
-        masked_alignments = (~msa_mask).unsqueeze(-1) * alignments_one_hot + (
-            msa_mask.unsqueeze(-1) * encode_one_hot_alignments(MSA_MASK_TOKEN)
+        masked_msa_truth = msa_mask.unsqueeze(-1) * alignments_one_hot
+        masked_alignments = (
+            alignments_one_hot
+            - masked_msa_truth
+            + (msa_mask.unsqueeze(-1) * encode_one_hot_alignments(MSA_MASK_TOKEN))
         )
         return {
             "msa_feat": torch.cat((masked_alignments, deletion_feat), dim=-1),
             "msa_mask": msa_mask,
-            "msa_truth": alignments_one_hot,
+            "masked_msa_truth": masked_msa_truth,
         }
 
     def parse_features(self, row):

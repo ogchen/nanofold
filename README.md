@@ -41,16 +41,21 @@ Preprocess training data by parsing downloaded mmCIF files and building multiple
 docker-compose run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta
 ```
 
-Run the training script:
+Run the training script for 1000 epochs:
 ```bash
-docker-compose run --rm train python train.py -c config/config.ini -i /preprocess/features.arrow --mlflow
+docker-compose run --rm train python train.py -c config/config.json -i /preprocess/features.arrow --mlflow --max-epoch 1000
+```
+
+To resume training from an MLFlow checkpoint, identify the corresponding `$RUNID` and run:
+```bash
+docker-compose run --rm train python train.py -r $RUNID -i /preprocess/features.arrow --mlflow --max-epoch 1000
 ```
 
 ### Profiling
 Run the pytorch profiler:
 ```bash
-docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.ini -i /preprocess/features.arrow --mode time
-docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.ini -i /preprocess/features.arrow --mode memory
+docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.json -i /preprocess/features.arrow --mode time
+docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.json -i /preprocess/features.arrow --mode memory
 ```
 The profiler spits out a `trace.json` and `snapshot.pickle` file in the mounted `/data/` volume.
 Load `trace.json` into [chrome://tracing](chrome://tracing/), and `snapshot.pickle` into [pytorch.org/memory_viz](https://pytorch.org/memory_viz).
