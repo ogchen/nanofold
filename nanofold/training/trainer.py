@@ -4,7 +4,14 @@ from nanofold.training.model import Nanofold
 
 
 class Trainer:
-    def __init__(self, params, loggers, log_every_n_epoch, checkpoint_save_freq):
+    def __init__(
+        self,
+        params,
+        loggers,
+        log_every_n_epoch,
+        checkpoint_save_freq,
+        checkpoint=None,
+    ):
         torch.autograd.set_detect_anomaly(
             params["detect_anomaly"],
             check_nan=params["detect_anomaly"],
@@ -14,20 +21,13 @@ class Trainer:
         self.loggers = loggers
         self.log_every_n_epoch = log_every_n_epoch
         self.checkpoint_save_freq = checkpoint_save_freq
-        self.setup_model(params)
+        self.setup_model(params, checkpoint)
         [l.log_params(params) for l in self.loggers]
         [l.log_config(params) for l in self.loggers]
         [l.log_model_summary(self.model) for l in self.loggers]
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(),
-            lr=params["learning_rate"],
-            betas=(params["beta1"], params["beta2"]),
-            eps=params["optimizer_eps"],
-        )
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
         self.clip_norm = params["clip_norm"]
 
-    def setup_model(self, params):
+    def setup_model(self, params, checkpoint):
         self.model = Nanofold(**Nanofold.get_args(params))
         self.model = self.model.to(self.device)
         compile_model = lambda m: torch.compile(
@@ -38,6 +38,20 @@ class Trainer:
         )
         self.train_model = compile_model(self.model)
         self.eval_model = compile_model(self.model)
+
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(),
+            lr=params["learning_rate"],
+            betas=(params["beta1"], params["beta2"]),
+            eps=params["optimizer_eps"],
+        )
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
+        self.epoch = 0
+        if checkpoint is not None:
+            self.epoch = checkpoint["epoch"]
+            self.model.load_state_dict(checkpoint["model"])
+            self.optimizer.load_state_dict(checkpoint["optimizer"])
+            self.scaler.load_state_dict(checkpoint["scaler"])
 
     def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss):
         return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss + 2 * msa_loss
@@ -91,11 +105,10 @@ class Trainer:
             [l.log_checkpoint(epoch, self.model, self.optimizer, self.scaler) for l in self.loggers]
 
     def fit(self, train_loader, eval_loaders, max_epoch):
-        epoch = 0
         for batch in train_loader:
-            if epoch == max_epoch:
+            if self.epoch >= max_epoch:
                 break
             self.training_loop(self.load_batch(batch))
-            self.log_epoch(epoch, eval_loaders)
-            epoch += 1
+            self.log_epoch(self.epoch, eval_loaders)
+            self.epoch += 1
         [l.log_model(self.model) for l in self.loggers]
