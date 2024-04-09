@@ -4,38 +4,35 @@ from nanofold.training.model import Nanofold
 
 
 class Trainer:
-    def __init__(self, config, loggers, log_every_n_epoch):
-        detect_anomaly = config.getboolean("General", "detect_anomaly")
-        torch.autograd.set_detect_anomaly(detect_anomaly, check_nan=detect_anomaly)
-        self.device = config.get("General", "device")
-        self.use_amp = config.getboolean("General", "use_amp") and self.device == "cuda"
+    def __init__(self, params, loggers, log_every_n_epoch):
+        torch.autograd.set_detect_anomaly(
+            params["detect_anomaly"],
+            check_nan=params["detect_anomaly"],
+        )
+        self.device = params["device"]
+        self.use_amp = params["use_amp"] and self.device == "cuda"
         self.loggers = loggers
         self.log_every_n_epoch = log_every_n_epoch
-        self.setup_model(config)
-        self.clip_norm = config.getfloat("Nanofold", "clip_norm")
-
+        self.setup_model(params)
+        [l.log_params(params) for l in self.loggers]
         [l.log_model_summary(self.model) for l in self.loggers]
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),
-            lr=config.getfloat("Optimizer", "learning_rate"),
-            betas=(
-                config.getfloat("Optimizer", "beta1"),
-                config.getfloat("Optimizer", "beta2"),
-            ),
-            eps=config.getfloat("Optimizer", "eps"),
+            lr=params["learning_rate"],
+            betas=(params["beta1"], params["beta2"]),
+            eps=params["optimizer_eps"],
         )
         self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
+        self.clip_norm = params["clip_norm"]
 
-    def setup_model(self, config):
-        params = Nanofold.get_args(config)
-        [l.log_params(params) for l in self.loggers]
-        self.model = Nanofold(**params)
+    def setup_model(self, params):
+        self.model = Nanofold(**Nanofold.get_args(params))
         self.model = self.model.to(self.device)
         compile_model = lambda m: torch.compile(
             m,
-            disable=not config.getboolean("General", "compile_model"),
+            disable=not params["compile_model"],
             dynamic=False,
-            mode=config.get("General", "compilation_mode", fallback="default"),
+            mode=params.get("compilation_mode", "default"),
         )
         self.train_model = compile_model(self.model)
         self.eval_model = compile_model(self.model)

@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.dev.ini -i /preprocess/features.arrow"
+            "args": "-c /workspace/config/config.dev.json -i /preprocess/features.arrow"
         },
         {
             "name": "Preprocess",
@@ -26,7 +26,7 @@
             "request": "launch",
             "program": "profiler.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.ini -i /preprocess/features.arrow --mode time"
+            "args": "-c /workspace/config/config.json -i /preprocess/features.arrow --mode time"
         },
         {
             "name": "Profile Memory",
@@ -34,7 +34,7 @@
             "request": "launch",
             "program": "profiler.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.ini -i /preprocess/features.arrow --mode memory"
+            "args": "-c /workspace/config/config.json -i /preprocess/features.arrow --mode memory"
         }
     ]
 }

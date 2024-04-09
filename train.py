@@ -1,5 +1,5 @@
 import argparse
-import configparser
+import json
 import logging
 import os
 import torch
@@ -24,37 +24,36 @@ def parse_args():
 
 
 def load_config(filepath):
-    config = configparser.ConfigParser()
     with open(filepath) as f:
-        config.read_file(f)
-    if config.get("General", "device") == "cuda" and not torch.cuda.is_available():
+        params = json.load(f)
+    if params["device"] == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available")
-    return config
+    return params
 
 
-def get_dataloaders(args, config):
+def get_dataloaders(args, params):
     train_data, test_data = ChainDataset.construct_datasets(
         args.input,
-        config.getfloat("Nanofold", "train_split"),
-        config.getint("Nanofold", "residue_crop_size"),
-        config.getint("Nanofold", "num_msa"),
+        params["train_split"],
+        params["residue_crop_size"],
+        params["num_msa"],
     )
     eval_dataloaders = {
         "train": torch.utils.data.DataLoader(
             train_data,
-            batch_size=config.getint("Nanofold", "eval_batch_size"),
+            batch_size=params["eval_batch_size"],
             pin_memory=True,
         ),
         "test": torch.utils.data.DataLoader(
             test_data,
-            batch_size=config.getint("Nanofold", "eval_batch_size"),
+            batch_size=params["eval_batch_size"],
             pin_memory=True,
         ),
     }
     return (
         torch.utils.data.DataLoader(
             train_data,
-            batch_size=config.getint("Nanofold", "batch_size"),
+            batch_size=params["batch_size"],
             pin_memory=True,
             num_workers=4,
         ),
@@ -65,8 +64,8 @@ def get_dataloaders(args, config):
 def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
-    config = load_config(args.config)
-    train_loader, eval_loaders = get_dataloaders(args, config)
+    params = load_config(args.config)
+    train_loader, eval_loaders = get_dataloaders(args, params)
     loggers = [
         Logger(),
     ]
@@ -77,8 +76,8 @@ def main():
                 pip_requirements="requirements/requirements.train.txt",
             )
         )
-    trainer = Trainer(config, loggers, log_every_n_epoch=100)
-    trainer.fit(train_loader, eval_loaders, config.getint("Nanofold", "max_epoch"))
+    trainer = Trainer(params, loggers, log_every_n_epoch=100)
+    trainer.fit(train_loader, eval_loaders, params["max_epoch"])
 
 
 if __name__ == "__main__":

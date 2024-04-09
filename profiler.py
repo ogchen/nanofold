@@ -1,5 +1,5 @@
 import argparse
-import configparser
+import json
 import logging
 import torch
 from pathlib import Path
@@ -21,12 +21,11 @@ def parse_args():
 
 
 def load_config(filepath):
-    config = configparser.ConfigParser()
     with open(filepath) as f:
-        config.read_file(f)
-    if config.get("General", "device") == "cuda" and not torch.cuda.is_available():
+        params = json.load(f)
+    if params["device"] == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available")
-    return config
+    return params
 
 
 class ProfiledTrainer(Trainer):
@@ -47,18 +46,15 @@ def trace_handler(p):
 def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
-    config = load_config(args.config)
+    params = load_config(args.config)
     dataset, _ = ChainDataset.construct_datasets(
         args.input,
         1.0,
-        config.getint("Nanofold", "residue_crop_size"),
-        config.getint("Nanofold", "num_msa"),
+        params["residue_crop_size"],
+        params["num_msa"],
     )
-    data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=config.getint("Nanofold", "batch_size")
-    )
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=params["batch_size"])
     next(iter(data_loader))
-    config["General"]["compile_model"] = "False"
 
     if args.mode == "time":
         with torch.profiler.profile(
@@ -72,7 +68,7 @@ def main():
             trainer.fit(data_loader, {}, max_epoch=40)
     elif args.mode == "memory":
         torch.cuda.memory._record_memory_history(max_entries=100000)
-        trainer = Trainer(config, loggers=[], log_every_n_epoch=1)
+        trainer = Trainer(params, loggers=[], log_every_n_epoch=1)
         trainer.fit(data_loader, {}, max_epoch=5)
         torch.cuda.memory._dump_snapshot("/data/snapshot.pickle")
         torch.cuda.memory._record_memory_history(enabled=None)

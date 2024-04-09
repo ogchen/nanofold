@@ -43,14 +43,14 @@ docker-compose run --rm data_processing python preprocess.py -m /data/pdb/ -o /p
 
 Run the training script:
 ```bash
-docker-compose run --rm train python train.py -c config/config.ini -i /preprocess/features.arrow --mlflow
+docker-compose run --rm train python train.py -c config/config.json -i /preprocess/features.arrow --mlflow
 ```
 
 ### Profiling
 Run the pytorch profiler:
 ```bash
-docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.ini -i /preprocess/features.arrow --mode time
-docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.ini -i /preprocess/features.arrow --mode memory
+docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.json -i /preprocess/features.arrow --mode time
+docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.json -i /preprocess/features.arrow --mode memory
 ```
 The profiler spits out a `trace.json` and `snapshot.pickle` file in the mounted `/data/` volume.
 Load `trace.json` into [chrome://tracing](chrome://tracing/), and `snapshot.pickle` into [pytorch.org/memory_viz](https://pytorch.org/memory_viz).
