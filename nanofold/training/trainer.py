@@ -45,6 +45,9 @@ class Trainer:
             betas=(params["beta1"], params["beta2"]),
             eps=params["optimizer_eps"],
         )
+        self.scheduler = torch.optim.lr_scheduler.LinearLR(
+            self.optimizer, start_factor=params["lr_start_factor"], total_iters=params["lr_warmup"]
+        )
         self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
         self.epoch = 0
         if checkpoint is not None:
@@ -52,6 +55,7 @@ class Trainer:
             self.model.load_state_dict(checkpoint["model"])
             self.optimizer.load_state_dict(checkpoint["optimizer"])
             self.scaler.load_state_dict(checkpoint["scaler"])
+            self.scheduler.load_state_dict(checkpoint["scheduler"])
 
     def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss):
         return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss + 2 * msa_loss
@@ -70,6 +74,7 @@ class Trainer:
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_norm)
         self.scaler.step(self.optimizer)
         self.scaler.update()
+        self.scheduler.step()
 
     @torch.no_grad()
     def evaluate(self, loader):
@@ -102,7 +107,10 @@ class Trainer:
             }
             [l.log_epoch(epoch, metrics) for l in self.loggers]
         if epoch % self.checkpoint_save_freq == 0:
-            [l.log_checkpoint(epoch, self.model, self.optimizer, self.scaler) for l in self.loggers]
+            [
+                l.log_checkpoint(epoch, self.model, self.optimizer, self.scheduler, self.scaler)
+                for l in self.loggers
+            ]
 
     def fit(self, train_loader, eval_loaders, max_epoch):
         for batch in train_loader:
