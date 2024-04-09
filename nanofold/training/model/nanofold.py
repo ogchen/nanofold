@@ -36,7 +36,7 @@ class Nanofold(nn.Module):
         num_distogram_channels,
         num_lddt_bins,
         num_lddt_channels,
-        use_checkpoint,
+        use_grad_checkpoint,
         device,
     ):
         super().__init__()
@@ -77,7 +77,7 @@ class Nanofold(nn.Module):
             pair_embedding_size, num_distogram_bins, num_distogram_channels, device
         )
         self.msa_predictor = MaskedMSAPredictor(msa_embedding_size)
-        self.use_checkpoint = use_checkpoint
+        self.use_grad_checkpoint = use_grad_checkpoint
 
     @staticmethod
     def get_args(config):
@@ -105,7 +105,7 @@ class Nanofold(nn.Module):
             "num_distogram_channels": config["num_distogram_channels"],
             "num_lddt_bins": config["num_lddt_bins"],
             "num_lddt_channels": config["num_lddt_channels"],
-            "use_checkpoint": config["use_checkpoint"],
+            "use_grad_checkpoint": config["use_grad_checkpoint"],
             "device": config["device"],
         }
 
@@ -114,7 +114,7 @@ class Nanofold(nn.Module):
         return cls(**cls.get_args(config))
 
     def run_evoformer(self, *args):
-        if self.use_checkpoint or not self.training:
+        if self.use_grad_checkpoint or not self.training:
             return torch.utils.checkpoint.checkpoint(
                 lambda *inputs: self.evoformer(*inputs), *args, use_reentrant=False
             )

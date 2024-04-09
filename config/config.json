@@ -4,7 +4,7 @@
     "detect_anomaly": false,
     "compile_model": false,
     "compilation_mode": "default",
-    "use_checkpoint": false,
+    "use_grad_checkpoint": false,
     "clip_norm": 2.0,
     "num_recycle": 3,
     "batch_size": 4,

@@ -3,7 +3,7 @@
     "use_amp": true,
     "detect_anomaly": true,
     "compile_model": false,
-    "use_checkpoint": false,
+    "use_grad_checkpoint": false,
     "clip_norm": 10.0,
     "num_recycle": 2,
     "batch_size": 2,
