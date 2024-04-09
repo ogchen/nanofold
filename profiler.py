@@ -29,26 +29,18 @@ def load_config(filepath):
     return config
 
 
-class ProfilerLogger:
-    def __init__(self, prof):
-        self.p = prof
+class ProfiledTrainer(Trainer):
+    def __init__(self, prof, params, *args, **kwargs):
+        self.prof = prof
+        params["compile_model"] = False
+        super().__init__(params, *args, **kwargs)
 
-    def log_model_summary(self, _):
-        pass
-
-    def log_epoch(self, epoch, _):
-        self.p.step()
-
-    def log_model(self, model):
-        pass
-
-    def log_params(self, params):
-        pass
+    def training_loop(self, *args, **kwargs):
+        super().training_loop(*args, **kwargs)
+        self.prof.step()
 
 
 def trace_handler(p):
-    output = p.key_averages().table(sort_by="cuda_memory_usage", row_limit=10)
-    print(output)
     p.export_chrome_trace("/data/trace.json")
 
 
@@ -76,7 +68,7 @@ def main():
             profile_memory=True,
             on_trace_ready=trace_handler,
         ) as prof:
-            trainer = Trainer(config, loggers=[ProfilerLogger(prof)], log_every_n_epoch=1)
+            trainer = ProfiledTrainer(prof, params, loggers=[], log_every_n_epoch=1)
             trainer.fit(data_loader, {}, max_epoch=40)
     elif args.mode == "memory":
         torch.cuda.memory._record_memory_history(max_entries=100000)
