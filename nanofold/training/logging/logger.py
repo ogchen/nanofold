@@ -15,7 +15,6 @@ class Logger:
 
         ordered_metrics = []
         for m in metric_names:
-            keys = [f"{c}_{m}" for c in categories]
             ordered_metrics.append(
                 f"{m} | " + ", ".join([f"{c}: {metrics[c + '_' + m]:.4f}" for c in categories])
             )
@@ -27,4 +26,7 @@ class Logger:
         pass
 
     def log_params(self, params):
+        pass
+
+    def log_config(self, config_dict):
         pass

@@ -15,6 +15,7 @@ class Trainer:
         self.log_every_n_epoch = log_every_n_epoch
         self.setup_model(params)
         [l.log_params(params) for l in self.loggers]
+        [l.log_config(params) for l in self.loggers]
         [l.log_model_summary(self.model) for l in self.loggers]
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),

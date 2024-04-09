@@ -31,3 +31,6 @@ class MLFlowLogger(Logger):
 
     def log_params(self, params):
         mlflow.log_params(params)
+
+    def log_config(self, config_dict):
+        mlflow.log_dict(config_dict, "config.json")
