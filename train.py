@@ -82,7 +82,7 @@ def main():
     mlflow_uri = os.getenv("MLFLOW_SERVER_URI")
 
     if args.runid:
-        checkpoint_loader = CheckpointLoader(mlflow_uri, run_id="b431689d4ee44701ae13f8585032a4b2")
+        checkpoint_loader = CheckpointLoader(mlflow_uri, run_id=args.runid)
         params = checkpoint_loader.get_params()
         checkpoint = checkpoint_loader.get_checkpoint(epoch=args.epoch)
         run_id = checkpoint_loader.get_run_id() if not args.epoch else None
