@@ -41,9 +41,14 @@ Preprocess training data by parsing downloaded mmCIF files and building multiple
 docker-compose run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta
 ```
 
-Run the training script:
+Run the training script for 1000 epochs:
 ```bash
-docker-compose run --rm train python train.py -c config/config.json -i /preprocess/features.arrow --mlflow
+docker-compose run --rm train python train.py -c config/config.json -i /preprocess/features.arrow --mlflow --max-epoch 1000
+```
+
+To resume training from an MLFlow checkpoint, identify the corresponding `$RUNID` and run:
+```bash
+docker-compose run --rm train python train.py -r $RUNID -i /preprocess/features.arrow --mlflow --max-epoch 1000
 ```
 
 ### Profiling
