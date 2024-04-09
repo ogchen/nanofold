@@ -8,11 +8,11 @@ from nanofold.training.logging import Logger
 
 
 class MLFlowLogger(Logger):
-    def __init__(self, uri, pip_requirements):
+    def __init__(self, uri, pip_requirements, run_id=None):
         super().__init__()
         self.pip_requirements = pip_requirements
         mlflow.set_tracking_uri(uri=uri)
-        mlflow.start_run()
+        mlflow.start_run(run_id=run_id)
 
     def __del__(self):
         mlflow.end_run()

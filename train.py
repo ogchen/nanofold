@@ -85,14 +85,20 @@ def main():
         checkpoint_loader = CheckpointLoader(mlflow_uri, run_id="b431689d4ee44701ae13f8585032a4b2")
         params = checkpoint_loader.get_params()
         checkpoint = checkpoint_loader.get_checkpoint(epoch=args.epoch)
+        run_id = checkpoint_loader.get_run_id() if not args.epoch else None
     else:
         params = load_config(args.config)
         checkpoint = None
+        run_id = None
 
     loggers = [Logger()]
     if args.mlflow:
         loggers.append(
-            MLFlowLogger(uri=mlflow_uri, pip_requirements="requirements/requirements.train.txt")
+            MLFlowLogger(
+                uri=mlflow_uri,
+                pip_requirements="requirements/requirements.train.txt",
+                run_id=run_id,
+            )
         )
 
     train_loader, eval_loaders = get_dataloaders(args, params)

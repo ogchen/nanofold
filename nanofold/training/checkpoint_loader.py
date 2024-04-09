@@ -21,6 +21,9 @@ class CheckpointLoader:
     def get_params(self):
         return mlflow.artifacts.load_dict(self.run.info.artifact_uri + "/config.json")
 
+    def get_run_id(self):
+        return self.run.info.run_id
+
     def get_checkpoint(self, epoch=None):
         epoch = self.checkpoints[-1][0] if epoch is None else epoch
         checkpoint = dict(self.checkpoints)[epoch]
