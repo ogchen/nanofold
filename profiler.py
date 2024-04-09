@@ -61,7 +61,7 @@ def main():
     if "time" in args.mode:
         with torch.profiler.profile(
             activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-            schedule=torch.profiler.schedule(skip_first=10, wait=5, warmup=1, active=5, repeat=1),
+            schedule=torch.profiler.schedule(skip_first=2, wait=2, warmup=1, active=3, repeat=1),
             with_stack=True,
             profile_memory=True,
             on_trace_ready=trace_handler,
@@ -69,11 +69,11 @@ def main():
             trainer = ProfiledTrainer(
                 prof, params, loggers=[], log_every_n_epoch=1, checkpoint_save_freq=1
             )
-            trainer.fit(data_loader, {}, max_epoch=40)
+            trainer.fit(data_loader, {}, max_epoch=10)
     if "memory" in args.mode:
         torch.cuda.memory._record_memory_history(max_entries=100000)
         trainer = Trainer(params, loggers=[], log_every_n_epoch=1, checkpoint_save_freq=1)
-        trainer.fit(data_loader, {}, max_epoch=5)
+        trainer.fit(data_loader, {}, max_epoch=3)
         torch.cuda.memory._dump_snapshot("/data/snapshot.pickle")
         torch.cuda.memory._record_memory_history(enabled=None)
 
