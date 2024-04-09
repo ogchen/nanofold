@@ -18,7 +18,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args": "-r b431689d4ee44701ae13f8585032a4b2 -i /preprocess/features.arrow --max-epoch 10000"
+            "args": "-r 200983a080a54c559ee9aef054a514a4 -i /preprocess/features.arrow --max-epoch 1000"
         },
         {
             "name": "Preprocess",
