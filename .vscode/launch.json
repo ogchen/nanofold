@@ -10,7 +10,15 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.dev.json -i /preprocess/features.arrow"
+            "args": "-c /workspace/config/config.dev.json -i /preprocess/features.arrow --max-epoch 1000"
+        },
+        {
+            "name": "Resume Training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train.py",
+            "console": "integratedTerminal",
+            "args": "-r b431689d4ee44701ae13f8585032a4b2 -i /preprocess/features.arrow --max-epoch 10000"
         },
         {
             "name": "Preprocess",

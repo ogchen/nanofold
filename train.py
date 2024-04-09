@@ -6,6 +6,7 @@ import torch
 from pathlib import Path
 
 from nanofold.training.chain_dataset import ChainDataset
+from nanofold.training.checkpoint_loader import CheckpointLoader
 from nanofold.training.logging import Logger
 from nanofold.training.logging import MLFlowLogger
 from nanofold.training.trainer import Trainer
@@ -13,7 +14,21 @@ from nanofold.training.trainer import Trainer
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", help="Configuration file for training")
+    config = parser.add_mutually_exclusive_group(required=True)
+    config.add_argument("-c", "--config", help="Configuration file for training")
+    config.add_argument("-r", "--runid", help="Resume training of run identified by MLFlow ID")
+    parser.add_argument(
+        "-e",
+        "--epoch",
+        help="Optional epoch for which to resume training. Use with --runid",
+        type=int,
+        required=False,
+    )
+    parser.add_argument("--max-epoch", help="Max number of epochs to train for", type=int)
+    parser.add_argument("--log-freq", help="Log every n epochs", type=int, default=100)
+    parser.add_argument(
+        "--checkpoint-freq", help="Checkpoint every n epochs", type=int, default=100
+    )
     parser.add_argument(
         "-i", "--input", help="Input chain training data in Arrow IPC file format", type=Path
     )
@@ -64,20 +79,31 @@ def get_dataloaders(args, params):
 def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
-    params = load_config(args.config)
-    train_loader, eval_loaders = get_dataloaders(args, params)
-    loggers = [
-        Logger(),
-    ]
+    mlflow_uri = os.getenv("MLFLOW_SERVER_URI")
+
+    if args.runid:
+        checkpoint_loader = CheckpointLoader(mlflow_uri, run_id="b431689d4ee44701ae13f8585032a4b2")
+        params = checkpoint_loader.get_params()
+        checkpoint = checkpoint_loader.get_checkpoint(epoch=args.epoch)
+    else:
+        params = load_config(args.config)
+        checkpoint = None
+
+    loggers = [Logger()]
     if args.mlflow:
         loggers.append(
-            MLFlowLogger(
-                uri=os.getenv("MLFLOW_SERVER_URI"),
-                pip_requirements="requirements/requirements.train.txt",
-            )
+            MLFlowLogger(uri=mlflow_uri, pip_requirements="requirements/requirements.train.txt")
         )
-    trainer = Trainer(params, loggers, log_every_n_epoch=100)
-    trainer.fit(train_loader, eval_loaders, params["max_epoch"])
+
+    train_loader, eval_loaders = get_dataloaders(args, params)
+    trainer = Trainer(
+        params,
+        loggers,
+        log_every_n_epoch=args.log_freq,
+        checkpoint_save_freq=args.checkpoint_freq,
+        checkpoint=checkpoint,
+    )
+    trainer.fit(train_loader, eval_loaders, args.max_epoch)
 
 
 if __name__ == "__main__":
