@@ -15,7 +15,9 @@ def parse_args():
         "-i", "--input", help="Input chain training data in Arrow IPC file format", type=Path
     )
     parser.add_argument("-l", "--logging", help="Logging level", default="INFO")
-    parser.add_argument("--mode", help="Mode of operation", choices=["time", "memory"])
+    parser.add_argument(
+        "--mode", help="Mode of operation", choices=["time", "memory"], action="append"
+    )
 
     return parser.parse_args()
 
@@ -56,7 +58,7 @@ def main():
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=params["batch_size"])
     next(iter(data_loader))
 
-    if args.mode == "time":
+    if "time" in args.mode:
         with torch.profiler.profile(
             activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
             schedule=torch.profiler.schedule(skip_first=10, wait=5, warmup=1, active=5, repeat=1),
@@ -68,7 +70,7 @@ def main():
                 prof, params, loggers=[], log_every_n_epoch=1, checkpoint_save_freq=1
             )
             trainer.fit(data_loader, {}, max_epoch=40)
-    elif args.mode == "memory":
+    if "memory" in args.mode:
         torch.cuda.memory._record_memory_history(max_entries=100000)
         trainer = Trainer(params, loggers=[], log_every_n_epoch=1, checkpoint_save_freq=1)
         trainer.fit(data_loader, {}, max_epoch=5)

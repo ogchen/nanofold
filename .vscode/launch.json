@@ -29,20 +29,12 @@
             "args": "-m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta"
         },
         {
-            "name": "Profile Time",
+            "name": "Profile",
             "type": "debugpy",
             "request": "launch",
             "program": "profiler.py",
             "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.json -i /preprocess/features.arrow --mode time"
-        },
-        {
-            "name": "Profile Memory",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "profiler.py",
-            "console": "integratedTerminal",
-            "args": "-c /workspace/config/config.json -i /preprocess/features.arrow --mode memory"
+            "args": "-c /workspace/config/config.json -i /preprocess/features.arrow --mode time --mode memory"
         }
     ]
 }
