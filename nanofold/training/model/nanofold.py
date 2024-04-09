@@ -165,7 +165,7 @@ class Nanofold(nn.Module):
             prev_pair_rep = pair_rep
             prev_ca_coords = coords[..., 1, :]
 
-        msa_loss = self.msa_predictor(msa_rep, batch["msa_mask"], batch.get("msa_truth"))
+        msa_loss = self.msa_predictor(msa_rep, batch["msa_mask"], batch.get("masked_msa_truth"))
 
         dist_loss = (
             self.distogram_loss(pair_rep, batch["translations"])
