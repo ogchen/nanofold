@@ -4,7 +4,7 @@ from nanofold.training.model import Nanofold
 
 
 class Trainer:
-    def __init__(self, params, loggers, log_every_n_epoch):
+    def __init__(self, params, loggers, log_every_n_epoch, checkpoint_save_freq):
         torch.autograd.set_detect_anomaly(
             params["detect_anomaly"],
             check_nan=params["detect_anomaly"],
@@ -13,6 +13,7 @@ class Trainer:
         self.use_amp = params["use_amp"] and self.device == "cuda"
         self.loggers = loggers
         self.log_every_n_epoch = log_every_n_epoch
+        self.checkpoint_save_freq = checkpoint_save_freq
         self.setup_model(params)
         [l.log_params(params) for l in self.loggers]
         [l.log_config(params) for l in self.loggers]
@@ -77,14 +78,17 @@ class Trainer:
         }
 
     def log_epoch(self, epoch, eval_loaders):
-        if epoch % self.log_every_n_epoch != 0 or len(self.loggers) == 0:
+        if len(self.loggers) == 0:
             return
-        metrics = {
-            f"{k}_{metric_name}": metric
-            for k, v in eval_loaders.items()
-            for metric_name, metric in self.evaluate(v).items()
-        }
-        [l.log_epoch(epoch, metrics) for l in self.loggers]
+        if epoch % self.log_every_n_epoch == 0:
+            metrics = {
+                f"{k}_{metric_name}": metric
+                for k, v in eval_loaders.items()
+                for metric_name, metric in self.evaluate(v).items()
+            }
+            [l.log_epoch(epoch, metrics) for l in self.loggers]
+        if epoch % self.checkpoint_save_freq == 0:
+            [l.log_checkpoint(epoch, self.model, self.optimizer, self.scaler) for l in self.loggers]
 
     def fit(self, train_loader, eval_loaders, max_epoch):
         epoch = 0

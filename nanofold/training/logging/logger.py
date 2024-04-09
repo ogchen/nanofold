@@ -30,3 +30,6 @@ class Logger:
 
     def log_config(self, config_dict):
         pass
+
+    def log_checkpoint(self, epoch, model, optimizer, scaler):
+        pass
