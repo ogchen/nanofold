@@ -91,21 +91,34 @@ class Trainer:
             dtype=torch.bfloat16,
             enabled=self.params["use_amp"] and self.params["device"] == "cuda",
         ):
-            _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss = (
-                self.eval_model(self.load_batch(next(iter(loader))))
-            )
-            loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss, msa_loss)
-        self.model.train()
-        return {
-            "chain_plddt": chain_plddt.mean().item(),
-            "chain_lddt": chain_lddt.mean().item(),
-            "fape_loss": fape_loss.item(),
-            "conf_loss": conf_loss.item(),
-            "aux_loss": aux_loss.item(),
-            "dist_loss": dist_loss.item(),
-            "msa_loss": msa_loss.item(),
-            "total_loss": loss.item(),
-        }
+            metrics = {
+                "chain_plddt": [],
+                "chain_lddt": [],
+                "fape_loss": [],
+                "conf_loss": [],
+                "aux_loss": [],
+                "dist_loss": [],
+                "msa_loss": [],
+                "total_loss": [],
+            }
+
+            for _ in range(self.params["num_eval_iters"]):
+                _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss = (
+                    self.eval_model(self.load_batch(next(iter(loader))))
+                )
+                total_loss = self.get_total_loss(
+                    fape_loss, conf_loss, aux_loss, dist_loss, msa_loss
+                )
+                metrics["chain_plddt"].append(chain_plddt)
+                metrics["chain_lddt"].append(chain_lddt)
+                metrics["fape_loss"].append(fape_loss)
+                metrics["conf_loss"].append(conf_loss)
+                metrics["aux_loss"].append(aux_loss)
+                metrics["dist_loss"].append(dist_loss)
+                metrics["msa_loss"].append(msa_loss)
+                metrics["total_loss"].append(total_loss)
+
+        return {k: torch.stack(v).mean().item() for k, v in metrics.items()}
 
     def log_epoch(self, epoch, eval_loaders):
         if len(self.loggers) == 0:
