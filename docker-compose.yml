@@ -19,6 +19,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.train
     image: train
+    depends_on:
+      - mlflow-server
     deploy:
       resources:
         reservations:

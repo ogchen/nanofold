@@ -127,30 +127,23 @@ class StructureModule(nn.Module):
         aux_loss = (
             torch.stack(aux_losses).mean() if all(l is not None for l in aux_losses) else None
         )
-        fape_loss = (
-            compute_fape_loss(
-                frames,
-                frames.translations,
-                frames_truth,
-                frames_truth.translations,
-                clamp=fape_clamp,
-            )
-            if (frames_truth is not None)
-            else None
-        )
         batched_frames = Frame(frames.rotations.unsqueeze(-3), frames.translations.unsqueeze(-2))
         coords = Frame.apply(batched_frames, local_coords)
 
         chain_lddt, chain_plddt, fape_loss, conf_loss, aux_loss = None, None, None, None, None
         if frames_truth is not None:
-            aux_loss = torch.stack(aux_losses).mean()
+            batched_frames_truth = Frame(
+                frames_truth.rotations.unsqueeze(-3), frames_truth.translations.unsqueeze(-2)
+            )
+            coords_truth = Frame.apply(batched_frames_truth, local_coords)
             fape_loss = compute_fape_loss(
                 frames,
-                frames.translations,
+                coords.view(*coords.shape[:-3], -1, *coords.shape[-1:]),
                 frames_truth,
-                frames_truth.translations,
+                coords_truth.view(*coords_truth.shape[:-3], -1, *coords_truth.shape[-1:]),
                 clamp=fape_clamp,
             )
+            aux_loss = torch.stack(aux_losses).mean()
             residue_LDDT_truth = self.lddt_predictor.compute_per_residue_LDDT(
                 frames.translations, frames_truth.translations
             )
