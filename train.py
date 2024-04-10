@@ -78,7 +78,11 @@ def get_dataloaders(args, params):
 
 def main():
     args = parse_args()
-    logging.basicConfig(level=getattr(logging, args.logging.upper()))
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s: %(message)s",
+        level=getattr(logging, args.logging.upper()),
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     mlflow_uri = os.getenv("MLFLOW_SERVER_URI")
 
     if args.runid:
