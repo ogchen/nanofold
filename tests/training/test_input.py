@@ -12,17 +12,16 @@ def test_input_embedder():
     position_bins = 3
     embedder = input.InputEmbedding(pair_embedding_size, msa_embedding_size, position_bins)
 
-    num_msa = 4
     seq = "ADHIAAAA"
     target_feat = encode_one_hot(seq)
     msa = {"alignments": [seq], "deletion_matrix": [torch.zeros(len(seq))]}
-    alignments_one_hot, deletion_feat = encode_msa(preprocess_msa(msa, num_msa))
+    alignments_one_hot, deletion_feat = encode_msa(preprocess_msa(msa, num_msa=4))
     msa_feat = torch.cat((alignments_one_hot, deletion_feat), dim=-1)
     residue_index = torch.arange(len(seq))
 
     msa_rep, pair_rep = embedder(target_feat, residue_index, msa_feat)
     assert pair_rep.shape == (len(seq), len(seq), pair_embedding_size)
-    assert msa_rep.shape == (num_msa, len(seq), msa_embedding_size)
+    assert msa_rep.shape == (1, len(seq), msa_embedding_size)
 
 
 def test_input_embedder_batched():

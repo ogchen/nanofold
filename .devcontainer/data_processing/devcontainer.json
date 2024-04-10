@@ -11,7 +11,8 @@
 		"vscode": {
 			"extensions": [
 				"ms-python.python",
-				"ms-python.black-formatter"
+				"ms-python.black-formatter",
+				"GitHub.copilot"
 			],
 			"settings": {
 				"python.testing.pytestArgs": [

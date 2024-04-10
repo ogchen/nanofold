@@ -66,10 +66,8 @@ def preprocess_msa(msa, num_msa):
     # Shuffle MSA
     random.shuffle(deduplicated)
 
-    # Pad or truncate MSA
+    # Truncate MSA
     msa = [query, *[m for m in deduplicated if m[0] != query]][:num_msa]
-    for _ in range(num_msa - len(msa)):
-        msa.append((MSA_GAP * len(query[0]), torch.zeros(len(query[1]), dtype=torch.int32)))
 
     return msa
 
@@ -147,6 +145,30 @@ class ChainDataset(IterableDataset):
             - masked_msa_truth
             + (msa_mask.unsqueeze(-1) * encode_one_hot_alignments(MSA_MASK_TOKEN))
         )
+
+        # Pad MSA
+        missing = self.num_msa - len(msa)
+        if missing > 0:
+            pad_zeros = lambda x: torch.cat(
+                [
+                    x,
+                    torch.zeros((missing, *x.shape[1:]), dtype=x.dtype),
+                ],
+                dim=0,
+            )
+            msa_mask = pad_zeros(msa_mask)
+            deletion_feat = pad_zeros(deletion_feat)
+            masked_msa_truth = pad_zeros(masked_msa_truth)
+            masked_alignments = torch.cat(
+                [
+                    masked_alignments,
+                    encode_one_hot_alignments([MSA_GAP]).repeat(
+                        missing, *masked_alignments.shape[1:-1], 1
+                    ),
+                ],
+                dim=0,
+            )
+
         return {
             "msa_feat": torch.cat((masked_alignments, deletion_feat), dim=-1),
             "msa_mask": msa_mask,
