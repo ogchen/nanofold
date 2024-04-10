@@ -5,7 +5,7 @@
     "compile_model": false,
     "compilation_mode": "default",
     "use_grad_checkpoint": true,
-    "clip_norm": 10.0,
+    "clip_norm": 0.1,
     "num_recycle": 4,
     "batch_size": 2,
     "eval_batch_size": 2,
