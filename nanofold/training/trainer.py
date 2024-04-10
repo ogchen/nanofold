@@ -16,39 +16,41 @@ class Trainer:
             params["detect_anomaly"],
             check_nan=params["detect_anomaly"],
         )
-        self.device = params["device"]
-        self.use_amp = params["use_amp"] and self.device == "cuda"
+        self.params = params
         self.loggers = loggers
         self.log_every_n_epoch = log_every_n_epoch
         self.checkpoint_save_freq = checkpoint_save_freq
-        self.setup_model(params, checkpoint)
+        self.setup_model(checkpoint)
         [l.log_params(params) for l in self.loggers]
         [l.log_config(params) for l in self.loggers]
         [l.log_model_summary(self.model) for l in self.loggers]
-        self.clip_norm = params["clip_norm"]
 
-    def setup_model(self, params, checkpoint):
-        self.model = Nanofold(**Nanofold.get_args(params))
-        self.model = self.model.to(self.device)
+    def setup_model(self, checkpoint):
+        self.model = Nanofold(**Nanofold.get_args(self.params))
+        self.model = self.model.to(self.params["device"])
         compile_model = lambda m: torch.compile(
             m,
-            disable=not params["compile_model"],
+            disable=not self.params["compile_model"],
             dynamic=False,
-            mode=params.get("compilation_mode", "default"),
+            mode=self.params.get("compilation_mode", "default"),
         )
         self.train_model = compile_model(self.model)
         self.eval_model = compile_model(self.model)
 
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),
-            lr=params["learning_rate"],
-            betas=(params["beta1"], params["beta2"]),
-            eps=params["optimizer_eps"],
+            lr=self.params["learning_rate"],
+            betas=(self.params["beta1"], self.params["beta2"]),
+            eps=self.params["optimizer_eps"],
         )
         self.scheduler = torch.optim.lr_scheduler.LinearLR(
-            self.optimizer, start_factor=params["lr_start_factor"], total_iters=params["lr_warmup"]
+            self.optimizer,
+            start_factor=self.params["lr_start_factor"],
+            total_iters=self.params["lr_warmup"],
         )
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
+        self.scaler = torch.cuda.amp.GradScaler(
+            enabled=self.params["use_amp"] and self.params["device"] == "cuda",
+        )
         self.epoch = 0
         if checkpoint is not None:
             self.epoch = checkpoint["epoch"]
@@ -62,16 +64,21 @@ class Trainer:
 
     def load_batch(self, batch):
         return {
-            k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()
+            k: v.to(self.params["device"]) if isinstance(v, torch.Tensor) else v
+            for k, v in batch.items()
         }
 
     def training_loop(self, batch):
         self.optimizer.zero_grad(set_to_none=True)
-        with torch.autocast(self.device, dtype=torch.bfloat16, enabled=self.use_amp):
+        with torch.autocast(
+            self.params["device"],
+            dtype=torch.bfloat16,
+            enabled=self.params["use_amp"] and self.params["device"] == "cuda",
+        ):
             _, _, _, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss = self.train_model(batch)
             loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss, msa_loss)
         self.scaler.scale(loss).backward()
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_norm)
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.params["clip_norm"])
         self.scaler.step(self.optimizer)
         self.scaler.update()
         self.scheduler.step()
@@ -79,7 +86,11 @@ class Trainer:
     @torch.no_grad()
     def evaluate(self, loader):
         self.model.eval()
-        with torch.autocast(self.device, dtype=torch.bfloat16, enabled=self.use_amp):
+        with torch.autocast(
+            self.params["device"],
+            dtype=torch.bfloat16,
+            enabled=self.params["use_amp"] and self.params["device"] == "cuda",
+        ):
             _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss = (
                 self.eval_model(self.load_batch(next(iter(loader))))
             )
