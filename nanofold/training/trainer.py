@@ -107,7 +107,10 @@ class Trainer:
             if self.epoch >= max_epoch:
                 break
             train_metrics = self.training_loop(self.load_batch(next(iter(train_loader))))
-            if any([self.epoch % l.log_every_n_epoch == 0 for l in self.loggers]) and test_loader is not None:
+            if (
+                any([self.epoch % l.log_every_n_epoch == 0 for l in self.loggers])
+                and test_loader is not None
+            ):
                 test_metrics = self.evaluate(self.load_batch(next(iter(test_loader))))
                 [l.log_epoch(self.epoch, train_metrics, test_metrics) for l in self.loggers]
             self.save_checkpoint()
