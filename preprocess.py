@@ -29,6 +29,8 @@ def parse_args():
 def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
+    msa_output_dir = args.output / "msa"
+    msa_output_dir.mkdir(exist_ok=True)
     ipc_output_path = args.output / "features.arrow"
     jackhmmer_results_path = args.output / "small_bfd_cache"
     jackhmmer_results_path.mkdir(exist_ok=True)
@@ -47,7 +49,7 @@ def main():
             process_mmcif_files(db_manager, executor, args.mmcif, args.batch)
 
         with ThreadPoolExecutor() as executor:
-            build_msa(msa_runner, db_manager, executor)
+            build_msa(msa_runner, db_manager, executor, msa_output_dir)
     dump_to_ipc(db_manager, ipc_output_path)
 
 

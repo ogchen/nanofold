@@ -1,12 +1,12 @@
 import logging
 import math
 import numpy as np
+import pickle
 from functools import partial
 from io import StringIO
 from itertools import batched
 from tempfile import NamedTemporaryFile
 
-from nanofold.data_processing.db import encode_doc
 from nanofold.data_processing.sto_parser import parse_msa
 from nanofold.common.residue_definitions import RESIDUE_INDEX
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
@@ -14,7 +14,7 @@ from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 
 
 def get_chains_to_process(db_manager):
-    chains = db_manager.chains().find({"msa": {"$exists": 1}}, {"_id": 1, "sequence": 1})
+    chains = db_manager.chains().find({"msa_feat": {"$exists": 0}}, {"_id": 1, "sequence": 1})
     return list(chains)
 
 
@@ -122,7 +122,7 @@ def get_extra_msa_seq(alignments_one_hot, deletion_matrix, num_msa_clusters, num
     )
 
 
-def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=64, num_extra_seq=256):
+def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=64, num_extra_seq=196):
     alignments_one_hot, deletion_matrix = preprocess_msa(alignments, deletion_matrix)
     cluster_msa, msa_feat = get_msa_feat(alignments_one_hot, deletion_matrix, num_msa_clusters)
     extra_msa_feat = get_extra_msa_seq(
@@ -135,7 +135,7 @@ def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=64, num_ext
     }
 
 
-def build_msa(msa_runner, db_manager, executor):
+def build_msa(msa_runner, db_manager, executor, msa_output_dir):
     chains = get_chains_to_process(db_manager)
     total_num_chains = db_manager.chains().count_documents({})
     logging.info(f"Found {len(chains)}/{total_num_chains} chains missing MSA")
@@ -146,8 +146,11 @@ def build_msa(msa_runner, db_manager, executor):
                 logging.error(f"Chain {chain['_id']} has a mismatching sequence and alignment")
                 continue
             features = parse_msa_features(alignments, deletion_matrix)
-            db_manager.chains().update_one(
-                {"_id": chain["_id"]}, {"$set": {"msa": encode_doc(features)}}
-            )
+            with open(
+                msa_output_dir / f"{chain['_id']['structure_id']}_{chain['_id']['chain_id']}.pkl",
+                "wb",
+            ) as f:
+                pickle.dump(features, f)
+            db_manager.chains().update_one({"_id": chain["_id"]}, {"$set": {"msa_feat": True}})
         except Exception as e:
             logging.error(f"Failed to build msa for chain {chain['_id']}: {e}")
