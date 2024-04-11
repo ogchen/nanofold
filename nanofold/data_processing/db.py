@@ -1,4 +1,6 @@
+import pickle
 import pymongo
+from bson.binary import Binary
 from pymongo import MongoClient
 
 
@@ -19,3 +21,11 @@ class DBManager:
 
     def chains(self):
         return self.db.chains
+
+
+def encode_doc(doc):
+    return Binary(pickle.dumps(doc, protocol=2))
+
+
+def decode_doc(doc):
+    return pickle.loads(doc)
