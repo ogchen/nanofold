@@ -54,14 +54,15 @@ def get_dataloaders(args, params):
         args.input,
         params["train_split"],
         params["residue_crop_size"],
-        params["num_msa"],
+        params["num_msa_clusters"],
+        params["num_extra_msa"],
     )
     return (
         torch.utils.data.DataLoader(
             train_data,
             batch_size=params["batch_size"],
             pin_memory=True,
-            num_workers=4,
+            num_workers=2,
         ),
         torch.utils.data.DataLoader(
             test_data,
