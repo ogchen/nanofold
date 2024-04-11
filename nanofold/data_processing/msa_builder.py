@@ -42,7 +42,7 @@ def build_msa(msa_runner, db_manager, executor):
     logging.info(f"Found {len(chains)}/{total_num_chains} chains missing MSA")
     for chain, sto_contents in get_sto_contents(msa_runner, executor, chains):
         try:
-            msa = parse_msa(StringIO(sto_contents), num_samples=125)
+            msa = parse_msa(StringIO(sto_contents), num_samples=500)
             if msa["alignments"][0] != chain["sequence"]:
                 logging.error(f"Chain {chain['_id']} has a mismatching sequence and alignment")
                 continue
