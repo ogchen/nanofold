@@ -50,7 +50,7 @@ def main():
 
         with ThreadPoolExecutor() as executor:
             build_msa(msa_runner, db_manager, executor, msa_output_dir)
-    dump_to_ipc(db_manager, ipc_output_path)
+    dump_to_ipc(db_manager, msa_output_dir, ipc_output_path)
 
 
 if __name__ == "__main__":
