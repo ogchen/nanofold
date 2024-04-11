@@ -64,7 +64,7 @@ def get_msa_feat(alignments, deletion_matrix, num_msa_clusters, batch_size=500):
     cluster_index = np.argmax(cluster_msa[..., : len(RESIDUE_INDEX)], axis=-1)[:, np.newaxis, :]
     cluster_profile = np.copy(cluster_msa)
     cluster_deletion_mean = np.copy(deletion_matrix[:num_msa_clusters])
-    cluster_counts = np.ones(num_msa_clusters)
+    cluster_counts = np.ones(len(cluster_msa))
 
     for i in range(num_msa_clusters, len(alignments), batch_size):
         batch_alignments = alignments[i : i + batch_size]
@@ -126,7 +126,7 @@ def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=64, num_ext
     alignments_one_hot, deletion_matrix = preprocess_msa(alignments, deletion_matrix)
     cluster_msa, msa_feat = get_msa_feat(alignments_one_hot, deletion_matrix, num_msa_clusters)
     extra_msa_feat = get_extra_msa_seq(
-        alignments_one_hot, deletion_matrix, num_msa_clusters, num_extra_seq
+        alignments_one_hot, deletion_matrix, len(cluster_msa), num_extra_seq
     )
     return {
         "cluster_msa": cluster_msa,
