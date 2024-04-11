@@ -8,8 +8,8 @@ from nanofold.training.logging import Logger
 
 
 class MLFlowLogger(Logger):
-    def __init__(self, uri, pip_requirements, run_id=None):
-        super().__init__()
+    def __init__(self, uri, pip_requirements, log_every_n_epoch, run_id=None):
+        super().__init__(log_every_n_epoch)
         self.pip_requirements = pip_requirements
         mlflow.set_tracking_uri(uri=uri)
         mlflow.start_run(run_id=run_id)
@@ -23,9 +23,13 @@ class MLFlowLogger(Logger):
             model_summary.write_text(str(torchinfo.summary(model, verbose=0)))
             mlflow.log_artifact(model_summary)
 
-    def log_epoch(self, epoch, metrics):
-        for k, metric in metrics.items():
-            mlflow.log_metric(k, metric, step=epoch)
+    def log_epoch(self, epoch, train_metrics, test_metrics):
+        if epoch % self.log_every_n_epoch != 0:
+            return
+        metrics = {f"train_{k}": v for k, v in train_metrics.items()} | {
+            f"test_{k}": v for k, v in test_metrics.items()
+        }
+        mlflow.log_metrics(metrics, step=epoch)
 
     def log_model(self, model):
         mlflow.pytorch.log_model(model, "model", pip_requirements=self.pip_requirements)

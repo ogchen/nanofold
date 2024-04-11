@@ -65,14 +65,12 @@ def main():
             profile_memory=True,
             on_trace_ready=trace_handler,
         ) as prof:
-            trainer = ProfiledTrainer(
-                prof, params, loggers=[], log_every_n_epoch=1, checkpoint_save_freq=1
-            )
-            trainer.fit(data_loader, {}, max_epoch=6)
+            trainer = ProfiledTrainer(prof, params, loggers=[], checkpoint_save_freq=1)
+            trainer.fit(data_loader, None, max_epoch=6)
     if "memory" in args.mode:
         torch.cuda.memory._record_memory_history(max_entries=100000)
-        trainer = Trainer(params, loggers=[], log_every_n_epoch=1, checkpoint_save_freq=1)
-        trainer.fit(data_loader, {}, max_epoch=1)
+        trainer = Trainer(params, loggers=[], checkpoint_save_freq=1)
+        trainer.fit(data_loader, None, max_epoch=1)
         torch.cuda.memory._dump_snapshot("/data/snapshot.pickle")
         torch.cuda.memory._record_memory_history(enabled=None)
 

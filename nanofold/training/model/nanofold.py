@@ -120,6 +120,9 @@ class Nanofold(nn.Module):
             )
         return self.evoformer(*args)
 
+    def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss):
+        return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss + 2 * msa_loss
+
     def forward(self, batch):
         num_recycle = (
             torch.randint(self.num_recycle, (1,)) + 1 if self.training else self.num_recycle
@@ -173,4 +176,14 @@ class Nanofold(nn.Module):
             else None
         )
 
-        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss
+        return {
+            "coords": coords,
+            "chain_plddt": chain_plddt.mean(),
+            "chain_lddt": chain_lddt.mean(),
+            "fape_loss": fape_loss,
+            "conf_loss": conf_loss,
+            "aux_loss": aux_loss,
+            "dist_loss": dist_loss,
+            "msa_loss": msa_loss,
+            "total_loss": self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss, msa_loss),
+        }
