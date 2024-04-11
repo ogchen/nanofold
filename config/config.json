@@ -9,7 +9,6 @@
     "num_recycle": 4,
     "batch_size": 2,
     "eval_batch_size": 2,
-    "num_eval_iters": 8,
     "residue_crop_size": 64,
     "train_split": 0.8,
     "single_embedding_size": 192,

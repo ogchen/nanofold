@@ -84,11 +84,9 @@ class LDDTPredictor(nn.Module):
 
     def forward(self, single, residue_LDDT_truth=None):
         logits = self.activate(single)
-        conf_loss, chain_plddt = None, None
+        chain_plddt = torch.mean(nn.functional.softmax(logits, dim=-1) @ self.bins, dim=-1)
 
-        if not self.training:
-            chain_plddt = torch.mean(nn.functional.softmax(logits, dim=-1) @ self.bins, dim=-1)
-
+        conf_loss = None
         if residue_LDDT_truth is not None:
             index = (
                 torch.floor(len(self.bins) * residue_LDDT_truth)

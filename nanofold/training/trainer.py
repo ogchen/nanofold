@@ -8,7 +8,6 @@ class Trainer:
         self,
         params,
         loggers,
-        log_every_n_epoch,
         checkpoint_save_freq,
         checkpoint=None,
     ):
@@ -18,7 +17,6 @@ class Trainer:
         )
         self.params = params
         self.loggers = loggers
-        self.log_every_n_epoch = log_every_n_epoch
         self.checkpoint_save_freq = checkpoint_save_freq
         self.setup_model(checkpoint)
         [l.log_params(params) for l in self.loggers]
@@ -59,9 +57,6 @@ class Trainer:
             self.scaler.load_state_dict(checkpoint["scaler"])
             self.scheduler.load_state_dict(checkpoint["scheduler"])
 
-    def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss):
-        return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss + 2 * msa_loss
-
     def load_batch(self, batch):
         return {
             k: v.to(self.params["device"]) if isinstance(v, torch.Tensor) else v
@@ -75,72 +70,46 @@ class Trainer:
             dtype=torch.bfloat16,
             enabled=self.params["use_amp"] and self.params["device"] == "cuda",
         ):
-            _, _, _, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss = self.train_model(batch)
-            loss = self.get_total_loss(fape_loss, conf_loss, aux_loss, dist_loss, msa_loss)
-        self.scaler.scale(loss).backward()
+            out = self.train_model(batch)
+        self.scaler.scale(out["total_loss"]).backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.params["clip_norm"])
         self.scaler.step(self.optimizer)
         self.scaler.update()
         self.scheduler.step()
+        return {k: v.item() for k, v in out.items() if k != "coords"}
 
     @torch.no_grad()
-    def evaluate(self, loader):
+    def evaluate(self, batch):
         self.model.eval()
         with torch.autocast(
             self.params["device"],
             dtype=torch.bfloat16,
             enabled=self.params["use_amp"] and self.params["device"] == "cuda",
         ):
-            metrics = {
-                "chain_plddt": [],
-                "chain_lddt": [],
-                "fape_loss": [],
-                "conf_loss": [],
-                "aux_loss": [],
-                "dist_loss": [],
-                "msa_loss": [],
-                "total_loss": [],
-            }
+            out = self.eval_model(batch)
+        self.model.train()
+        return {k: v.item() for k, v in out.items() if k != "coords"}
 
-            for _ in range(self.params["num_eval_iters"]):
-                _, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss = (
-                    self.eval_model(self.load_batch(next(iter(loader))))
-                )
-                total_loss = self.get_total_loss(
-                    fape_loss, conf_loss, aux_loss, dist_loss, msa_loss
-                )
-                metrics["chain_plddt"].append(chain_plddt)
-                metrics["chain_lddt"].append(chain_lddt)
-                metrics["fape_loss"].append(fape_loss)
-                metrics["conf_loss"].append(conf_loss)
-                metrics["aux_loss"].append(aux_loss)
-                metrics["dist_loss"].append(dist_loss)
-                metrics["msa_loss"].append(msa_loss)
-                metrics["total_loss"].append(total_loss)
+    def log_epoch(self, train_metrics, test_metrics):
+        [l.log_epoch(self.epoch, train_metrics, test_metrics) for l in self.loggers]
 
-        return {k: torch.stack(v).mean().item() for k, v in metrics.items()}
-
-    def log_epoch(self, epoch, eval_loaders):
-        if len(self.loggers) == 0:
-            return
-        if epoch % self.log_every_n_epoch == 0:
-            metrics = {
-                f"{k}_{metric_name}": metric
-                for k, v in eval_loaders.items()
-                for metric_name, metric in self.evaluate(v).items()
-            }
-            [l.log_epoch(epoch, metrics) for l in self.loggers]
-        if epoch % self.checkpoint_save_freq == 0:
+    def save_checkpoint(self):
+        if self.epoch % self.checkpoint_save_freq == 0:
             [
-                l.log_checkpoint(epoch, self.model, self.optimizer, self.scheduler, self.scaler)
+                l.log_checkpoint(
+                    self.epoch, self.model, self.optimizer, self.scheduler, self.scaler
+                )
                 for l in self.loggers
             ]
 
-    def fit(self, train_loader, eval_loaders, max_epoch):
-        for batch in train_loader:
+    def fit(self, train_loader, test_loader, max_epoch):
+        while True:
             if self.epoch >= max_epoch:
                 break
-            self.training_loop(self.load_batch(batch))
-            self.log_epoch(self.epoch, eval_loaders)
+            train_metrics = self.training_loop(self.load_batch(next(iter(train_loader))))
+            if any([self.epoch % l.log_every_n_epoch == 0 for l in self.loggers]) and test_loader is not None:
+                test_metrics = self.evaluate(self.load_batch(next(iter(test_loader))))
+                [l.log_epoch(self.epoch, train_metrics, test_metrics) for l in self.loggers]
+            self.save_checkpoint()
             self.epoch += 1
         [l.log_model(self.model) for l in self.loggers]

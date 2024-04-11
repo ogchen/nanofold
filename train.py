@@ -25,7 +25,10 @@ def parse_args():
         required=False,
     )
     parser.add_argument("--max-epoch", help="Max number of epochs to train for", type=int)
-    parser.add_argument("--log-freq", help="Log every n epochs", type=int, default=100)
+    parser.add_argument(
+        "--mlflow-log-freq", help="Log to MLFlow every n epochs", type=int, default=5
+    )
+    parser.add_argument("--log-freq", help="Log to stdout every n epochs", type=int, default=5)
     parser.add_argument(
         "--checkpoint-freq", help="Checkpoint every n epochs", type=int, default=100
     )
@@ -53,18 +56,6 @@ def get_dataloaders(args, params):
         params["residue_crop_size"],
         params["num_msa"],
     )
-    eval_dataloaders = {
-        "train": torch.utils.data.DataLoader(
-            train_data,
-            batch_size=params["eval_batch_size"],
-            pin_memory=True,
-        ),
-        "test": torch.utils.data.DataLoader(
-            test_data,
-            batch_size=params["eval_batch_size"],
-            pin_memory=True,
-        ),
-    }
     return (
         torch.utils.data.DataLoader(
             train_data,
@@ -72,7 +63,12 @@ def get_dataloaders(args, params):
             pin_memory=True,
             num_workers=4,
         ),
-        eval_dataloaders,
+        torch.utils.data.DataLoader(
+            test_data,
+            batch_size=params["eval_batch_size"],
+            pin_memory=True,
+            num_workers=1,
+        ),
     )
 
 
@@ -95,25 +91,25 @@ def main():
         checkpoint = None
         run_id = None
 
-    loggers = [Logger()]
+    loggers = [Logger(log_every_n_epoch=args.log_freq)]
     if args.mlflow:
         loggers.append(
             MLFlowLogger(
                 uri=mlflow_uri,
                 pip_requirements="requirements/requirements.train.txt",
+                log_every_n_epoch=args.mlflow_log_freq,
                 run_id=run_id,
             )
         )
 
-    train_loader, eval_loaders = get_dataloaders(args, params)
+    train_loader, test_loader = get_dataloaders(args, params)
     trainer = Trainer(
         params,
         loggers,
-        log_every_n_epoch=args.log_freq,
         checkpoint_save_freq=args.checkpoint_freq,
         checkpoint=checkpoint,
     )
-    trainer.fit(train_loader, eval_loaders, args.max_epoch)
+    trainer.fit(train_loader, test_loader, args.max_epoch)
 
 
 if __name__ == "__main__":
