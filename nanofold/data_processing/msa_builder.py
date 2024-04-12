@@ -1,11 +1,14 @@
+import glob
 import gzip
 import logging
 import math
 import numpy as np
+import os
 import pickle
 from functools import partial
 from io import StringIO
 from itertools import batched
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from nanofold.data_processing.sto_parser import parse_msa
@@ -14,9 +17,14 @@ from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
 from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 
 
-def get_chains_to_process(db_manager):
+def get_chains_to_process(db_manager, msa_output_dir):
     chains = db_manager.chains().find({"msa_feat": {"$exists": 0}}, {"_id": 1, "sequence": 1})
-    return list(chains)
+    search_glob = os.path.join(msa_output_dir, "*.pkl.gz")
+    msa_files = glob.glob(search_glob)
+    found_ids = [Path(m).stem.split(".")[0] for m in msa_files]
+    return [
+        c for c in chains if f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids
+    ]
 
 
 def get_msa(msa_runner, chain):
@@ -118,7 +126,7 @@ def get_extra_msa_seq(alignments_one_hot, deletion_matrix, num_msa_clusters, num
     }
 
 
-def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=48, num_extra_seq=16):
+def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=64, num_extra_seq=128):
     alignments_one_hot, deletion_matrix = preprocess_msa(alignments, deletion_matrix)
     msa_feat = get_msa_feat(alignments_one_hot, deletion_matrix, num_msa_clusters)
     extra_msa_feat = get_extra_msa_seq(
@@ -128,7 +136,7 @@ def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=48, num_ext
 
 
 def build_msa(msa_runner, db_manager, executor, msa_output_dir):
-    chains = get_chains_to_process(db_manager)
+    chains = get_chains_to_process(db_manager, msa_output_dir)
     total_num_chains = db_manager.chains().count_documents({})
     logging.info(f"Found {len(chains)}/{total_num_chains} chains missing MSA")
     for chain, sto_contents in get_sto_contents(msa_runner, executor, chains):
