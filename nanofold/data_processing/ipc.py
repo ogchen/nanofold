@@ -1,7 +1,12 @@
+import glob
+import gzip
 import logging
+import os
 import pickle
 import pyarrow as pa
+from functools import partial
 from itertools import batched
+from pathlib import Path
 
 SCHEMA = pa.schema(
     [
@@ -23,24 +28,34 @@ SCHEMA = pa.schema(
 )
 
 
-def get_ready_chains(db_manager):
-    return db_manager.chains().find({"msa_feat": {"$exists": 1}})
+def get_ready_chains(db_manager, msa_output_dir):
+    chains = db_manager.chains().find({})
+    search_glob = os.path.join(msa_output_dir, "*.pkl.gz")
+    msa_files = glob.glob(search_glob)
+    found_ids = [Path(m).stem.split(".")[0] for m in msa_files]
+    ready_chains = [
+        c for c in chains if f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" in found_ids
+    ]
+    return ready_chains
 
 
-def dump_to_ipc(db_manager, msa_output_dir, output, batch_size=25):
-    chains = get_ready_chains(db_manager)
+def get_msa_features(msa_output_dir, chain):
+    with gzip.open(
+        msa_output_dir / f"{chain['_id']['structure_id']}_{chain['_id']['chain_id']}.pkl.gz",
+        "rb",
+    ) as f:
+        return pickle.load(f)
+
+
+def dump_to_ipc(db_manager, msa_output_dir, output, executor, batch_size=25):
+    chains = get_ready_chains(db_manager, msa_output_dir)
+    msa_feat_getter = partial(get_msa_features, msa_output_dir)
 
     num_chains = 0
     with pa.OSFile(str(output), mode="w") as f:
         with pa.ipc.new_file(f, SCHEMA) as writer:
             for batch in batched(chains, batch_size):
-                msa_features = []
-                for c in batch:
-                    with open(
-                        msa_output_dir / f"{c['_id']['structure_id']}_{c['_id']['chain_id']}.pkl",
-                        "rb",
-                    ) as f:
-                        msa_features.append(pickle.load(f))
+                msa_features = list(executor.map(msa_feat_getter, batch))
 
                 record_batch = [
                     pa.array([c["_id"]["structure_id"] for c in batch]),

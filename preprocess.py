@@ -52,9 +52,10 @@ def main():
         with ProcessPoolExecutor() as executor:
             process_mmcif_files(db_manager, executor, args.mmcif, args.batch)
 
-        with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor() as executor:
+        if not args.dump_only:
             build_msa(msa_runner, db_manager, executor, msa_output_dir)
-    dump_to_ipc(db_manager, msa_output_dir, ipc_output_path)
+        dump_to_ipc(db_manager, msa_output_dir, ipc_output_path, executor)
 
 
 if __name__ == "__main__":
