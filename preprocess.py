@@ -28,7 +28,11 @@ def parse_args():
 
 def main():
     args = parse_args()
-    logging.basicConfig(level=getattr(logging, args.logging.upper()))
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s: %(message)s",
+        level=getattr(logging, args.logging.upper()),
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     msa_output_dir = args.output / "msa"
     msa_output_dir.mkdir(exist_ok=True)
     ipc_output_path = args.output / "features.arrow"
