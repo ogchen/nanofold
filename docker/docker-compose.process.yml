@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  db:
+    image: mongo:7.0
+    volumes:
+      - db:/data/db
+
+  data_processing:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.process
+    image: data_processing
+    depends_on:
+      - db
+    volumes:
+      - /home/ogchen/preprocess:/preprocess
+      - /home/ogchen/data:/data
+    environment:
+      - MONGODB_URI=mongodb://db:27017
+volumes:
+  db:
