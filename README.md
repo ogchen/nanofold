@@ -41,12 +41,12 @@ and computing various features to be used in training.
 
 Run the training script for `N` epochs:
 ```bash
-docker-compose -f docker/docker-compose.train.yml run python train.py -c config/config.json -i /preprocess/features.arrow --mlflow --max-epoch $N
+docker-compose -f docker/docker-compose.train.yml run --rm train python train.py -c config/config.json -i /preprocess/features.arrow --mlflow --max-epoch $N
 ```
 
 To resume training from an MLFlow checkpoint, identify the corresponding `$RUNID` and run:
 ```bash
-docker-compose -f docker/docker-compose.train.yml run python train.py -r $RUNID -i /preprocess/features.arrow --mlflow --max-epoch $N
+docker-compose -f docker/docker-compose.train.yml run --rm train python train.py -r $RUNID -i /preprocess/features.arrow --mlflow --max-epoch $N
 ```
 
 ## Profiling
