@@ -52,7 +52,8 @@ def main():
         args.input,
         1.0,
         params["residue_crop_size"],
-        params["num_msa"],
+        params["num_msa_clusters"],
+        params["num_extra_msa"],
     )
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=params["batch_size"])
     next(iter(data_loader))
