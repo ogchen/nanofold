@@ -1,5 +1,7 @@
+import gzip
 import subprocess
 import os
+from pathlib import Path
 
 from nanofold.data_processing.sto_parser import truncate_sto
 
@@ -37,10 +39,19 @@ class MSARunner:
         ]
 
     def cached_result(self, output):
+        zip_output = Path(f"{output}.gz")
+        content = None
+
+        if zip_output.exists():
+            with gzip.open(zip_output, "rb") as gz_f:
+                content = gz_f.read().decode()
         if output.exists() and os.path.getsize(output) > 0:
             with open(output) as f:
-                return f.read()
-        return None
+                content = f.read()
+                with gzip.open(zip_output, "wb") as gz_f:
+                    gz_f.write(content.encode())
+            os.remove(output)
+        return content
 
     def truncate_sto(self, output):
         if self.max_sequences is not None:
@@ -57,7 +68,6 @@ class MSARunner:
         cached_result = self.cached_result(output)
         if cached_result is not None:
             return cached_result
-
         cmd = self.build_jackhmmer_cmd(fasta_input, tmp_output)
         try:
             subprocess.run(cmd, capture_output=True, check=True)
