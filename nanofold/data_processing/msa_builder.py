@@ -1,3 +1,4 @@
+import gzip
 import logging
 import math
 import numpy as np
@@ -137,8 +138,9 @@ def build_msa(msa_runner, db_manager, executor, msa_output_dir):
                 logging.error(f"Chain {chain['_id']} has a mismatching sequence and alignment")
                 continue
             features = parse_msa_features(alignments, deletion_matrix)
-            with open(
-                msa_output_dir / f"{chain['_id']['structure_id']}_{chain['_id']['chain_id']}.pkl",
+            with gzip.open(
+                msa_output_dir
+                / f"{chain['_id']['structure_id']}_{chain['_id']['chain_id']}.pkl.gz",
                 "wb",
             ) as f:
                 pickle.dump(features, f)
