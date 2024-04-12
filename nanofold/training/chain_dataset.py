@@ -25,6 +25,97 @@ def encode_one_hot(seq):
     return torch.nn.functional.one_hot(indices, num_classes=len(RESIDUE_INDEX)).float()
 
 
+def mask_replace_msa(cluster_msa, cluster_profile):
+    cluster_mask = torch.rand(cluster_msa.shape[:-1]) < 0.15
+    replace_mask = F.one_hot(
+        RESIDUE_INDEX_MSA_WITH_MASK[MSA_MASK_TOKEN]
+        * torch.ones(cluster_mask.shape, dtype=torch.long),
+        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+    )
+    replace_uniform = F.one_hot(
+        torch.randint(len(RESIDUE_INDEX), cluster_mask.shape),
+        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+    )
+    replace_sampled = F.one_hot(
+        torch.multinomial(cluster_profile.flatten(end_dim=-2), 1, replacement=True).reshape(
+            cluster_profile.shape[:-1]
+        ),
+        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+    )
+    replace_p = torch.rand(cluster_mask.shape).unsqueeze(-1)
+    replace_value = (
+        (replace_p < 0.1) * replace_uniform
+        + ((replace_p >= 0.1) & (replace_p < 0.2)) * replace_sampled
+        + ((replace_p >= 0.2) & (replace_p < 0.9)) * replace_mask
+        + (replace_p >= 0.9) * cluster_msa
+    )
+
+    masked_msa_truth = cluster_mask.unsqueeze(-1) * cluster_msa
+    replaced_cluster_msa = cluster_msa - masked_msa_truth + replace_value
+    return replaced_cluster_msa, masked_msa_truth, cluster_mask
+
+
+def construct_gap_padding(shape):
+    return torch.ones(shape).unsqueeze(-1) * F.one_hot(
+        torch.tensor(RESIDUE_INDEX_MSA_WITH_MASK[MSA_GAP]),
+        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+    )
+
+
+def construct_extra_msa_feat(
+    extra_msa,
+    extra_msa_has_deletion,
+    extra_msa_deletion_value,
+    cluster_centre_msa_feat,
+    num_extra_msa,
+):
+    if len(extra_msa) > 0:
+        extra_msa = torch.from_numpy(np.stack(np.stack(extra_msa).tolist()))
+        extra_msa_has_deletion = torch.from_numpy(
+            np.stack(np.stack(extra_msa_has_deletion).tolist())
+        )
+        extra_msa_deletion_value = torch.from_numpy(
+            np.stack(np.stack(extra_msa_deletion_value).tolist())
+        )
+        extra_msa_feat = torch.cat(
+            [
+                extra_msa,
+                extra_msa_has_deletion.unsqueeze(-1),
+                extra_msa_deletion_value.unsqueeze(-1),
+            ],
+            dim=-1,
+        )
+        extra_msa_feat = torch.cat([extra_msa_feat, cluster_centre_msa_feat], dim=0)
+    else:
+        extra_msa_feat = cluster_centre_msa_feat
+
+    padding_shape = (max(num_extra_msa - len(extra_msa_feat), 0), *extra_msa_feat.shape[1:-1])
+    padding = torch.cat(
+        [
+            construct_gap_padding(padding_shape),
+            torch.zeros(*padding_shape, 2),
+        ],
+        dim=-1,
+    )
+    return torch.cat([extra_msa_feat, padding], dim=0)
+
+
+def pad_msa_feat(msa_feat, masked_msa_truth, cluster_mask, num_msa_clusters):
+    padding_shape = (max(num_msa_clusters - len(msa_feat), 0), *msa_feat.shape[1:-1])
+    gap_padding = construct_gap_padding(padding_shape)
+    padding = torch.cat([gap_padding, torch.zeros(*padding_shape, 3), gap_padding], dim=-1)
+    msa_feat = torch.cat([msa_feat, padding], dim=0)
+    masked_msa_truth = torch.cat(
+        [masked_msa_truth, torch.zeros(*padding_shape, masked_msa_truth.shape[-1])],
+        dim=0,
+    )
+    cluster_mask = torch.cat(
+        [cluster_mask, torch.zeros(*padding_shape)],
+        dim=0,
+    )
+    return msa_feat, masked_msa_truth, cluster_mask
+
+
 class ChainDataset(IterableDataset):
     def __init__(self, table, indices, residue_crop_size, num_msa_clusters, num_extra_msa):
         super().__init__()
@@ -61,6 +152,9 @@ class ChainDataset(IterableDataset):
         slice_column = lambda col_name: lambda r: r[col_name][
             r["start"] : r["start"] + self.residue_crop_size
         ]
+        slice_column_msa = lambda col_name, slice_size: lambda r: [
+            s[r["start"] : r["start"] + self.residue_crop_size] for s in r[col_name][:slice_size]
+        ]
 
         while True:
             sampled_indices = np.random.choice(self.indices, SAMPLE_SIZE)
@@ -77,114 +171,70 @@ class ChainDataset(IterableDataset):
             )
             for col_name in ["positions", "sequence", "translations", "rotations"]:
                 df[col_name] = df.apply(slice_column(col_name), axis=1)
-            df["cluster_msa"] = df.apply(
-                lambda r: [
-                    s[r["start"] : r["start"] + self.residue_crop_size]
-                    for s in r["cluster_msa"][: self.num_msa_clusters]
-                ],
-                axis=1,
-            )
-            df["msa_feat"] = df.apply(
-                lambda r: [
-                    s[r["start"] : r["start"] + self.residue_crop_size]
-                    for s in r["msa_feat"][: self.num_msa_clusters]
-                ],
-                axis=1,
-            )
-            df["extra_msa_feat"] = df.apply(
-                lambda r: [
-                    s[r["start"] : r["start"] + self.residue_crop_size]
-                    for s in r["extra_msa_feat"][: self.num_extra_msa]
-                ],
-                axis=1,
-            )
+            for col_name in [
+                "cluster_msa",
+                "cluster_has_deletion",
+                "cluster_deletion_value",
+                "cluster_deletion_mean",
+                "cluster_profile",
+            ]:
+                df[col_name] = df.apply(slice_column_msa(col_name, self.num_msa_clusters), axis=1)
+            for col_name in ["extra_msa", "extra_msa_has_deletion", "extra_msa_deletion_value"]:
+                df[col_name] = df.apply(slice_column_msa(col_name, self.num_extra_msa), axis=1)
 
             for row in df.itertuples():
                 if accept_chain(row):
                     yield self.parse_features(row)
 
     def parse_msa_features(self, row):
-        msa_feat = torch.from_numpy(np.stack(np.stack(row.msa_feat).tolist()))
-        cluster_msa = torch.from_numpy(np.stack(np.stack(row.cluster_msa).tolist()))
-
-        cluster_mask = torch.rand(cluster_msa.shape[:-1]) < 0.15
-        replace_mask = F.one_hot(
-            RESIDUE_INDEX_MSA_WITH_MASK[MSA_MASK_TOKEN]
-            * torch.ones(cluster_mask.shape, dtype=torch.long),
-            num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+        cluster_msa = torch.from_numpy(np.stack(np.stack(row.cluster_msa).tolist())).long()
+        cluster_profile = torch.from_numpy(np.stack(np.stack(row.cluster_profile).tolist()))
+        cluster_has_deletion = (
+            torch.from_numpy(np.stack(np.stack(row.cluster_has_deletion).tolist()))
+            .long()
+            .unsqueeze(-1)
         )
-        replace_uniform = F.one_hot(
-            torch.randint(len(RESIDUE_INDEX), cluster_mask.shape),
-            num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+        cluster_deletion_value = (
+            torch.from_numpy(np.stack(np.stack(row.cluster_deletion_value).tolist()))
+            .long()
+            .unsqueeze(-1)
         )
-        replace_sampled = F.one_hot(
-            torch.multinomial(
-                msa_feat[..., 3:].reshape(-1, len(RESIDUE_INDEX_MSA_WITH_MASK)), 1, replacement=True
-            ).reshape(msa_feat.shape[:-1]),
-            num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+        cluster_deletion_mean = (
+            torch.from_numpy(np.stack(np.stack(row.cluster_deletion_mean).tolist()))
+            .float()
+            .unsqueeze(-1)
         )
-        replace_p = torch.rand(cluster_mask.shape).unsqueeze(-1)
-        replace_value = (
-            (replace_p < 0.1) * replace_uniform
-            + ((replace_p >= 0.1) & (replace_p < 0.2)) * replace_sampled
-            + ((replace_p >= 0.2) & (replace_p < 0.9)) * replace_mask
-            + (replace_p >= 0.9) * cluster_msa
+        replaced_cluster_msa, masked_msa_truth, cluster_mask = mask_replace_msa(
+            cluster_msa, cluster_profile
         )
 
-        masked_msa_truth = cluster_mask.unsqueeze(-1) * cluster_msa
-        replaced_cluster_msa = cluster_msa - masked_msa_truth + replace_value
-
-        extra_msa_feat = (
-            torch.from_numpy(np.stack(np.stack(row.extra_msa_feat).tolist()))
-            if len(row.extra_msa_feat) > 0
-            else torch.empty([0, self.residue_crop_size, len(RESIDUE_INDEX_MSA_WITH_MASK) + 2])
+        extra_msa_feat = construct_extra_msa_feat(
+            row.extra_msa,
+            row.extra_msa_has_deletion,
+            row.extra_msa_deletion_value,
+            cluster_centre_msa_feat=torch.cat(
+                [cluster_msa, cluster_has_deletion, cluster_deletion_value], dim=-1
+            ),
+            num_extra_msa=self.num_extra_msa,
         )
 
-        # Padding
-        padding_msa = torch.cat([cluster_msa, msa_feat[..., :2]], dim=-1)[
-            : max(self.num_extra_msa - len(extra_msa_feat), 0)
-        ]
-        extra_msa_feat = torch.cat([extra_msa_feat, padding_msa], dim=0)
-        extra_msa_feat = torch.cat(
-            [
-                extra_msa_feat,
-                torch.ones(
-                    max(self.num_extra_msa - len(extra_msa_feat), 0), self.residue_crop_size, 1
-                )
-                * F.one_hot(
-                    torch.tensor(RESIDUE_INDEX_MSA_WITH_MASK[MSA_GAP]),
-                    num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK) + 2,
-                ),
-            ],
-            dim=0,
-        )
-
-        missing_clusters = max(self.num_msa_clusters - len(replaced_cluster_msa), 0)
-        replaced_cluster_msa = torch.cat(
+        msa_feat = torch.cat(
             [
                 replaced_cluster_msa,
-                torch.ones(missing_clusters, self.residue_crop_size, 1)
-                * F.one_hot(
-                    torch.tensor(RESIDUE_INDEX_MSA_WITH_MASK[MSA_GAP]),
-                    num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
-                ),
+                cluster_has_deletion,
+                cluster_deletion_value,
+                cluster_deletion_mean,
+                cluster_profile,
             ],
-            dim=0,
+            dim=-1,
         )
-        msa_feat = torch.cat([msa_feat, torch.zeros(missing_clusters, *msa_feat.shape[1:])], dim=0)
-        cluster_mask = torch.cat(
-            [cluster_mask, torch.zeros(missing_clusters, self.residue_crop_size, dtype=torch.bool)],
-            dim=0,
+        msa_feat, masked_msa_truth, cluster_mask = pad_msa_feat(
+            msa_feat, masked_msa_truth, cluster_mask, self.num_msa_clusters
         )
-        masked_msa_truth = torch.cat(
-            [masked_msa_truth, torch.zeros((missing_clusters, *masked_msa_truth.shape[1:]))],
-            dim=0,
-        )
-
         return {
             "cluster_mask": cluster_mask,
             "masked_msa_truth": masked_msa_truth,
-            "msa_feat": torch.cat([replaced_cluster_msa, msa_feat], dim=-1),
+            "msa_feat": msa_feat,
             "extra_msa_feat": extra_msa_feat,
         }
 
