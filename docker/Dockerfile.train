@@ -12,7 +12,7 @@ RUN mkdir -p /opt/miniconda3 \
     && bash /tmp/miniconda.sh -b -u -p /opt/miniconda3 \
     && rm -rf /tmp/miniconda.sh
 
-    ENV PATH="/opt/miniconda3/bin:${PATH}"
+ENV PATH="/opt/miniconda3/bin:${PATH}"
 
 RUN conda install -y -c conda-forge \
         python=3.11 \
