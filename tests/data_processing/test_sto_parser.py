@@ -19,22 +19,22 @@ Q8QVG3_ADEBA/907-1142              -----LALALGSGLAVN---------S-NN
 //
         """
     )
-    msa = parse_msa(input)
+    alignments, deletion_matrix = parse_msa(input)
     expected_deletion_matrix = [[0] * 21 for _ in range(4)]
     expected_deletion_matrix[2][17] = 5
     expected_deletion_matrix[2][19] = 1
     expected_deletion_matrix[3][19] = 1
-    assert msa["alignments"] == [
+    assert alignments == [
         "FDNTAIAINAGKGLEFDTNTS",
         "----QLRLNIGQGLRYNP-TS",
         "------TKEDKLCLSLG----",
         "-----LALALGSGLAVN--NN",
     ]
-    assert msa["deletion_matrix"] == expected_deletion_matrix
+    assert deletion_matrix == expected_deletion_matrix
 
     num_samples = 2
-    msa_sampled = parse_msa(input, num_samples)
-    assert msa["alignments"][0] == msa_sampled["alignments"][0]
-    assert msa["deletion_matrix"][0] == msa_sampled["deletion_matrix"][0]
-    assert len(msa_sampled["alignments"]) == num_samples
-    assert len(msa_sampled["deletion_matrix"]) == num_samples
+    sampled_alignments, sampled_deletion = parse_msa(input, num_samples)
+    assert alignments[0] == sampled_alignments[0]
+    assert deletion_matrix[0] == sampled_deletion[0]
+    assert len(sampled_alignments) == num_samples
+    assert len(sampled_deletion) == num_samples
