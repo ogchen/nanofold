@@ -33,10 +33,9 @@ def get_ready_chains(db_manager, msa_output_dir):
     search_glob = os.path.join(msa_output_dir, "*.pkl.gz")
     msa_files = glob.glob(search_glob)
     found_ids = [Path(m).stem.split(".")[0] for m in msa_files]
-    ready_chains = [
-        c for c in chains if f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" in found_ids
-    ]
-    return ready_chains
+    for c in chains:
+        if f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" in found_ids:
+            yield c
 
 
 def get_msa_features(msa_output_dir, chain):
