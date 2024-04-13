@@ -85,9 +85,9 @@ def construct_extra_msa_feat(
             ],
             dim=-1,
         )
-        extra_msa_feat = torch.cat([extra_msa_feat, cluster_centre_msa_feat], dim=0)
+        extra_msa_feat = torch.cat([extra_msa_feat, cluster_centre_msa_feat], dim=0)[:num_extra_msa]
     else:
-        extra_msa_feat = cluster_centre_msa_feat
+        extra_msa_feat = cluster_centre_msa_feat[:num_extra_msa]
 
     padding_shape = (max(num_extra_msa - len(extra_msa_feat), 0), *extra_msa_feat.shape[1:-1])
     padding = torch.cat(
@@ -248,7 +248,7 @@ class ChainDataset(IterableDataset):
                 [[p[1] for p in get_atom_positions(r)] for r in row.sequence]
             ),
             "target_feat": encode_one_hot(row.sequence),
-            "positions": torch.from_numpy(row.positions),
+            "positions": torch.tensor(row.positions),
             **self.parse_msa_features(row),
         }
         return features
