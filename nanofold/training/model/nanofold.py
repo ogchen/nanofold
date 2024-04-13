@@ -4,6 +4,7 @@ from torch import nn
 from nanofold.training.frame import Frame
 from nanofold.training.loss import DistogramLoss
 from nanofold.training.model.evoformer import Evoformer
+from nanofold.training.model.extra_msa import ExtraMSAStack
 from nanofold.training.model.input import InputEmbedding
 from nanofold.training.model.masked_msa import MaskedMSAPredictor
 from nanofold.training.model.recycle import RecyclingEmbedder
@@ -22,6 +23,8 @@ class Nanofold(nn.Module):
         num_triangular_attention_channels,
         product_embedding_size,
         position_bins,
+        num_extra_msa_blocks,
+        num_extra_msa_channels,
         num_evoformer_blocks,
         num_evoformer_msa_heads,
         num_evoformer_pair_heads,
@@ -46,6 +49,19 @@ class Nanofold(nn.Module):
         self.pair_embedding_size = pair_embedding_size
         self.input_embedder = InputEmbedding(pair_embedding_size, msa_embedding_size, position_bins)
         self.recycling_embedder = RecyclingEmbedder(pair_embedding_size, msa_embedding_size, device)
+        self.extra_msa_stack = ExtraMSAStack(
+            num_extra_msa_blocks,
+            num_extra_msa_channels,
+            num_triangular_update_channels,
+            num_triangular_attention_channels,
+            product_embedding_size,
+            num_evoformer_blocks,
+            num_evoformer_msa_heads,
+            num_evoformer_pair_heads,
+            num_evoformer_channels,
+            evoformer_transition_multiplier,
+            device,
+        )
         self.evoformer = Evoformer(
             single_embedding_size,
             pair_embedding_size,
@@ -91,6 +107,8 @@ class Nanofold(nn.Module):
             "num_triangular_update_channels": config["num_triangular_update_channels"],
             "num_triangular_attention_channels": config["num_triangular_attention_channels"],
             "product_embedding_size": config["product_embedding_size"],
+            "num_extra_msa_blocks": config["num_extra_msa_blocks"],
+            "num_extra_msa_channels": config["num_extra_msa_channels"],
             "num_evoformer_blocks": config["num_evoformer_blocks"],
             "num_evoformer_msa_heads": config["num_evoformer_msa_heads"],
             "num_evoformer_pair_heads": config["num_evoformer_pair_heads"],
@@ -147,6 +165,8 @@ class Nanofold(nn.Module):
             )
             msa_rep[..., 0, :, :] = msa_rep[..., 0, :, :] + msa_row_update
             pair_rep = pair_rep + pair_rep_update
+
+            pair_rep = self.extra_msa_stack(batch["extra_msa_feat"], pair_rep)
 
             msa_rep, pair_rep, single_rep = self.run_evoformer(msa_rep, pair_rep)
 
