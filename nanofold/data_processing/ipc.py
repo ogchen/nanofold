@@ -50,37 +50,44 @@ def get_msa_features(msa_output_dir, chain):
         return None
 
 
-def dump_to_ipc(db_manager, msa_output_dir, output, executor, batch_size=25):
+def get_record_batch(executor, msa_feat_getter, chain_batch):
+    batch = [
+        (c, m)
+        for c, m in zip(chain_batch, list(executor.map(msa_feat_getter, chain_batch)))
+        if m is not None
+    ]
+
+    return [
+        pa.array([c["_id"]["structure_id"] for c, _ in batch]),
+        pa.array([c["_id"]["chain_id"] for c, _ in batch]),
+        pa.array([c["rotations"] for c, _ in batch]),
+        pa.array([c["translations"] for c, _ in batch]),
+        pa.array([c["sequence"] for c, _ in batch]),
+        pa.array([c["positions"] for c, _ in batch]),
+        pa.array([m["cluster_msa"].tolist() for _, m in batch]),
+        pa.array([m["cluster_has_deletion"].tolist() for _, m in batch]),
+        pa.array([m["cluster_deletion_value"].tolist() for _, m in batch]),
+        pa.array([m["cluster_deletion_mean"].tolist() for _, m in batch]),
+        pa.array([m["cluster_profile"].tolist() for _, m in batch]),
+        pa.array([m["extra_msa"].tolist() for _, m in batch]),
+        pa.array([m["extra_msa_has_deletion"].tolist() for _, m in batch]),
+        pa.array([m["extra_msa_deletion_value"].tolist() for _, m in batch]),
+    ]
+
+
+def dump_to_ipc(db_manager, msa_output_dir, output, executor, batch_size=15):
     chains = get_ready_chains(db_manager, msa_output_dir)
     msa_feat_getter = partial(get_msa_features, msa_output_dir)
 
     num_chains = 0
     with pa.OSFile(str(output), mode="w") as f:
         with pa.ipc.new_file(f, SCHEMA) as writer:
-            for batch in batched(chains, batch_size):
-                msa_features = list(executor.map(msa_feat_getter, batch))
-                batch = [(c, m) for c, m in zip(batch, msa_features) if m is not None]
-
-                record_batch = [
-                    pa.array([c["_id"]["structure_id"] for c, _ in batch]),
-                    pa.array([c["_id"]["chain_id"] for c, _ in batch]),
-                    pa.array([c["rotations"] for c, _ in batch]),
-                    pa.array([c["translations"] for c, _ in batch]),
-                    pa.array([c["sequence"] for c, _ in batch]),
-                    pa.array([c["positions"] for c, _ in batch]),
-                    pa.array([m["cluster_msa"].tolist() for _, m in batch]),
-                    pa.array([m["cluster_has_deletion"].tolist() for _, m in batch]),
-                    pa.array([m["cluster_deletion_value"].tolist() for _, m in batch]),
-                    pa.array([m["cluster_deletion_mean"].tolist() for _, m in batch]),
-                    pa.array([m["cluster_profile"].tolist() for _, m in batch]),
-                    pa.array([m["extra_msa"].tolist() for _, m in batch]),
-                    pa.array([m["extra_msa_has_deletion"].tolist() for _, m in batch]),
-                    pa.array([m["extra_msa_deletion_value"].tolist() for _, m in batch]),
-                ]
-
-                record_batch = pa.RecordBatch.from_arrays(record_batch, schema=SCHEMA)
-                writer.write_batch(record_batch)
-                num_chains += len(batch)
+            for chain_batch in batched(chains, batch_size):
+                writer.write_batch(
+                    pa.RecordBatch.from_arrays(
+                        get_record_batch(executor, msa_feat_getter, chain_batch), schema=SCHEMA
+                    )
+                )
+                num_chains += len(chain_batch)
                 logging.info(f"Wrote {num_chains} chains to IPC file")
-
     logging.info(f"Finished writing {num_chains} chains to {output}")
