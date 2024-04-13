@@ -58,3 +58,10 @@ The profiler spits out a `trace.json` and `snapshot.pickle` file in the mounted 
 Load `trace.json` into [chrome://tracing](chrome://tracing/), and `snapshot.pickle` into [pytorch.org/memory_viz](https://pytorch.org/memory_viz).
 
 Refer to [this Github comment](https://github.com/pytorch/pytorch/issues/99615#issuecomment-1827386273) if the profiler is complaining with `CUPTI_ERROR_NOT_INITIALIZED`.
+
+## Unit Tests
+Run tests with
+```bash
+docker run --rm --gpus all train pytest tests/training
+docker run --rm data_processing pytest tests/data_processing
+```
