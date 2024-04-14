@@ -1,5 +1,8 @@
 {
 	"name": "Training Dev Container",
+	"mounts": [
+		"source=/home/ogchen/data,target=/data,type=bind,consistency=cached"
+	],
 	"dockerComposeFile": ["../../docker/docker-compose.train.yml", "docker-compose.extend.yml"],
 	"service": "train",
 	"workspaceFolder": "/workspace",
