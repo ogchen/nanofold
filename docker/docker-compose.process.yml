@@ -13,9 +13,10 @@ services:
     depends_on:
       - db
     volumes:
-      - /home/ogchen/preprocess:/preprocess
+      - preprocess:/preprocess
       - /home/ogchen/data:/data
     environment:
       - MONGODB_URI=mongodb://db:27017
 volumes:
   db:
+  preprocess:
