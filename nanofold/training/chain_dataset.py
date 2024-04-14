@@ -13,7 +13,7 @@ from nanofold.common.residue_definitions import RESIDUE_INDEX
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
 
 
-SAMPLE_SIZE = 5
+SAMPLE_SIZE = 2
 
 
 def accept_chain(row):
@@ -71,12 +71,8 @@ def construct_extra_msa_feat(
 ):
     if len(extra_msa) > 0:
         extra_msa = torch.from_numpy(np.stack(np.stack(extra_msa).tolist()))
-        extra_msa_has_deletion = torch.from_numpy(
-            np.stack(np.stack(extra_msa_has_deletion).tolist())
-        )
-        extra_msa_deletion_value = torch.from_numpy(
-            np.stack(np.stack(extra_msa_deletion_value).tolist())
-        )
+        extra_msa_has_deletion = torch.from_numpy(np.stack(extra_msa_has_deletion))
+        extra_msa_deletion_value = torch.from_numpy(np.stack(extra_msa_deletion_value))
         extra_msa_feat = torch.cat(
             [
                 extra_msa,
@@ -130,8 +126,8 @@ class ChainDataset(IterableDataset):
         with pa.memory_map(str(features_file)) as source:
             with pa.ipc.open_file(source) as reader:
                 table = reader.read_all()
-        table_size = table.get_total_buffer_size() / (1024**2)
-        logging.info(f"Features table loaded, size {table_size:.2f} MB")
+        table_size = table.get_total_buffer_size() / (1024**3)
+        logging.info(f"Features table loaded, size {table_size:.2f} GB")
         train_size = int(train_split * table.num_rows)
         if train_size <= 0 or train_size > table.num_rows:
             raise ValueError(f"train_size must be between 0 and {table.num_rows}, got {train_size}")
@@ -190,20 +186,12 @@ class ChainDataset(IterableDataset):
         cluster_msa = torch.from_numpy(np.stack(np.stack(row.cluster_msa).tolist())).long()
         cluster_profile = torch.from_numpy(np.stack(np.stack(row.cluster_profile).tolist()))
         cluster_has_deletion = (
-            torch.from_numpy(np.stack(np.stack(row.cluster_has_deletion).tolist()))
-            .long()
-            .unsqueeze(-1)
+            torch.from_numpy(np.stack(row.cluster_has_deletion)).long().unsqueeze(-1)
         )
-        cluster_deletion_value = (
-            torch.from_numpy(np.stack(np.stack(row.cluster_deletion_value).tolist()))
-            .long()
-            .unsqueeze(-1)
+        cluster_deletion_value = torch.from_numpy(np.stack(row.cluster_deletion_value)).unsqueeze(
+            -1
         )
-        cluster_deletion_mean = (
-            torch.from_numpy(np.stack(np.stack(row.cluster_deletion_mean).tolist()))
-            .float()
-            .unsqueeze(-1)
-        )
+        cluster_deletion_mean = torch.from_numpy(np.stack(row.cluster_deletion_mean)).unsqueeze(-1)
         replaced_cluster_msa, masked_msa_truth, cluster_mask = mask_replace_msa(
             cluster_msa, cluster_profile
         )
