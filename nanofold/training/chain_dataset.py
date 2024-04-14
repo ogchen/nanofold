@@ -1,21 +1,19 @@
-from torch.utils.data import IterableDataset
 import logging
-import math
 import numpy as np
 import pyarrow as pa
 import pyarrow.compute as pc
-import random
 import torch
+import torch.nn.functional as F
+from torch.utils.data import IterableDataset
 
 from nanofold.common.residue_definitions import get_atom_positions
 from nanofold.common.residue_definitions import MSA_GAP
 from nanofold.common.residue_definitions import MSA_MASK_TOKEN
 from nanofold.common.residue_definitions import RESIDUE_INDEX
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
-from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 
 
-SAMPLE_SIZE = 100
+SAMPLE_SIZE = 2
 
 
 def accept_chain(row):
@@ -27,56 +25,99 @@ def encode_one_hot(seq):
     return torch.nn.functional.one_hot(indices, num_classes=len(RESIDUE_INDEX)).float()
 
 
-def encode_one_hot_alignments(alignments):
-    indices = torch.tensor(
-        [
-            [
-                RESIDUE_INDEX_MSA_WITH_MASK.get(r, RESIDUE_INDEX_MSA_WITH_MASK[UNKNOWN_RESIDUE[0]])
-                for r in a
-            ]
-            for a in alignments
-        ]
+def mask_replace_msa(cluster_msa, cluster_profile):
+    cluster_mask = torch.rand(cluster_msa.shape[:-1]) < 0.15
+    replace_mask = F.one_hot(
+        RESIDUE_INDEX_MSA_WITH_MASK[MSA_MASK_TOKEN]
+        * torch.ones(cluster_mask.shape, dtype=torch.long),
+        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
     )
-    return torch.nn.functional.one_hot(
-        indices, num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK)
-    ).float()
+    replace_uniform = F.one_hot(
+        torch.randint(len(RESIDUE_INDEX), cluster_mask.shape),
+        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+    )
+    replace_sampled = F.one_hot(
+        torch.multinomial(cluster_profile.flatten(end_dim=-2), 1, replacement=True).reshape(
+            cluster_profile.shape[:-1]
+        ),
+        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+    )
+    replace_p = torch.rand(cluster_mask.shape).unsqueeze(-1)
+    replace_value = (
+        (replace_p < 0.1) * replace_uniform
+        + ((replace_p >= 0.1) & (replace_p < 0.2)) * replace_sampled
+        + ((replace_p >= 0.2) & (replace_p < 0.9)) * replace_mask
+        + (replace_p >= 0.9) * cluster_msa
+    )
+
+    masked_msa_truth = cluster_mask.unsqueeze(-1) * cluster_msa
+    replaced_cluster_msa = cluster_msa - masked_msa_truth + replace_value
+    return replaced_cluster_msa, masked_msa_truth, cluster_mask
 
 
-def encode_deletion_matrix(deletion_matrix):
-    counts = torch.stack(deletion_matrix)
-    has_deletion = counts > 0
-    deletion_value = 2 / math.pi * torch.arctan(counts / 3)
-    return torch.cat((has_deletion.unsqueeze(-1), deletion_value.unsqueeze(-1)), dim=-1)
+def construct_gap_padding(shape):
+    return torch.ones(shape).unsqueeze(-1) * F.one_hot(
+        torch.tensor(RESIDUE_INDEX_MSA_WITH_MASK[MSA_GAP]),
+        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
+    )
 
 
-def encode_msa(msa):
-    alignments_one_hot = encode_one_hot_alignments([m[0] for m in msa])
-    deletion_feat = encode_deletion_matrix([m[1] for m in msa])
-    return alignments_one_hot, deletion_feat
+def construct_extra_msa_feat(
+    extra_msa,
+    extra_msa_has_deletion,
+    extra_msa_deletion_value,
+    cluster_centre_msa_feat,
+    num_extra_msa,
+):
+    if len(extra_msa) > 0:
+        extra_msa = torch.from_numpy(np.stack(np.stack(extra_msa).tolist()))
+        extra_msa_has_deletion = torch.from_numpy(np.stack(extra_msa_has_deletion))
+        extra_msa_deletion_value = torch.from_numpy(np.stack(extra_msa_deletion_value))
+        extra_msa_feat = torch.cat(
+            [
+                extra_msa,
+                extra_msa_has_deletion.unsqueeze(-1),
+                extra_msa_deletion_value.unsqueeze(-1),
+            ],
+            dim=-1,
+        )
+        extra_msa_feat = torch.cat([extra_msa_feat, cluster_centre_msa_feat], dim=0)[:num_extra_msa]
+    else:
+        extra_msa_feat = cluster_centre_msa_feat[:num_extra_msa]
+
+    padding_shape = (max(num_extra_msa - len(extra_msa_feat), 0), *extra_msa_feat.shape[1:-1])
+    padding = torch.cat(
+        [
+            construct_gap_padding(padding_shape),
+            torch.zeros(*padding_shape, 2),
+        ],
+        dim=-1,
+    )
+    return torch.cat([extra_msa_feat, padding], dim=0)
 
 
-def preprocess_msa(msa, num_msa):
-    msa = zip(*msa.values())
-    msa = [m for m in msa if not all(c == MSA_GAP for c in m[0])]
-    query = (msa[0][0], torch.tensor(msa[0][1]))
-
-    # Deduplicate MSA
-    deduplicated = list(set([(a, torch.tensor(d)) for a, d in msa[1:]]))
-
-    # Shuffle MSA
-    random.shuffle(deduplicated)
-
-    # Truncate MSA
-    msa = [query, *[m for m in deduplicated if m[0] != query]][:num_msa]
-
-    return msa
+def pad_msa_feat(msa_feat, masked_msa_truth, cluster_mask, num_msa_clusters):
+    padding_shape = (max(num_msa_clusters - len(msa_feat), 0), *msa_feat.shape[1:-1])
+    gap_padding = construct_gap_padding(padding_shape)
+    padding = torch.cat([gap_padding, torch.zeros(*padding_shape, 3), gap_padding], dim=-1)
+    msa_feat = torch.cat([msa_feat, padding], dim=0)
+    masked_msa_truth = torch.cat(
+        [masked_msa_truth, torch.zeros(*padding_shape, masked_msa_truth.shape[-1])],
+        dim=0,
+    )
+    cluster_mask = torch.cat(
+        [cluster_mask, torch.zeros(*padding_shape)],
+        dim=0,
+    )
+    return msa_feat, masked_msa_truth, cluster_mask
 
 
 class ChainDataset(IterableDataset):
-    def __init__(self, table, indices, residue_crop_size, num_msa):
+    def __init__(self, table, indices, residue_crop_size, num_msa_clusters, num_extra_msa):
         super().__init__()
         self.residue_crop_size = residue_crop_size
-        self.num_msa = num_msa
+        self.num_msa_clusters = num_msa_clusters
+        self.num_extra_msa = num_extra_msa
         self.table = table
         self.indices = indices
 
@@ -85,8 +126,8 @@ class ChainDataset(IterableDataset):
         with pa.memory_map(str(features_file)) as source:
             with pa.ipc.open_file(source) as reader:
                 table = reader.read_all()
-        table_size = table.get_total_buffer_size() / (1024**2)
-        logging.info(f"Features table loaded, size {table_size:.2f} MB")
+        table_size = table.get_total_buffer_size() / (1024**3)
+        logging.info(f"Features table loaded, size {table_size:.2f} GB")
         train_size = int(train_split * table.num_rows)
         if train_size <= 0 or train_size > table.num_rows:
             raise ValueError(f"train_size must be between 0 and {table.num_rows}, got {train_size}")
@@ -107,15 +148,9 @@ class ChainDataset(IterableDataset):
         slice_column = lambda col_name: lambda r: r[col_name][
             r["start"] : r["start"] + self.residue_crop_size
         ]
-        slice_column_msa = lambda r: {
-            "alignments": [
-                a[r["start"] : r["start"] + self.residue_crop_size] for a in r["msa"]["alignments"]
-            ],
-            "deletion_matrix": [
-                d[r["start"] : r["start"] + self.residue_crop_size]
-                for d in r["msa"]["deletion_matrix"]
-            ],
-        }
+        slice_column_msa = lambda col_name, slice_size: lambda r: [
+            s[r["start"] : r["start"] + self.residue_crop_size] for s in r[col_name][:slice_size]
+        ]
 
         while True:
             sampled_indices = np.random.choice(self.indices, SAMPLE_SIZE)
@@ -123,56 +158,72 @@ class ChainDataset(IterableDataset):
                 pc.field("length") >= self.residue_crop_size
             )
             sample = self.table.filter(expression)
+            if len(sample) == 0:
+                continue
+
             df = sample.to_pandas(use_threads=False)
             df["start"] = df["length"].apply(
                 lambda x: np.random.randint(x - self.residue_crop_size + 1)
             )
             for col_name in ["positions", "sequence", "translations", "rotations"]:
                 df[col_name] = df.apply(slice_column(col_name), axis=1)
-            df["msa"] = df.apply(slice_column_msa, axis=1)
+            for col_name in [
+                "cluster_msa",
+                "cluster_has_deletion",
+                "cluster_deletion_value",
+                "cluster_deletion_mean",
+                "cluster_profile",
+            ]:
+                df[col_name] = df.apply(slice_column_msa(col_name, self.num_msa_clusters), axis=1)
+            for col_name in ["extra_msa", "extra_msa_has_deletion", "extra_msa_deletion_value"]:
+                df[col_name] = df.apply(slice_column_msa(col_name, self.num_extra_msa), axis=1)
 
             for row in df.itertuples():
                 if accept_chain(row):
                     yield self.parse_features(row)
 
-    def parse_msa_features(self, msa):
-        msa = preprocess_msa(msa, self.num_msa)
-        alignments_one_hot, deletion_feat = encode_msa(msa)
-        msa_mask = torch.rand(alignments_one_hot.shape[:-1]) < 0.1
-        masked_msa_truth = msa_mask.unsqueeze(-1) * alignments_one_hot
-        masked_alignments = (
-            alignments_one_hot
-            - masked_msa_truth
-            + (msa_mask.unsqueeze(-1) * encode_one_hot_alignments(MSA_MASK_TOKEN))
+    def parse_msa_features(self, row):
+        cluster_msa = torch.from_numpy(np.stack(np.stack(row.cluster_msa).tolist())).long()
+        cluster_profile = torch.from_numpy(np.stack(np.stack(row.cluster_profile).tolist()))
+        cluster_has_deletion = (
+            torch.from_numpy(np.stack(row.cluster_has_deletion)).long().unsqueeze(-1)
+        )
+        cluster_deletion_value = torch.from_numpy(np.stack(row.cluster_deletion_value)).unsqueeze(
+            -1
+        )
+        cluster_deletion_mean = torch.from_numpy(np.stack(row.cluster_deletion_mean)).unsqueeze(-1)
+        replaced_cluster_msa, masked_msa_truth, cluster_mask = mask_replace_msa(
+            cluster_msa, cluster_profile
         )
 
-        # Pad MSA
-        missing = self.num_msa - len(msa)
-        if missing > 0:
-            pad_zeros = lambda x: torch.cat(
-                [
-                    x,
-                    torch.zeros((missing, *x.shape[1:]), dtype=x.dtype),
-                ],
-                dim=0,
-            )
-            msa_mask = pad_zeros(msa_mask)
-            deletion_feat = pad_zeros(deletion_feat)
-            masked_msa_truth = pad_zeros(masked_msa_truth)
-            masked_alignments = torch.cat(
-                [
-                    masked_alignments,
-                    encode_one_hot_alignments([MSA_GAP]).repeat(
-                        missing, *masked_alignments.shape[1:-1], 1
-                    ),
-                ],
-                dim=0,
-            )
+        extra_msa_feat = construct_extra_msa_feat(
+            row.extra_msa,
+            row.extra_msa_has_deletion,
+            row.extra_msa_deletion_value,
+            cluster_centre_msa_feat=torch.cat(
+                [cluster_msa, cluster_has_deletion, cluster_deletion_value], dim=-1
+            ),
+            num_extra_msa=self.num_extra_msa,
+        )
 
+        msa_feat = torch.cat(
+            [
+                replaced_cluster_msa,
+                cluster_has_deletion,
+                cluster_deletion_value,
+                cluster_deletion_mean,
+                cluster_profile,
+            ],
+            dim=-1,
+        )
+        msa_feat, masked_msa_truth, cluster_mask = pad_msa_feat(
+            msa_feat, masked_msa_truth, cluster_mask, self.num_msa_clusters
+        )
         return {
-            "msa_feat": torch.cat((masked_alignments, deletion_feat), dim=-1),
-            "msa_mask": msa_mask,
+            "cluster_mask": cluster_mask,
             "masked_msa_truth": masked_msa_truth,
+            "msa_feat": msa_feat,
+            "extra_msa_feat": extra_msa_feat,
         }
 
     def parse_features(self, row):
@@ -185,7 +236,7 @@ class ChainDataset(IterableDataset):
                 [[p[1] for p in get_atom_positions(r)] for r in row.sequence]
             ),
             "target_feat": encode_one_hot(row.sequence),
-            "positions": torch.from_numpy(row.positions),
-            **self.parse_msa_features(row.msa),
+            "positions": torch.tensor(row.positions),
+            **self.parse_msa_features(row),
         }
         return features

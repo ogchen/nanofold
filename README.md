@@ -24,39 +24,44 @@ gzip -d bfd-first_non_consensus_sequences.fasta.gz
 Requires [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 for GPU support within containers.
 
-Build docker images with
+Build the docker images with
 ```bash
-docker-compose build
+docker-compose -f docker/docker-compose.process.yml build
+docker-compose -f docker/docker-compose.train.yml build
 ```
 
-Run tests with
+## Training
+Run the preprocessing script with
 ```bash
-docker run -it --gpus all --rm train pytest tests/training
-docker run -it --rm data_processing pytest tests/data_processing
+docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta
 ```
+This parses the downloaded mmCIF files to extract protein information, including the residue sequence and atom co-ordinates.
+It uses the jackhmmer tool to search the provided small BFD database and build multiple sequence alignments, before clustering
+and computing various features to be used in training.
 
-### Training
-Preprocess training data by parsing downloaded mmCIF files and building multiple sequence alignments:
+Run the training script for `N` epochs:
 ```bash
-docker-compose run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta
-```
-
-Run the training script for 1000 epochs:
-```bash
-docker-compose run --rm train python train.py -c config/config.json -i /preprocess/features.arrow --mlflow --max-epoch 1000
+docker-compose -f docker/docker-compose.train.yml run --rm train python train.py -c config/config.json -i /preprocess/features.arrow --mlflow --max-epoch $N
 ```
 
 To resume training from an MLFlow checkpoint, identify the corresponding `$RUNID` and run:
 ```bash
-docker-compose run --rm train python train.py -r $RUNID -i /preprocess/features.arrow --mlflow --max-epoch 1000
+docker-compose -f docker/docker-compose.train.yml run --rm train python train.py -r $RUNID -i /preprocess/features.arrow --mlflow --max-epoch $N
 ```
 
-### Profiling
+## Profiling
 Run the pytorch profiler:
 ```bash
-docker-compose run --rm -v $HOME/data:/data train python profiler.py -c config/config.json -i /preprocess/features.arrow --mode time --mode memory
+docker run --rm -v $HOME/data:/data train python profiler.py -c config/config.json -i /preprocess/features.arrow --mode time --mode memory
 ```
 The profiler spits out a `trace.json` and `snapshot.pickle` file in the mounted `/data/` volume.
 Load `trace.json` into [chrome://tracing](chrome://tracing/), and `snapshot.pickle` into [pytorch.org/memory_viz](https://pytorch.org/memory_viz).
 
 Refer to [this Github comment](https://github.com/pytorch/pytorch/issues/99615#issuecomment-1827386273) if the profiler is complaining with `CUPTI_ERROR_NOT_INITIALIZED`.
+
+## Unit Tests
+Run tests with
+```bash
+docker run --rm --gpus all train pytest tests/training
+docker run --rm data_processing pytest tests/data_processing
+```

@@ -1,12 +1,9 @@
 {
 	"name": "Data Processing Dev Container",
-	"mounts": [
-		"source=/home/ogchen/data,target=/data,type=bind,consistency=cached"
-	],
-	"dockerComposeFile": ["../../docker-compose.yml", "../docker-compose.extend.yml"],
+	"dockerComposeFile": ["../../docker/docker-compose.process.yml", "docker-compose.extend.yml"],
 	"service": "data_processing",
 	"workspaceFolder": "/workspace",
-	"shutdownAction": "none",
+	"shutdownAction": "stopCompose",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -20,5 +17,8 @@
 				]
 			}
 		}
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {}
 	}
 }

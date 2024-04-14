@@ -3,10 +3,10 @@
 	"mounts": [
 		"source=/home/ogchen/data,target=/data,type=bind,consistency=cached"
 	],
-	"dockerComposeFile": ["../../docker-compose.yml", "../docker-compose.extend.yml"],
+	"dockerComposeFile": ["../../docker/docker-compose.train.yml", "docker-compose.extend.yml"],
 	"service": "train",
 	"workspaceFolder": "/workspace",
-	"shutdownAction": "none",
+	"shutdownAction": "stopCompose",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -20,5 +20,8 @@
 				]
 			}
 		}
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {}
 	}
 }

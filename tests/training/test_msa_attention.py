@@ -29,9 +29,9 @@ def test_msa_row_attention_with_pair_bias():
                     for j in range(num_res):
                         k = model.key(m[j])[h]
                         bias = model.bias(pair_rep[b, i, j])[h]
-                        a.append((q.T @ k) / math.sqrt(model.num_channels) + bias)
+                        a.append((q.transpose(0, -1) @ k) / math.sqrt(model.num_channels) + bias)
 
-                    a = torch.nn.functional.softmax(torch.stack(a))
+                    a = torch.nn.functional.softmax(torch.stack(a), dim=0)
                     sum = 0
                     for j in range(num_res):
                         sum += a[j] * model.value(m[j])[h]
@@ -61,8 +61,8 @@ def test_msa_col_attention():
                     for t in range(num_msa):
                         q = model.query(msa_rep[b, s, i])[h]
                         k = model.key(msa_rep[b, t, i])[h]
-                        a.append((q.T @ k) / math.sqrt(model.num_channels))
-                    a = torch.nn.functional.softmax(torch.stack(a))
+                        a.append((q.transpose(0, -1) @ k) / math.sqrt(model.num_channels))
+                    a = torch.nn.functional.softmax(torch.stack(a), dim=0)
                     sum = 0
                     for t in range(num_msa):
                         sum += a[t] * model.value(msa_rep[b, t, i])[h]

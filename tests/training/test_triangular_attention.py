@@ -27,8 +27,8 @@ def test_triangle_attention_starting_node():
                         query = model.query(pair_rep[x, i, j])[h]
                         key = model.key(pair_rep[x, i, k])[h]
                         bias = model.bias(pair_rep[x, j, k])[h]
-                        attn.append(query.T @ key / math.sqrt(num_channels) + bias)
-                    attn = torch.nn.functional.softmax(torch.stack(attn))
+                        attn.append(query.transpose(0, -1) @ key / math.sqrt(num_channels) + bias)
+                    attn = torch.nn.functional.softmax(torch.stack(attn), dim=0)
                     sum = 0
                     for k in range(num_res):
                         value = model.value(pair_rep[x, i, k])[h]
@@ -62,8 +62,8 @@ def test_triangle_attention_ending_node():
                         query = model.query(pair_rep[x, i, j])[h]
                         key = model.key(pair_rep[x, k, j])[h]
                         bias = model.bias(pair_rep[x, k, i])[h]
-                        attn.append(query.T @ key / math.sqrt(num_channels) + bias)
-                    attn = torch.nn.functional.softmax(torch.stack(attn))
+                        attn.append(query.transpose(0, -1) @ key / math.sqrt(num_channels) + bias)
+                    attn = torch.nn.functional.softmax(torch.stack(attn), dim=0)
                     sum = 0
                     for k in range(num_res):
                         value = model.value(pair_rep[x, k, j])[h]

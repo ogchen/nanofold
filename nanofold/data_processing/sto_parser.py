@@ -80,7 +80,4 @@ def parse_msa(input, num_samples=None):
         ]
     compressed_alignments = compress_alignment_gaps(alignments)
     deletion_matrix = compute_deletion_matrix(alignments)
-    return {
-        "alignments": compressed_alignments,
-        "deletion_matrix": deletion_matrix,
-    }
+    return compressed_alignments, deletion_matrix
