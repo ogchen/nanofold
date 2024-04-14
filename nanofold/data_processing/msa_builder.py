@@ -18,7 +18,7 @@ from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 
 
 def get_chains_to_process(db_manager, msa_output_dir):
-    chains = db_manager.chains().find({"msa_feat": {"$exists": 0}}, {"_id": 1, "sequence": 1})
+    chains = db_manager.chains().find({}, {"_id": 1, "sequence": 1})
     search_glob = os.path.join(msa_output_dir, "*.pkl.gz")
     msa_files = glob.glob(search_glob)
     found_ids = [Path(m).stem.split(".")[0] for m in msa_files]
