@@ -96,8 +96,8 @@ def get_msa_feat(alignments, deletion_matrix, num_msa_clusters, batch_size=500):
     return {
         "cluster_msa": cluster_msa.astype(np.bool_),
         "cluster_has_deletion": cluster_has_deletion.astype(np.bool_),
-        "cluster_deletion_value": cluster_deletion_value.astype(np.float16),
-        "cluster_deletion_mean": cluster_deletion_mean.astype(np.float16),
+        "cluster_deletion_value": cluster_deletion_value.astype(np.float32),
+        "cluster_deletion_mean": cluster_deletion_mean.astype(np.float32),
         "cluster_profile": cluster_profile.astype(np.float32),
     }
 
@@ -113,16 +113,14 @@ def preprocess_msa(alignments, deletion_matrix):
 
 
 def get_extra_msa_seq(alignments_one_hot, deletion_matrix, num_msa_clusters, num_extra_seq):
-    indices = np.arange(num_msa_clusters, len(alignments_one_hot))
-    np.random.shuffle(indices)
-    indices = indices[:num_extra_seq]
-    extra_msa_has_deletion = deletion_matrix[indices] > 0
-    extra_msa_deletion_value = normalize_to_unit(deletion_matrix[indices])
+    extra_msa = alignments_one_hot[num_msa_clusters:][:num_extra_seq]
+    extra_msa_has_deletion = deletion_matrix[num_msa_clusters:][:num_extra_seq] > 0
+    extra_msa_deletion_value = normalize_to_unit(deletion_matrix[num_msa_clusters:][:num_extra_seq])
 
     return {
-        "extra_msa": alignments_one_hot.astype(np.bool_),
+        "extra_msa": extra_msa.astype(np.bool_),
         "extra_msa_has_deletion": extra_msa_has_deletion.astype(np.bool_),
-        "extra_msa_deletion_value": extra_msa_deletion_value.astype(np.float16),
+        "extra_msa_deletion_value": extra_msa_deletion_value.astype(np.float32),
     }
 
 
