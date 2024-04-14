@@ -19,6 +19,7 @@ class Nanofold(nn.Module):
         single_embedding_size,
         pair_embedding_size,
         msa_embedding_size,
+        extra_msa_embedding_size,
         num_triangular_update_channels,
         num_triangular_attention_channels,
         product_embedding_size,
@@ -50,15 +51,15 @@ class Nanofold(nn.Module):
         self.input_embedder = InputEmbedding(pair_embedding_size, msa_embedding_size, position_bins)
         self.recycling_embedder = RecyclingEmbedder(pair_embedding_size, msa_embedding_size, device)
         self.extra_msa_stack = ExtraMSAStack(
-            num_extra_msa_blocks,
-            num_extra_msa_channels,
+            pair_embedding_size,
+            extra_msa_embedding_size,
             num_triangular_update_channels,
             num_triangular_attention_channels,
             product_embedding_size,
-            num_evoformer_blocks,
+            num_extra_msa_blocks,
             num_evoformer_msa_heads,
             num_evoformer_pair_heads,
-            num_evoformer_channels,
+            num_extra_msa_channels,
             evoformer_transition_multiplier,
             device,
         )
@@ -103,6 +104,7 @@ class Nanofold(nn.Module):
             "single_embedding_size": config["single_embedding_size"],
             "pair_embedding_size": config["pair_embedding_size"],
             "msa_embedding_size": config["msa_embedding_size"],
+            "extra_msa_embedding_size": config["extra_msa_embedding_size"],
             "position_bins": config["position_bins"],
             "num_triangular_update_channels": config["num_triangular_update_channels"],
             "num_triangular_attention_channels": config["num_triangular_attention_channels"],

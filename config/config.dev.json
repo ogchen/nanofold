@@ -13,6 +13,7 @@
     "single_embedding_size": 7,
     "pair_embedding_size": 5,
     "msa_embedding_size": 10,
+    "extra_msa_embedding_size": 3,
     "num_msa_clusters": 5,
     "num_extra_msa": 5,
     "position_bins": 3,

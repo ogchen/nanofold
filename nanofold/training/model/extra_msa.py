@@ -80,13 +80,27 @@ class ExtraMSAStackBlock(nn.Module):
 
 
 class ExtraMSAStack(nn.Module):
-    def __init__(self, num_blocks, num_channels, device, extra_msa_input_size=25):
+    def __init__(
+        self,
+        pair_embedding_size,
+        extra_msa_embedding_size,
+        num_triangular_update_channels,
+        num_triangular_attention_channels,
+        product_embedding_size,
+        num_blocks,
+        num_msa_heads,
+        num_pair_heads,
+        num_channels,
+        evoformer_transition_multiplier,
+        device,
+        extra_msa_input_size=25,
+    ):
         super().__init__()
         self.blocks = nn.ModuleList(
             [
                 ExtraMSAStackBlock(
                     pair_embedding_size,
-                    msa_embedding_size,
+                    extra_msa_embedding_size,
                     num_triangular_update_channels,
                     num_triangular_attention_channels,
                     product_embedding_size,
@@ -100,7 +114,7 @@ class ExtraMSAStack(nn.Module):
             ]
         )
 
-        self.linear = nn.Linear(extra_msa_input_size, 1)
+        self.linear = nn.Linear(extra_msa_input_size, extra_msa_embedding_size)
 
     def forward(self, extra_msa_feat, pair_rep):
         extra_msa_rep = self.linear(extra_msa_feat)
