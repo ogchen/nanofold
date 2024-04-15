@@ -73,8 +73,10 @@ class Trainer:
         self.scaler.scale(out["total_loss"]).backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.params["clip_norm"])
         self.scaler.step(self.optimizer)
+        current_scale = self.scaler.get_scale()
         self.scaler.update()
-        self.scheduler.step()
+        if current_scale <= self.scaler.get_scale():
+            self.scheduler.step()
         return {k: v.item() for k, v in out.items() if k != "coords"}
 
     @torch.no_grad()
