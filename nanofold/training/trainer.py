@@ -67,7 +67,6 @@ class Trainer:
         self.optimizer.zero_grad(set_to_none=True)
         with torch.autocast(
             self.params["device"],
-            dtype=torch.bfloat16,
             enabled=self.params["use_amp"] and self.params["device"] == "cuda",
         ):
             out = self.train_model(batch)
@@ -83,7 +82,6 @@ class Trainer:
         self.model.eval()
         with torch.autocast(
             self.params["device"],
-            dtype=torch.bfloat16,
             enabled=self.params["use_amp"] and self.params["device"] == "cuda",
         ):
             out = self.eval_model(batch)
