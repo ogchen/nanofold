@@ -113,6 +113,6 @@ class Trainer:
             ):
                 test_metrics = self.evaluate(self.load_batch(next(iter(test_loader))))
                 [l.log_epoch(self.epoch, train_metrics, test_metrics) for l in self.loggers]
-            self.save_checkpoint()
             self.epoch += 1
+            self.save_checkpoint()
         [l.log_model(self.model) for l in self.loggers]
