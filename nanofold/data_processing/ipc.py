@@ -29,7 +29,7 @@ SCHEMA = pa.schema(
 
 
 def get_ready_chains(db_manager, msa_output_dir):
-    chains = db_manager.chains().find({})
+    chains = db_manager.chains().find()
     search_glob = os.path.join(msa_output_dir, "*.pkl.gz")
     msa_files = glob.glob(search_glob)
     found_ids = [Path(m).stem.split(".")[0] for m in msa_files]

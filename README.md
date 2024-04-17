@@ -20,6 +20,12 @@ wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_no
 gzip -d bfd-first_non_consensus_sequences.fasta.gz
 ```
 
+Download and unzip PDB70 for template search with
+```bash
+wget https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200401.tar.gz
+mkdir pdb70 && tar -xf pdb70_from_mmcif_200401.tar.gz -C pdb70
+```
+
 ### Docker
 Requires [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 for GPU support within containers.
