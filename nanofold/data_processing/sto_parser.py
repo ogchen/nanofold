@@ -1,5 +1,7 @@
 import numpy as np
+import subprocess
 from collections import OrderedDict
+from tempfile import NamedTemporaryFile
 
 
 def is_alignment_line(line):
@@ -24,7 +26,7 @@ def extract_alignments(input):
         if is_alignment_line(line):
             line = line.split()
             alignments[line[0]] = alignments.get(line[0], "") + line[1]
-    return list(alignments.values())
+    return alignments
 
 
 def filter_sto_by_sequences(input, sequences):
@@ -70,7 +72,7 @@ def compute_deletion_matrix(alignments):
 
 
 def parse_msa(input, num_samples=None):
-    alignments = extract_alignments(input)
+    alignments = list(extract_alignments(input).values())
     if not all([len(a) == len(alignments[0]) for a in alignments]):
         raise ValueError("MSA sequences are not of equal length")
     if num_samples is not None and len(alignments) > num_samples:
@@ -81,3 +83,11 @@ def parse_msa(input, num_samples=None):
     compressed_alignments = compress_alignment_gaps(alignments)
     deletion_matrix = compute_deletion_matrix(alignments)
     return compressed_alignments, deletion_matrix
+
+
+def convert_to_a2m(reformat_bin, msa_sto, a2m_file):
+    with NamedTemporaryFile(mode="w") as tmp:
+        tmp.write(msa_sto)
+        tmp.flush()
+        cmd = [reformat_bin, "sto", "a2m", tmp.name, a2m_file]
+        subprocess.run(cmd, capture_output=True, check=True)
