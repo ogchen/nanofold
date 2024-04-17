@@ -1,0 +1,667 @@
+Query         1vh2_A
+Match_columns 152
+No_of_seqs    62 out of 66
+Neff          4.03002
+Searched_HMMs 80799
+Date          Wed Apr 17 16:29:31 2024
+Command       /opt/hhsuite/bin/hhsearch -i /tmp/tmpv3db703n -o /preprocess/templates_cache/1vh2_A.hhr -d /data/pdb70/pdb70 -v 0 -cpu 1 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 1VJE_A S-ribosylhomocysteinase 100.0 4.9E-68   6E-73  425.0   0.0  152    1-152     7-158 (166)
+  2 1VH2_A S-ribosylhomocysteinase 100.0 7.9E-68 9.8E-73  423.8   0.0  152    1-152     7-158 (166)
+  3 1J6X_A AUTOINDUCER-2 PRODUCTIO 100.0 1.8E-65 2.2E-70  408.3   0.0  143    1-144     5-149 (160)
+  4 1J6X_B AUTOINDUCER-2 PRODUCTIO 100.0 1.8E-65 2.2E-70  408.3   0.0  143    1-144     5-149 (160)
+  5 1IE0_A AUTOINDUCER-2 PRODUCTIO 100.0 4.8E-65   6E-70  404.8   0.0  140    1-141     4-148 (157)
+  6 1J98_A AUTOINDUCER-2 PRODUCTIO 100.0 5.2E-65 6.4E-70  404.6   0.0  140    1-141     4-148 (157)
+  7 5E68_B S-ribosylhomocysteine l 100.0 5.8E-65 7.2E-70  411.3   0.0  150    1-150     4-159 (179)
+  8 1J6W_A AUTOINDUCER-2 PRODUCTIO 100.0 1.5E-64 1.8E-69  407.8   0.0  150    1-150     4-159 (175)
+  9 4XCH_B S-ribosylhomocysteine l 100.0 1.9E-64 2.4E-69  412.3   0.0  148    1-148    41-190 (194)
+ 10 1TKE_A Threonyl-tRNA synthetas  69.6     3.4 4.2E-05   33.3   0.0   58   47-106    69-129 (224)
+ 11 1V4P_B alanyl-tRNA synthetase   67.1     4.2 5.2E-05   30.9   0.0   57   49-106     7-67  (157)
+ 12 1V4P_C alanyl-tRNA synthetase   67.1     4.2 5.2E-05   30.9   0.0   57   49-106     7-67  (157)
+ 13 3KEW_A DHHA1 domain protein; S  56.3     8.9 0.00011   31.9   0.0   60   45-106    92-151 (241)
+ 14 2E1B_A 216aa long hypothetical  50.1      13 0.00016   30.5   0.0   59   45-106    93-156 (216)
+ 15 6VU9_A Threonine--tRNA ligase   38.3      27 0.00033   32.9   0.0   57   48-106    78-137 (641)
+ 16 3UOR_A ABC transporter sugar b  33.2      36 0.00045   30.1   0.0   40   83-122   391-430 (458)
+ 17 3UOR_B ABC transporter sugar b  33.2      36 0.00045   30.1   0.0   40   83-122   391-430 (458)
+ 18 5E6G_B De novo designed protei  33.2      36 0.00045   27.7   0.0   35   77-112    11-46  (136)
+ 19 6NU2_7 39S ribosomal protein L  32.8      37 0.00046   29.2   0.0   57   47-105   105-175 (287)
+ 20 3JTZ_A Integrase; four strande  29.3      47 0.00058   23.5   0.0   22  119-140    53-74  (88)
+ 21 3OL0_A de novo designed monome  28.7      49  0.0006   22.3   0.0   12   76-87     13-24  (48)
+ 22 1NYQ_B threonyl-tRNA synthetas  27.9      51 0.00063   30.6   0.0   59   46-106    70-131 (645)
+ 23 1NYR_A threonyl-tRNA synthetas  27.9      51 0.00063   30.6   0.0   59   46-106    70-131 (645)
+ 24 5U86_A UDP-3-O-acyl-N-acetylgl  27.4      53 0.00066   29.8   0.0   19   48-66     67-85  (275)
+ 25 2GO4_B UDP-3-O-[3-hydroxymyris  26.4      57  0.0007   29.5   0.0   20   47-66     66-85  (267)
+ 26 5ODC_B Heterodisulfide reducta  26.4      57  0.0007   27.6   0.0   48   91-140    16-66  (291)
+ 27 5ODH_H FAD dependent oxidoredu  26.4      57  0.0007   27.6   0.0   48   91-140    16-66  (291)
+ 28 5ODQ_B Heterodisulfide reducta  26.4      57  0.0007   27.6   0.0   48   91-140    16-66  (291)
+ 29 3P3G_A UDP-3-O-[3-hydroxymyris  24.9      63 0.00078   29.7   0.0   20   47-66     71-90  (300)
+ 30 6CAX_A UDP-3-O-acyl-N-acetylgl  24.4      65 0.00081   29.7   0.0   40   47-86     71-117 (304)
+ 31 2ESR_B Methyltransferase (E.C.  24.2      66 0.00082   23.4   0.0   17   66-85     33-49  (177)
+ 32 1QF6_A THREONYL-TRNA SYNTHETAS  24.0      67 0.00083   30.1   0.0   57   48-106    70-129 (642)
+ 33 4FW5_C UDP-3-O-[3-hydroxymyris  23.9      68 0.00084   29.6   0.0   40   47-86     73-119 (302)
+ 34 4CE4_c MRPL27, MRPL28, MRPL47,  22.9      73  0.0009   28.3   0.0   59   46-106   103-175 (301)
+ 35 6IH0_A UDP-3-O-acyl-N-acetylgl  22.8      74 0.00091   29.0   0.0   20   47-66     66-85  (279)
+ 36 6GB2_Bc Mitochondrial ribosoma  21.8      79 0.00098   28.6   0.0   59   46-106   136-208 (334)
+ 37 2ML7_A Specific abundant prote  21.5      81   0.001   20.4   0.0   11   71-81     16-26  (31)
+ 38 5VWM_A UDP-3-O-acyl-N-acetylgl  20.9      85  0.0011   29.9   0.0   40   47-86    167-213 (400)
+
+No 1
+>1VJE_A S-ribosylhomocysteinase (E.C.3.13.1.-); structural genomics, Hydrolase; HET: CSD, MSE; 1.64A {Deinococcus radiodurans} SCOP: d.185.1.2
+Probab=100.00  E-value=4.9e-68  Score=425.00  Aligned_cols=152  Identities=99%  Similarity=1.452  Sum_probs=146.8  Template_Neff=4.200
+
+Q 1vh2_A            1 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHLEGVVDVSPMGCRTGM   80 (152)
+Q Consensus         1 veSF~lDH~~v~aPyvrla~~~~~~~Gd~v~~~DlR~~qPN~~~l~~~~lHSlEHL~A~~lRn~~d~vI~~~PMGCrTGF   80 (152)
+                      |+||++||++|+|||||+|++++|++||+|+||||||+|||+++|++++|||||||+|||+||+.+++||||||||||||
+T Consensus         7 i~SF~vDH~kl~APgvyvsr~~~g~~Gd~ittyDlR~~qPN~e~l~~~a~HTiEHl~At~lRn~~d~vIy~gPMGCrTGF   86 (166)
+T 1VJE_A            7 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHLEGVVDVSPMGARTGM   86 (166)
+T ss_dssp             -CGGGBCTTTCCSSEEEEEEEEECTTSCEEEEEEEECSCTTSCCCCHHHHHHHHHHHHHHHHHHCTTEEEEEECTTSSEE
+T ss_pred             cceeeccCcccCCCeEEEEEEEeCCCCCeEEEEEEEecCCCCCCCCHHHHHHHHHHHHHHHHhcCCCeEEEeccCCCCce
+Confidence            78999999999999999999988999999999999999999999999999999999999999999999999999999999
+
+
+Q 1vh2_A           81 YMAVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDHDLAAARQHARDVLDQGLKVQETILLER  152 (152)
+Q Consensus        81 YL~~~g~~~~e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny~~HsL~~Aq~~A~~~L~~~~~~~~~~~~~~  152 (152)
+                      ||+++|+++.++|+++++++|++|++++++|||+++.|||||++|||++||++|++||+++|+.++|++|||
+T Consensus        87 YLi~~g~~~~~~v~~l~~~~l~~i~~~~~eVPga~~~eCGNy~~HdL~~AK~~A~~~L~~~~~~~~~~~~~~  158 (166)
+T 1VJE_A           87 YMAVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDHDLAAARQHARDVLDQGLKVQETILLER  158 (166)
+T ss_dssp             EEEEESSCCHHHHHHHHHHHHHHHHTCCSCCTTCSTTTCTTTTCCCHHHHHHHHHHHHHHCCCBCCCCBC--
+T ss_pred             EEEEeCCCCHHHHHHHHHHHHHHHhcCCCCCCCCChhhccchhcCCHHHHHHHHHHHHHcCCChhhchhhhc
+Confidence            999999999999999999999999987789999999999999999999999999999999999999999997
+
+
+No 2
+>1VH2_A S-ribosylhomocysteinase (E.C.3.13.1.-); structural genomics, HYDROLASE; 2.0A {Deinococcus radiodurans} SCOP: d.185.1.2
+Probab=100.00  E-value=7.9e-68  Score=423.79  Aligned_cols=152  Identities=100%  Similarity=1.476  Sum_probs=149.1  Template_Neff=4.200
+
+Q 1vh2_A            1 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHLEGVVDVSPMGCRTGM   80 (152)
+Q Consensus         1 veSF~lDH~~v~aPyvrla~~~~~~~Gd~v~~~DlR~~qPN~~~l~~~~lHSlEHL~A~~lRn~~d~vI~~~PMGCrTGF   80 (152)
+                      |+||++||++|+|||||+|++++|++||+|+||||||+|||+++|++++|||||||+|||+||+.+++||||||||||||
+T Consensus         7 i~SF~vDH~kl~APgvyvsr~~~g~~Gd~vttyDlR~~qPN~e~l~~~a~HTlEHl~At~lRn~~d~vIy~gPMGCrTGF   86 (166)
+T 1VH2_A            7 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHLEGVVDVSPMGCRTGM   86 (166)
+T ss_dssp             CCSCCBCTTSCCSSEEEEEEEEECTTSCEEEEEEEECSCTTSCCCCHHHHHHHHHHHHHHHHHHCSSEEEEEECTTSSEE
+T ss_pred             cceeeccCcccCCCeEEEEEEEeCCCCCeEEEEEEEecCCCCCCCCHHHHHHHHHHHHHHHHhcCCCeEEEecCCCCcce
+Confidence            78999999999999999999988999999999999999999999999999999999999999999999999999999999
+
+
+Q 1vh2_A           81 YMAVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDHDLAAARQHARDVLDQGLKVQETILLER  152 (152)
+Q Consensus        81 YL~~~g~~~~e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny~~HsL~~Aq~~A~~~L~~~~~~~~~~~~~~  152 (152)
+                      ||+++|+++.++|+++++++|++|++++++||||++.|||||++|||++||++|++||+++|+..+|++|||
+T Consensus        87 YLi~~g~~~~~~i~~l~~~~l~~i~~~~~eVPga~~~eCGNy~~hdL~~AK~~A~~~L~~~~~~~~~~~~~~  158 (166)
+T 1VH2_A           87 YMAVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDHDLAAARQHARDVLDQGLKVQETILLER  158 (166)
+T ss_dssp             EEEEESSCCHHHHHHHHHHHHHHHHTCCSCCTTCSTTTCTTTTCCCHHHHHHHHHHHHHHCCCBCCCCBCCC
+T ss_pred             EEEEeCCCCHHHHHHHHHHHHHHHhcCCCCCCCCChhhccchhcCCHHHHHHHHHHHHHcCCChhhchhhhc
+Confidence            999999999999999999999999987789999999999999999999999999999999999999999997
+
+
+No 3
+>1J6X_A AUTOINDUCER-2 PRODUCTION PROTEIN LUXS; alpha-beta fold, SIGNALING PROTEIN; HET: MET, MSE; 2.38A {Helicobacter pylori} SCOP: d.185.1.2
+Probab=100.00  E-value=1.8e-65  Score=408.25  Aligned_cols=143  Identities=44%  Similarity=0.753  Sum_probs=139.3  Template_Neff=4.300
+
+Q 1vh2_A            1 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHLEGVVDVSPMGCRTGM   80 (152)
+Q Consensus         1 veSF~lDH~~v~aPyvrla~~~~~~~Gd~v~~~DlR~~qPN~~~l~~~~lHSlEHL~A~~lRn~~d~vI~~~PMGCrTGF   80 (152)
+                      |+||++||++|+|||||+|+++++++||+|+||||||+|||+++|++++|||||||+|||+||+.+++||||||||||||
+T Consensus         5 I~SF~lDH~kl~APgvyvsr~~~g~~Gd~i~tyDlR~~qPN~e~l~~~alHTlEHl~At~lRn~~d~vIy~gPMGCrTGF   84 (160)
+T 1J6X_A            5 VESFNLDHTKVKAPYVRIADRKKGVNGDLIVKYDVRFKQPNRDHMDMPSLHSLEHLVAEIIRNHANYVVDWSPMGCQTGF   84 (160)
+T ss_dssp             SGGGGSCTTSCCSSEEEEEEEEECTTSCEEEEEEEECSCTTTCCCCHHHHHHHHHHHHHHHHHHCSCEEEEEECTTSSEE
+T ss_pred             cceeeccccccCCCeEEEEEEeeCCCCcEEEEEEEEeeCCCCCCCCHHHHHHHHHHHHHHHHhhCCcEEEEecCCCCcee
+Confidence            78999999999999999999988999999999999999999999999999999999999999999999999999999999
+
+
+Q 1vh2_A           81 YMAVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDHDLAAARQHARDVLDQ--GLKV  144 (152)
+Q Consensus        81 YL~~~g~~~~e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny~~HsL~~Aq~~A~~~L~~--~~~~  144 (152)
+                      ||+++|++++++|+++++++|++|+++ ++|||+++.|||||++|||++||++|++||++  +|+.
+T Consensus        85 YLi~~g~~~~~~v~~l~~~~l~~i~~~-~eVPga~~~eCGny~~hdL~~AK~~a~~~L~~~~~~~~  149 (160)
+T 1J6X_A           85 YLTVLNHDNYTEILEVLEKTMQDVLKA-KEVPASNEKQCGWAANHTLEGAQNLARAFLDKRAEWSE  149 (160)
+T ss_dssp             EEEEESCCCHHHHHHHHHHHHHHHTTC-SSCTTCSTTTCTTTTSCCHHHHHHHHHHHHHTGGGTTC
+T ss_pred             EEEEecCCCHHHHHHHHHHHHHHHHhc-CCCCCCChhhccchhhCCHHHHHHHHHHHHHHcccccc
+Confidence            999999999999999999999999988 99999999999999999999999999999998  6664
+
+
+No 4
+>1J6X_B AUTOINDUCER-2 PRODUCTION PROTEIN LUXS; alpha-beta fold, SIGNALING PROTEIN; HET: MET; 2.38A {Helicobacter pylori} SCOP: d.185.1.2
+Probab=100.00  E-value=1.8e-65  Score=408.25  Aligned_cols=143  Identities=44%  Similarity=0.753  Sum_probs=139.3  Template_Neff=4.300
+
+Q 1vh2_A            1 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHLEGVVDVSPMGCRTGM   80 (152)
+Q Consensus         1 veSF~lDH~~v~aPyvrla~~~~~~~Gd~v~~~DlR~~qPN~~~l~~~~lHSlEHL~A~~lRn~~d~vI~~~PMGCrTGF   80 (152)
+                      |+||++||++|+|||||+|+++++++||+|+||||||+|||+++|++++|||||||+|||+||+.+++||||||||||||
+T Consensus         5 I~SF~lDH~kl~APgvyvsr~~~g~~Gd~i~tyDlR~~qPN~e~l~~~alHTlEHl~At~lRn~~d~vIy~gPMGCrTGF   84 (160)
+T 1J6X_B            5 VESFNLDHTKVKAPYVRIADRKKGVNGDLIVKYDVRFKQPNRDHMDMPSLHSLEHLVAEIIRNHANYVVDWSPMGCQTGF   84 (160)
+T ss_dssp             SGGGGSCTTTCCSSEEEEEEEEECTTSCEEEEEEEECSCTTTCCCCHHHHHHHHHHHHHHHHHHCSCEEEEEECTTSSEE
+T ss_pred             cceeeccccccCCCeEEEEEEeeCCCCcEEEEEEEEeeCCCCCCCCHHHHHHHHHHHHHHHHhhCCcEEEEecCCCCcee
+Confidence            78999999999999999999988999999999999999999999999999999999999999999999999999999999
+
+
+Q 1vh2_A           81 YMAVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDHDLAAARQHARDVLDQ--GLKV  144 (152)
+Q Consensus        81 YL~~~g~~~~e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny~~HsL~~Aq~~A~~~L~~--~~~~  144 (152)
+                      ||+++|++++++|+++++++|++|+++ ++|||+++.|||||++|||++||++|++||++  +|+.
+T Consensus        85 YLi~~g~~~~~~v~~l~~~~l~~i~~~-~eVPga~~~eCGny~~hdL~~AK~~a~~~L~~~~~~~~  149 (160)
+T 1J6X_B           85 YLTVLNHDNYTEILEVLEKTMQDVLKA-KEVPASNEKQCGWAANHTLEGAQNLARAFLDKRAEWSE  149 (160)
+T ss_dssp             EEEEESCCCHHHHHHHHHHHHHHHHTC-SSCTTCSSSSCTTTTSCCHHHHHHHHHHHHHTGGGTTC
+T ss_pred             EEEEecCCCHHHHHHHHHHHHHHHHhc-CCCCCCChhhccchhhCCHHHHHHHHHHHHHHcccccc
+Confidence            999999999999999999999999988 99999999999999999999999999999998  6664
+
+
+No 5
+>1IE0_A AUTOINDUCER-2 PRODUCTION PROTEIN LUXS; four stranded antiparallel beta sheet; 1.6A {Bacillus subtilis} SCOP: d.185.1.2
+Probab=100.00  E-value=4.8e-65  Score=404.80  Aligned_cols=140  Identities=44%  Similarity=0.765  Sum_probs=136.3  Template_Neff=4.300
+
+Q 1vh2_A            1 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHL-----EGVVDVSPMG   75 (152)
+Q Consensus         1 veSF~lDH~~v~aPyvrla~~~~~~~Gd~v~~~DlR~~qPN~~~l~~~~lHSlEHL~A~~lRn~~-----d~vI~~~PMG   75 (152)
+                      |+||++||++|+|||||+|+++++++||+|+||||||+|||+++|++++|||||||+|||+||+.     +++|||||||
+T Consensus         4 i~SF~lDH~kl~aPgvy~sr~~~g~~gd~ittyDlR~~qPN~e~l~~~alHTlEHl~At~lRn~~~~~~~d~vIy~gPMG   83 (157)
+T 1IE0_A            4 VESFELDHNAVVAPYVRHCGVHKVGTDGVVNKFDIRFCQPNKQAMKPDTIHTLEHLLAFTIRSHAEKYDHFDIIDISPMG   83 (157)
+T ss_dssp             GGGGGSCTTTCCSSEEEEEEEEEETTTEEEEEEEEECSCTTTCCCCHHHHHHHHHHHHHHHHHHHTTCTTEEEEEEEECT
+T ss_pred             cceEEecCcccCCCeEEEEEEEEcCCCceEEEEEEEEecCCCCCCCHHHHHHHHHHHHHHHHHcccccCCCceEEEecCC
+Confidence            78999999999999999999988999999999999999999999999999999999999999995     6899999999
+
+
+Q 1vh2_A           76 CRTGMYMAVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDHDLAAARQHARDVLDQG  141 (152)
+Q Consensus        76 CrTGFYL~~~g~~~~e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny~~HsL~~Aq~~A~~~L~~~  141 (152)
+                      |||||||+++|++++++|+++++++|++|+++ ++||||++.|||||++|||++||++|++||+++
+T Consensus        84 CrTGFYLi~~g~~~~~~v~~l~~~~l~~i~~~-~eVPga~~~eCGNy~~hdL~~AK~~a~~~L~~~  148 (157)
+T 1IE0_A           84 CQTGYYLVVSGEPTSAEIVDLLEDTMKEAVEI-TEIPAANEKQCGQAKLHDLEGAKRLMRFWLSQD  148 (157)
+T ss_dssp             TSSEEEEEEEECCCHHHHHHHHHHHHHHHTTC-CSCTTCSTTTCTTTTCCCHHHHHHHHHHHHTSC
+T ss_pred             cccceEEEEeCCCCHHHHHHHHHHHHHHHhhc-cCCCCCChhhccchhhCCHHHHHHHHHHHHHcC
+Confidence            99999999999999999999999999999988 999999999999999999999999999999983
+
+
+No 6
+>1J98_A AUTOINDUCER-2 PRODUCTION PROTEIN LUXS; Autoinducer synthesis, SIGNALING PROTEIN; 1.2A {Bacillus subtilis} SCOP: d.185.1.2
+Probab=100.00  E-value=5.2e-65  Score=404.61  Aligned_cols=140  Identities=44%  Similarity=0.747  Sum_probs=136.3  Template_Neff=4.300
+
+Q 1vh2_A            1 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHL-----EGVVDVSPMG   75 (152)
+Q Consensus         1 veSF~lDH~~v~aPyvrla~~~~~~~Gd~v~~~DlR~~qPN~~~l~~~~lHSlEHL~A~~lRn~~-----d~vI~~~PMG   75 (152)
+                      |+||++||++|+|||||+|+++++++||+|+||||||+|||+++|++++|||||||+|||+||+.     +++|||||||
+T Consensus         4 i~SF~lDH~kl~aPgvy~sr~~~g~~gd~ittyDlR~~qPN~e~l~~~alHTlEHl~At~lRn~~~~~~~d~vIy~gPMG   83 (157)
+T 1J98_A            4 VESFELDHNAVVAPYVRHCGVHKVGTDGVVNKFDIRFCQPNKQAMKPDTIHTLEHLLAFTIRSHAEKYDHFDIIDISPMG   83 (157)
+T ss_dssp             CGGGGSCTTTCCSSEEEEEEEEEETTTEEEEEEEEECSCTTTCCCCHHHHHHHHHHHHHHHHHHHTTCSSEEEEEEEECT
+T ss_pred             cceEEecCcccCCCeEEEEEEEEcCCCceEEEEEEEEecCCCCCCCHHHHHHHHHHHHHHHHHcccccCCCceEEEecCC
+Confidence            78999999999999999999988999999999999999999999999999999999999999995     6899999999
+
+
+Q 1vh2_A           76 CRTGMYMAVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDHDLAAARQHARDVLDQG  141 (152)
+Q Consensus        76 CrTGFYL~~~g~~~~e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny~~HsL~~Aq~~A~~~L~~~  141 (152)
+                      |||||||+++|++++++|+++++++|++|+++ ++||||++.|||||++|||++||++|++||+++
+T Consensus        84 CrTGFYLi~~g~~~~~~i~~l~~~~l~~i~~~-~eVPga~~~eCGNy~~hdL~~AK~~a~~~L~~~  148 (157)
+T 1J98_A           84 CQTGYYLVVSGETTSAEIVDLLEDTMKEAVEI-TEIPAANEKQCGQAKLHDLEGAKRLMRFWLSQD  148 (157)
+T ss_dssp             TSSEEEEEEEECCCHHHHHHHHHHHHHHHTTC-CSCTTCSTTTCTTTTCCCHHHHHHHHHHHHTSC
+T ss_pred             cccceEEEEeCCCCHHHHHHHHHHHHHHHhhc-cCCCCCChhhccchhhCCHHHHHHHHHHHHHcC
+Confidence            99999999999999999999999999999988 999999999999999999999999999999983
+
+
+No 7
+>5E68_B S-ribosylhomocysteine lyase (E.C.4.4.1.21); Quroum sensing Protein, LuxS, Salmonella; HET: PAV, CSD; 1.58A {Salmonella typhi}
+Probab=100.00  E-value=5.8e-65  Score=411.28  Aligned_cols=150  Identities=47%  Similarity=0.831  Sum_probs=143.0  Template_Neff=4.200
+
+Q 1vh2_A            1 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHL----EGVVDVSPMGC   76 (152)
+Q Consensus         1 veSF~lDH~~v~aPyvrla~~~~~~~Gd~v~~~DlR~~qPN~~~l~~~~lHSlEHL~A~~lRn~~----d~vI~~~PMGC   76 (152)
+                      |+||++||++|+|||||+|++++|++||+|+||||||+|||+++|++++|||||||+|||+||+.    ++|||||||||
+T Consensus         4 I~SF~lDH~kl~APgvy~sr~~~g~~Gd~ittyDlR~~qPN~e~l~~~a~HTlEHL~At~lRn~~~~~~d~vIy~gPMGC   83 (179)
+T 5E68_B            4 LDSFAVDHTRMQAPAVRTAKTMNTPHGDAITVFDLRFCIPNKEVMPEKGIHTLEHLFAGFMRDHLNGNGVEIIDISPMGA   83 (179)
+T ss_dssp             CEECCBCTTTCCSSEEEEEEEEECTTCCEEEEEEEECSCTTTCCCCHHHHHHHHHHHHHHHHHHHCSSSCEEEEEEECTT
+T ss_pred             cceeeecccccCCCeEEEEEEeeCCCCCeEEEEEEEeecCCCCCCCHHHHHHHHHHHHHHHHhhhcCCCCceEEEeCCCc
+Confidence            78999999999999999999988999999999999999999999999999999999999999995    78999999999
+
+
+Q 1vh2_A           77 RTGMYMAVIGEPDEQGVMKAFEAALKDTAGH-D-QPIPGVSELECGNYRDHDLAAARQHARDVLDQGLKVQETILL  150 (152)
+Q Consensus        77 rTGFYL~~~g~~~~e~i~~~~~~~l~~il~~-~-~eVP~a~~~qCGny~~HsL~~Aq~~A~~~L~~~~~~~~~~~~  150 (152)
+                      ||||||+++|+++.++|+++++++|++|+++ + ++|||+++.|||||++|||++||++|++||+++++.+.+..|
+T Consensus        84 rTGFYLi~~g~~~~~~v~~l~~~~l~~i~~~~~~~eVPga~~~eCGNy~~HdL~~AK~~Ak~~L~~~is~~~~~~l  159 (179)
+T 5E68_B           84 RTGFYMSLIGTPDEQRVADAWKAAMADVLKVQDQNQIPELNVYQCGTYQMHSLSEAQDIARHILERDVRVNSNKEL  159 (179)
+T ss_dssp             SSEEEEEEESCCCHHHHHHHHHHHHHHHHTCCSGGGSTTCSTTTCTTTTCCCHHHHHHHHHHHHHHCCEECCHHHH
+T ss_pred             ccceEEEEeCCCCHHHHHHHHHHHHHHHHhhcccccCCCCChhhccccccCCHHHHHHHHHHHHHcCCCcCCCccc
+Confidence            9999999999999999999999999999987 4 899999999999999999999999999999997777766554
+
+
+No 8
+>1J6W_A AUTOINDUCER-2 PRODUCTION PROTEIN LUXS; alpha-beta fold, SIGNALING PROTEIN; HET: MET; 2.1A {Haemophilus influenzae} SCOP: d.185.1.2
+Probab=100.00  E-value=1.5e-64  Score=407.78  Aligned_cols=150  Identities=49%  Similarity=0.905  Sum_probs=127.5  Template_Neff=4.200
+
+Q 1vh2_A            1 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHL--E--GVVDVSPMGC   76 (152)
+Q Consensus         1 veSF~lDH~~v~aPyvrla~~~~~~~Gd~v~~~DlR~~qPN~~~l~~~~lHSlEHL~A~~lRn~~--d--~vI~~~PMGC   76 (152)
+                      |+||++||++|+|||||+|++++|++||+|+||||||+|||+++|++++|||||||+|||+||+.  +  +|||||||||
+T Consensus         4 I~SF~lDH~kl~APgVy~sr~~~g~~Gd~ittyDlR~~qPN~e~l~~~a~HTiEHl~At~lRn~~~~d~~~vIy~gPMGC   83 (175)
+T 1J6W_A            4 LDSFKVDHTKMNAPAVRIAKTMLTPKGDNITVFDLRFCIPNKEILSPKGIHTLEHLFAGFMRDHLNGDSIEIIDISPMGC   83 (175)
+T ss_dssp             CGGGGBCGGGCCSSEEEEC-----TTCCEEEEEEEECSCTTTCCCCHHHHHHHHHHHHHHHHHHHCBTTBEEEEEEECTT
+T ss_pred             cceeEecCcccCCCeEEEEEEeeCCCCCeEEEEEEEEeCCCCCCCCHHHHHHHHHHHHHHHHhccCCCCCCeEEEecCCc
+Confidence            78999999999999999999988999999999999999999999999999999999999999996  6  8999999999
+
+
+Q 1vh2_A           77 RTGMYMAVIGEPDEQGVMKAFEAALKDTAGH-D-QPIPGVSELECGNYRDHDLAAARQHARDVLDQGLKVQETILL  150 (152)
+Q Consensus        77 rTGFYL~~~g~~~~e~i~~~~~~~l~~il~~-~-~eVP~a~~~qCGny~~HsL~~Aq~~A~~~L~~~~~~~~~~~~  150 (152)
+                      ||||||+++|+++.++|+++++++|++|+++ + ++|||+++.|||||++|||++||++|++||+++|+.+.++.+
+T Consensus        84 rTGFYLi~~g~~~~~~v~~l~~~~l~~i~~~~~~~eVPga~~~eCGNy~~HdL~~AK~~Ak~~L~~~~~~~~~~~~  159 (175)
+T 1J6W_A           84 RTGFYMSLIGTPNEQKVSEAWLASMQDVLGVQDQASIPELNIYQCGSYTEHSLEDAHEIAKNVIARGIGVNKNEDL  159 (175)
+T ss_dssp             SSEEEEEEESCCCHH--HHHH--HHHHHH-----T-CTTCSTTTCTTTTSCCHHHHHHHHHHHHHHCCB-------
+T ss_pred             cceeEEEEeCCCCHHHHHHHHHHHHHHHHHhhhhCCCCCCCchhccccccCCHHHHHHHHHHHHHcCCCCChhhhH
+Confidence            9999999999999999999999999999986 4 899999999999999999999999999999998888877654
+
+
+No 9
+>4XCH_B S-ribosylhomocysteine lyase (E.C.4.4.1.21); S-ribosylhomocysteinase, LYASE; 2.2A {Streptococcus suis}
+Probab=100.00  E-value=1.9e-64  Score=412.31  Aligned_cols=148  Identities=43%  Similarity=0.818  Sum_probs=137.8  Template_Neff=3.900
+
+Q 1vh2_A            1 VESFDLDHTKVKAPYVRLAGVKTTPKGDQISKYDLRFLQPNQGAIDPAAIHTLEHLLAGYMRDHLEGVVDVSPMGCRTGM   80 (152)
+Q Consensus         1 veSF~lDH~~v~aPyvrla~~~~~~~Gd~v~~~DlR~~qPN~~~l~~~~lHSlEHL~A~~lRn~~d~vI~~~PMGCrTGF   80 (152)
+                      |+||++||++|+|||||+|+++++++||+|+||||||+|||+++|++++|||||||+|||+||+.+++||||||||||||
+T Consensus        41 I~SF~lDHtkl~APgVyvsr~~~g~~Gd~vttyDLR~~qPN~e~l~~~a~HTiEHL~At~lRn~~d~vIyfgPMGCrTGF  120 (194)
+T 4XCH_B           41 VESFELDHTIVKAPYIRLISEEVGPKGDIITNFDIRLIQPNENAMDTAGLHTIEHLLAKLIRQRIDGLIDCSPFGCRTGF  120 (194)
+T ss_dssp             -----CCTTSCCSSEEEEEEEEECTTSCEEEEEEEECSCTTTCCCCHHHHHHHHHHHHHHHHTTCSCEEEEEECTTSSEE
+T ss_pred             ceeeeccCcccCCCeEEEEEEEeCCCCCeEEEEEEEEeCCCCCCCCHHHHHHHHHHHHHHHHHhCCCeEEEecCCcccee
+Confidence            78999999999999999999988999999999999999999999999999999999999999999999999999999999
+
+
+Q 1vh2_A           81 YMAVIGEPDEQGVMKAFEAALKDTAG-H-DQPIPGVSELECGNYRDHDLAAARQHARDVLDQGLKVQETI  148 (152)
+Q Consensus        81 YL~~~g~~~~e~i~~~~~~~l~~il~-~-~~eVP~a~~~qCGny~~HsL~~Aq~~A~~~L~~~~~~~~~~  148 (152)
+                      ||+++|+++.++|+++++++|++|++ + +++||||++.|||||++|||++||++|++||+++|+....+
+T Consensus       121 YLi~~G~~~~~dv~~ll~~~l~~I~~~~~~~eVPga~~~eCGNy~~HdL~~AK~~Ak~~L~~~~~~~~~~  190 (194)
+T 4XCH_B          121 HMIMWGKQDSEKIAQVIKSSLEEIAEGITWEDVPGTTIESCGNYKDHSLHSAKEWAKLILSQGISTDAFE  190 (194)
+T ss_dssp             EEEEESCCCHHHHHHHHHHHHHHHHHTCCGGGCSCCSTTTCTTTTSCCHHHHHHHHHHHHHHCCBSSSSS
+T ss_pred             EEEEecCCCHHHHHHHHHHHHHHHHhccccccCCCCChhhccccccCCHHHHHHHHHHHHHcCCCccccc
+Confidence            99999999999999999999999997 5 58999999999999999999999999999999988766554
+
+
+No 10
+>1TKE_A Threonyl-tRNA synthetase (E.C.6.1.1.3); LIGASE; 1.46A {Escherichia coli} SCOP: d.67.1.1, d.15.10.1
+Probab=69.59  E-value=3.4  Score=33.32  Aligned_cols=58  Identities=19%  Similarity=0.305  Sum_probs=39.3  Template_Neff=9.600
+
+Q 1vh2_A           47 PAAIHTLEHLLAGYMRDHLEG-VVDVSPMGCRTGMYMAVIGE--PDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        47 ~~~lHSlEHL~A~~lRn~~d~-vI~~~PMGCrTGFYL~~~g~--~~~e~i~~~~~~~l~~il~  106 (152)
+                      ..-.||..|+++..+++.-.+ .+-.|+.. .-|||+-+.+.  .+.++ ++.+++.+++++.
+T Consensus        69 ~~~~~s~~~ll~~al~~~~~~~~~~~~~~~-~~g~y~d~~~~~~~~~~~-l~~ie~~m~~ii~  129 (224)
+T 1TKE_A           69 EIIRHSCAHLLGHAIKQLWPHTKMAIGPVI-DNGFYYDVDLDRTLTQED-VEALEKRMHELAE  129 (224)
+T ss_dssp             HHHHHHHHHHHHHHHHHHSTTCEECCCCEE-TTEEEEEEECSSCCCHHH-HHHHHHHHHHHHT
+T ss_pred             HHHHHHHHHHHHHHHHHHCCCCeecCCCcc-CCcEEEEeecCCCCCHHH-HHHHHHHHHHHHH
+Confidence            345899999999999987432 34556655 56799888763  44444 4666666666664
+
+
+No 11
+>1V4P_B alanyl-tRNA synthetase (E.C.6.1.1.7); alanyl-tRNA synthetase, alanine-tRNA ligase, Pyrococcus; 1.45A {Pyrococcus horikoshii} SCOP: d.67.1.2
+Probab=67.07  E-value=4.2  Score=30.87  Aligned_cols=57  Identities=14%  Similarity=0.198  Sum_probs=32.2  Template_Neff=9.700
+
+Q 1vh2_A           49 AIHTLEHLLAGYMRDHL-EG-VVDVSPMGC-RTGM-YMAVIGEPDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        49 ~lHSlEHL~A~~lRn~~-d~-vI~~~PMGC-rTGF-YL~~~g~~~~e~i~~~~~~~l~~il~  106 (152)
+                      -.||..|+++.-+++.- +. .+-.|+.-- ..|| |+-+.+..+.+ .++.+++.++.++.
+T Consensus         7 ~~hSa~hll~~al~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-~l~~ie~~~~~~I~   67 (157)
+T 1V4P_B            7 RTHSALHVVKGAVVKVLGSEAKWTYSTYVKGNKGVLIVKFDRKPSDE-EIREIERLANEKVK   67 (157)
+T ss_dssp             HHHHHHHHHHHHHHHHHCGGGCCEEEEEEETTEEEEEEECSSCCCHH-HHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHHHCCcceeeeeeEEeCCeEEEEEEcCCCCCHH-HHHHHHHHHHHHHH
+Confidence            47999999999888753 32 223333221 1356 56555544433 34566665666554
+
+
+No 12
+>1V4P_C alanyl-tRNA synthetase (E.C.6.1.1.7); alanyl-tRNA synthetase, alanine-tRNA ligase, Pyrococcus; 1.45A {Pyrococcus horikoshii} SCOP: d.67.1.2
+Probab=67.07  E-value=4.2  Score=30.87  Aligned_cols=57  Identities=14%  Similarity=0.198  Sum_probs=32.2  Template_Neff=9.700
+
+Q 1vh2_A           49 AIHTLEHLLAGYMRDHL-EG-VVDVSPMGC-RTGM-YMAVIGEPDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        49 ~lHSlEHL~A~~lRn~~-d~-vI~~~PMGC-rTGF-YL~~~g~~~~e~i~~~~~~~l~~il~  106 (152)
+                      -.||..|+++.-+++.- +. .+-.|+.-- ..|| |+-+.+..+.+ .++.+++.++.++.
+T Consensus         7 ~~hSa~hll~~al~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-~l~~ie~~~~~~I~   67 (157)
+T 1V4P_C            7 RTHSALHVVKGAVVKVLGSEAKWTYSTYVKGNKGVLIVKFDRKPSDE-EIREIERLANEKVK   67 (157)
+T ss_dssp             HHHHHHHHHHHHHHHHHCGGGCCEEEEEEETTEEEEEEECSSCCCHH-HHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHHHCCcceeeeeeEEeCCeEEEEEEcCCCCCHH-HHHHHHHHHHHHHH
+Confidence            47999999999888753 32 223333221 1356 56555544433 34566665666554
+
+
+No 13
+>3KEW_A DHHA1 domain protein; STRUCTURAL GENOMICS, PSI-2, TRNA SYNTHASE; 2.0A {Clostridium perfringens}
+Probab=56.33  E-value=8.9  Score=31.93  Aligned_cols=60  Identities=18%  Similarity=0.141  Sum_probs=34.0  Template_Neff=8.900
+
+Q 1vh2_A           45 IDPAAIHTLEHLLAGYMRDHLEGVVDVSPMGCRTGMYMAVIGEPDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        45 l~~~~lHSlEHL~A~~lRn~~d~vI~~~PMGCrTGFYL~~~g~~~~e~i~~~~~~~l~~il~  106 (152)
+                      ......||..||++..+++..+... .|..--.-|||+-+.+..+.++ ++.+++.++.++.
+T Consensus        92 ~~~~~~HTa~hLL~~al~~~~~~~~-~g~~~~~~~~~~d~~~~~~~~~-l~~ie~~~n~~I~  151 (241)
+T 3KEW_A           92 FDGMQQHLGQHLLSGCFYDLFGANT-CGFHLGKEISTVDIVGFLDEKT-IREAEKEANRLIF  151 (241)
+T ss_dssp             HHHHHHHHHHHHHHHHHHHHHCCCE-EEEEECSSCEEEEEESCCCHHH-HHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHHHHHHhCCce-eEEecCCCceEEEecCCCCHHH-HHHHHHHHHHHHH
+Confidence            4456689999999999987632211 1111111357777665443333 4555555555554
+
+
+No 14
+>2E1B_A 216aa long hypothetical alanyl-tRNA synthetase(E.C.6.1.1.7; zinc-binding motif, trans-editing enzyme, Structural; 2.7A {Pyrococcus horikoshii} SCOP: b.43.3.6, d.67.1.2
+Probab=50.11  E-value=13  Score=30.51  Aligned_cols=59  Identities=14%  Similarity=0.074  Sum_probs=31.9  Template_Neff=8.800
+
+Q 1vh2_A           45 IDPAAIHTLEHLLAGYMRDHLEGVVDVSPMGCRTG---MYMAVI--GEPDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        45 l~~~~lHSlEHL~A~~lRn~~d~vI~~~PMGCrTG---FYL~~~--g~~~~e~i~~~~~~~l~~il~  106 (152)
+                      ......||-.||++..++...+. ..+.+.|+..+   ||+-+.  +..  ++..+.+++.++.++.
+T Consensus        93 ~~~~~~HTA~HlL~~al~~~~~~-~~~~~~~~~~~~~~~~~d~~~~~~~--~~~l~~ie~~~n~~I~  156 (216)
+T 2E1B_A           93 YKLMRIHTGLHLLEHVLNEVLGE-GNWQLVGSGMSVEKGRYDIAYPENL--NKYKEQIISLFNKYVD  156 (216)
+T ss_dssp             HHHHHHHHHHHHHHHHHCCCCCT-TSCEEEECCBCSSEEEEEEECSSCG--GGGHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHHHHHHhcc-CCceeecccCccCcceeEEeCcchh--HHHHHHHHHHHHHHHH
+Confidence            44567999999999999886431 22234555433   554221  222  2333445555555543
+
+
+No 15
+>6VU9_A Threonine--tRNA ligase (E.C.6.1.1.3); AARS, aminoacyl tRNA synthetase, NIAID; HET: SO4; 2.2A {Stenotrophomonas maltophilia (strain K279a)}
+Probab=38.26  E-value=27  Score=32.87  Aligned_cols=57  Identities=18%  Similarity=0.290  Sum_probs=36.2  Template_Neff=9.800
+
+Q 1vh2_A           48 AAIHTLEHLLAGYMRDHLEG-VVDVSPMGCRTGMYMAVIGE--PDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        48 ~~lHSlEHL~A~~lRn~~d~-vI~~~PMGCrTGFYL~~~g~--~~~e~i~~~~~~~l~~il~  106 (152)
+                      .-.||.-|+++..+++.-.. .+-.|+-- ..|||+-+.+.  .+.++ ++.+++-++.+..
+T Consensus        78 ~~~hS~~~ll~~a~~~~~~~~~~~~~~~~-~~g~~~~~~~~~~~~~~~-~~~ie~~m~~iI~  137 (641)
+T 6VU9_A           78 IIRHSCAHLVGHAVKQLYPDVKMVIGPVI-AEGFYYDIYSERPFTPDD-MAAIEKRMGELIA  137 (641)
+T ss_dssp             HHHHHHHHHHHHHHHHHSTTSEECCCCEE-TTEEEEEEECSSCCCHHH-HHHHHHHHHHHHT
+T ss_pred             HHHHHHHHHHHHHHHHHCCCCEEeeecee-CCEEEEEEecCCCCCHHH-HHHHHHHHHHHHh
+Confidence            45899999999999987432 23333332 24788877663  45444 4666666666664
+
+
+No 16
+>3UOR_A ABC transporter sugar binding protein; alfa/beta protein, periplasmic-binding protein, maltose; 2.202A {Xanthomonas axonopodis pv. citri}
+Probab=33.21  E-value=36  Score=30.06  Aligned_cols=40  Identities=10%  Similarity=0.114  Sum_probs=25.3  Template_Neff=10.400
+
+Q 1vh2_A           83 AVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNY  122 (152)
+Q Consensus        83 ~~~g~~~~e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny  122 (152)
+                      ++.|..+++++++.+.+.++.+++..++|+..+...||+.
+T Consensus       391 ~~~g~~~~~~al~~~~~~~~~~l~~~~~~~~~~~~~~~~~  430 (458)
+T 3UOR_A          391 VVRGGQSHDAAVQELDQRVDEILAKRRWIFEQEGGHVGPA  430 (458)
+T ss_dssp             HHHHCCCHHHHHHHHHHHHHHHTHHHHHHHHHSCC-----
+T ss_pred             HHhCCCCHHHHHHHHHHHHHHHHHhccchhhccCCcccCC
+Confidence            3446666777777777777777765577888888888854
+
+
+No 17
+>3UOR_B ABC transporter sugar binding protein; alfa/beta protein, periplasmic-binding protein, maltose; 2.202A {Xanthomonas axonopodis pv. citri}
+Probab=33.21  E-value=36  Score=30.06  Aligned_cols=40  Identities=10%  Similarity=0.114  Sum_probs=24.5  Template_Neff=10.400
+
+Q 1vh2_A           83 AVIGEPDEQGVMKAFEAALKDTAGHDQPIPGVSELECGNY  122 (152)
+Q Consensus        83 ~~~g~~~~e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny  122 (152)
+                      ++.|..+++++++.+.+.++.+++..++|+..+...||+.
+T Consensus       391 ~~~g~~~~~~al~~~~~~~~~~l~~~~~~~~~~~~~~~~~  430 (458)
+T 3UOR_B          391 VVRGGQSHDAAVQELDQRVDEILAKRRWIFEQEGGHVGPA  430 (458)
+T ss_dssp             HHHHCCCHHHHHHHHHHHHHHHTHHHHHHHHHCC------
+T ss_pred             HHhCCCCHHHHHHHHHHHHHHHHHhccchhhccCCcccCC
+Confidence            3446666777777777777777765577888888888854
+
+
+No 18
+>5E6G_B De novo designed protein CA01; Computational Design, Protein Engineering, DE; HET: GOL, PO4; 2.09A {synthetic construct}
+Probab=33.21  E-value=36  Score=27.73  Aligned_cols=35  Identities=17%  Similarity=0.243  Sum_probs=17.2  Template_Neff=1.000
+
+Q 1vh2_A           77 RTGMYMAVIGEPDEQGVMKAFEAALKDTAGH-DQPIP  112 (152)
+Q Consensus        77 rTGFYL~~~g~~~~e~i~~~~~~~l~~il~~-~~eVP  112 (152)
+                      .||-.|.+.| .+++++++-++.+|+.|+.. +.+|.
+T Consensus        11 gtgenlyfqg-gspeqmaeeirqalekilkqleneie   46 (136)
+T 5E6G_B           11 GTGENLYFQG-GSPEQMAEEIRQALEKILKQLENEIE   46 (136)
+T ss_dssp             ------------CHHHHHHHHHHHHHHHHHHHHHHHH
+T ss_pred             CCCccceecC-CCHHHHHHHHHHHHHHHHHHHHHHHH
+Confidence            4777888887 47888888888888888742 24444
+
+
+No 19
+>6NU2_7 39S ribosomal protein L2, mitochondrial; mitochondrial ribosome recycling Factor, mtRRF; HET: MG; 3.9A {Homo sapiens}
+Probab=32.83  E-value=37  Score=29.21  Aligned_cols=57  Identities=12%  Similarity=0.226  Sum_probs=32.5  Template_Neff=8.800
+
+Q 1vh2_A           47 PAAIHTLEHLLAGYMRDHL-EG--V--VD--VSPMGCRTGMYM-AVIG------EPDEQGVMKAFEAALKDTA  105 (152)
+Q Consensus        47 ~~~lHSlEHL~A~~lRn~~-d~--v--I~--~~PMGCrTGFYL-~~~g------~~~~e~i~~~~~~~l~~il  105 (152)
+                      ..-.||.-|+++..++..- +.  +  +.  .||.+ .-|||. +...      ..+.+++ +.|++.++.++
+T Consensus       105 ~~~~hSa~hlL~~Al~~~~~~~~~v~l~~~~~~~~~-~~~f~~D~~~~~~~~~~~is~e~l-~~Ie~~m~~iI  175 (287)
+T 6NU2_7          105 KAYWRSCAMMMGCVIERAFKDEYMVNLVRAPEVPVI-SGAFCYDVVLDSKLDEWMPTKENL-RSFTKDAHALI  175 (287)
+T ss_pred             HHHHHHHHHHHHHHHHHHCCCCcEEEEEEeCCCCCc-CCeEEEEEEcCCCCCCCCCCHHHH-HHHHHHHHHHH
+Confidence            3458999999999998874 32  1  21  56654 345766 3332      1344443 44554455544
+
+
+No 20
+>3JTZ_A Integrase; four stranded beta-sheet, DNA BINDING; 1.3A {Yersinia pestis}
+Probab=29.29  E-value=47  Score=23.53  Aligned_cols=22  Identities=27%  Similarity=0.392  Sum_probs=17.2  Template_Neff=8.600
+
+Q 1vh2_A          119 CGNYRDHDLAAARQHARDVLDQ  140 (152)
+Q Consensus       119 CGny~~HsL~~Aq~~A~~~L~~  140 (152)
+                      =|.|...+|+.|++.|.+++..
+T Consensus        53 lG~~~~~tl~~AR~~A~~~~~~   74 (88)
+T 3JTZ_A           53 LGAYPAISLSDARQQREGIRKM   74 (88)
+T ss_dssp             EEETTTSCHHHHHHHHHHHHHH
+T ss_pred             eeccCCCCHHHHHHHHHHHHHH
+Confidence            3455558999999999998765
+
+
+No 21
+>3OL0_A de novo designed monomer trefoil-fold; beta-trefoil, trefoil-fold, synthetic protein, Function-competent; HET: SO4; 1.483A {synthetic construct}
+Probab=28.71  E-value=49  Score=22.27  Aligned_cols=12  Identities=25%  Similarity=0.540  Sum_probs=9.7  Template_Neff=6.000
+
+Q 1vh2_A           76 CRTGMYMAVIGE   87 (152)
+Q Consensus        76 CrTGFYL~~~g~   87 (152)
+                      |||||+|-...+
+T Consensus        13 crtg~~L~I~~d   24 (48)
+T 3OL0_A           13 TETGQYLRINPD   24 (48)
+T ss_dssp             TTTCCEEEECTT
+T ss_pred             ecCCcEEEECCC
+Confidence            999999887654
+
+
+No 22
+>1NYQ_B threonyl-tRNA synthetase (E.C.6.1.1.3); threonyl-tRNA synthetase, adenylate, LIGASE; HET: TSB; 3.2A {Staphylococcus aureus} SCOP: d.67.1.1, d.104.1.1, d.15.10.1, c.51.1.1
+Probab=27.92  E-value=51  Score=30.64  Aligned_cols=59  Identities=17%  Similarity=0.239  Sum_probs=36.1  Template_Neff=10.400
+
+Q 1vh2_A           46 DPAAIHTLEHLLAGYMRDHLEG-VVDVSPMGCRTGMYMAVIGE--PDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        46 ~~~~lHSlEHL~A~~lRn~~d~-vI~~~PMGCrTGFYL~~~g~--~~~e~i~~~~~~~l~~il~  106 (152)
+                      .....||..|+++..+++.-+. .+..|+-- .-|||+-+.+.  .+.++ ++.+++.++.++.
+T Consensus        70 ~~~~~ht~~hll~~a~~~~~~~~~~~~~~~~-~~~~~~~~~~~~~~~~~~-~~~ie~~~~~~i~  131 (645)
+T 1NYQ_B           70 LEVLRHSTAHLMAHAIKRLYGNVKFGVGPVI-EGGFYYDFDIDQNISSDD-FEQIEKTMKQIVN  131 (645)
+T ss_dssp             HHHHHHHHHHHHHTTSSSSSCCCCCCCCCBC-SSCEEEEECCSSCCCSST-HHHHHHHTTTSST
+T ss_pred             HHHHHHHHHHHHHHHHHHHhCCcEeecccee-CCeEEEEeecCCCCCHHH-HHHHHHHHHHHHH
+Confidence            3566899999999999987432 12233322 24788877663  45444 3555655666554
+
+
+No 23
+>1NYR_A threonyl-tRNA synthetase (E.C.6.1.1.3); threonyl-tRNA synthetase, ATP, threonine, LIGASE; HET: THR, ATP; 2.8A {Staphylococcus aureus} SCOP: c.51.1.1, d.15.10.1, d.67.1.1, d.104.1.1
+Probab=27.92  E-value=51  Score=30.64  Aligned_cols=59  Identities=17%  Similarity=0.239  Sum_probs=36.1  Template_Neff=10.400
+
+Q 1vh2_A           46 DPAAIHTLEHLLAGYMRDHLEG-VVDVSPMGCRTGMYMAVIGE--PDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        46 ~~~~lHSlEHL~A~~lRn~~d~-vI~~~PMGCrTGFYL~~~g~--~~~e~i~~~~~~~l~~il~  106 (152)
+                      .....||..|+++..+++.-+. .+..|+-- .-|||+-+.+.  .+.++ ++.+++.++.++.
+T Consensus        70 ~~~~~ht~~hll~~a~~~~~~~~~~~~~~~~-~~~~~~~~~~~~~~~~~~-~~~ie~~~~~~i~  131 (645)
+T 1NYR_A           70 LEVLRHSTAHLMAHAIKRLYGNVKFGVGPVI-EGGFYYDFDIDQNISSDD-FEQIEKTMKQIVN  131 (645)
+T ss_dssp             HHHHHHHHHHHHHHHHHHHSSSCEECCCCEE-TTEEEEEEECSSCCCSTT-HHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHHHHHhCCcEeecccee-CCeEEEEeecCCCCCHHH-HHHHHHHHHHHHH
+Confidence            3566899999999999987432 12233322 24788877663  45444 3555655666554
+
+
+No 24
+>5U86_A UDP-3-O-acyl-N-acetylglucosamine deacetylase (E.C.3.5.1.108); LpxC lipid A antibiotic LPS; HET: PO4, EDO, 81V; 1.62A {Aquifex aeolicus (strain VF5)}
+Probab=27.40  E-value=53  Score=29.84  Aligned_cols=19  Identities=26%  Similarity=0.315  Sum_probs=14.5  Template_Neff=5.800
+
+Q 1vh2_A           48 AAIHTLEHLLAGYMRDHLE   66 (152)
+Q Consensus        48 ~~lHSlEHL~A~~lRn~~d   66 (152)
+                      ..++|+|||+|...--..|
+T Consensus        67 ~~V~TVEHLlAAl~~lgId   85 (275)
+T 5U86_A           67 QRIKTVEHILSVLHLLEIT   85 (275)
+T ss_dssp             EEEBCCHHHHHHHHHHTCC
+T ss_pred             eeEEchHHHHHHHHHcCCc
+Confidence            5699999999987664433
+
+
+No 25
+>2GO4_B UDP-3-O-[3-hydroxymyristoyl] N-acetylglucosamine deacetylase (E.C.3.5.1.-); LpxC-inhibitor complex, HYDROLASE; HET: TUX; 2.7A {Aquifex aeolicus} SCOP: d.14.1.7
+Probab=26.40  E-value=57  Score=29.49  Aligned_cols=20  Identities=25%  Similarity=0.273  Sum_probs=14.8  Template_Neff=5.900
+
+Q 1vh2_A           47 PAAIHTLEHLLAGYMRDHLE   66 (152)
+Q Consensus        47 ~~~lHSlEHL~A~~lRn~~d   66 (152)
+                      ...++|+|||+|...--..|
+T Consensus        66 ~~~V~TvEHLlAAL~~lgId   85 (267)
+T 2GO4_B           66 GQRIKTVEHILSVLHLLEIT   85 (267)
+T ss_dssp             TEEEBCCHHHHHHHHHHTCC
+T ss_pred             CeeEEchHHHHHHHHHcCCc
+Confidence            35699999999987654433
+
+
+No 26
+>5ODC_B Heterodisulfide reductase, subunit A (E.C.1.8.98.1); Heterodisulfide reductase, [NiFe]-hydrogenase, FeS cluster; HET: 9S8, ACT, NFU, PE3, SF4, FAD, GOL; 2.3A {Methanothermococcus thermolithotrophicus DSM 2095}
+Probab=26.38  E-value=57  Score=27.60  Aligned_cols=48  Identities=17%  Similarity=0.003  Sum_probs=29.9  Template_Neff=9.600
+
+Q 1vh2_A           91 QGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDH---DLAAARQHARDVLDQ  140 (152)
+Q Consensus        91 e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny~~H---sL~~Aq~~A~~~L~~  140 (152)
+                      .++...+.+.|+.. ..+-.+|. ...-||++..|   +.+.|++.|++-++.
+T Consensus        16 ~~~~~~~~~ll~~l-g~~~~~~~-~~~CCG~~~~~~~g~~~~~~~~a~~n~~~   66 (291)
+T 5ODC_B           16 AGVEAATRTVMEKL-GVELVDMT-GASCCPAPGVFGSFDQKTWLTLAARNLCI   66 (291)
+T ss_dssp             HHHHHHHHHHHHHT-TCEEEECT-TBCCCCCHHHHHHHCHHHHHHHHHHHHHH
+T ss_pred             ccHHHHHHHHHHHh-CCcEEeCC-CCCCCCccccccCcCHHHHHHHHHHHHHH
+Confidence            45566666666543 33234443 36678988775   466788888877765
+
+
+No 27
+>5ODH_H FAD dependent oxidoreductase, CoB/CoM heterodisulfide; Heterodisulfide reductase, [NiFe]-hydrogenase, FeS cluster; HET: PE3, 9S8, COM, NFU, GOL, SF4, FAD, TP7; 2.2A {Methanothermococcus thermolithotrophicus DSM 2095}
+Probab=26.38  E-value=57  Score=27.60  Aligned_cols=48  Identities=17%  Similarity=0.003  Sum_probs=29.9  Template_Neff=9.600
+
+Q 1vh2_A           91 QGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDH---DLAAARQHARDVLDQ  140 (152)
+Q Consensus        91 e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny~~H---sL~~Aq~~A~~~L~~  140 (152)
+                      .++...+.+.|+.. ..+-.+|. ...-||++..|   +.+.|++.|++-++.
+T Consensus        16 ~~~~~~~~~ll~~l-g~~~~~~~-~~~CCG~~~~~~~g~~~~~~~~a~~n~~~   66 (291)
+T 5ODH_H           16 AGVEAATRTVMEKL-GVELVDMT-GASCCPAPGVFGSFDQKTWLTLAARNLCI   66 (291)
+T ss_dssp             HHHHHHHHHHHHHH-TCEEEECT-TBCCCCCHHHHHHHCHHHHHHHHHHHHHH
+T ss_pred             ccHHHHHHHHHHHh-CCcEEeCC-CCCCCCccccccCcCHHHHHHHHHHHHHH
+Confidence            45566666666543 33234443 36678988775   466788888877765
+
+
+No 28
+>5ODQ_B Heterodisulfide reductase, subunit A (E.C.1.8.98.1); Heterodisulfide reductase, [NiFe]-hydrogenase, FeS cluster; HET: PE3, 9S8, 9SB, ACT, NFU, GOL, SF4, FAD; 2.15A {Methanothermococcus thermolithotrophicus DSM 2095}
+Probab=26.38  E-value=57  Score=27.60  Aligned_cols=48  Identities=17%  Similarity=0.003  Sum_probs=29.9  Template_Neff=9.600
+
+Q 1vh2_A           91 QGVMKAFEAALKDTAGHDQPIPGVSELECGNYRDH---DLAAARQHARDVLDQ  140 (152)
+Q Consensus        91 e~i~~~~~~~l~~il~~~~eVP~a~~~qCGny~~H---sL~~Aq~~A~~~L~~  140 (152)
+                      .++...+.+.|+.. ..+-.+|. ...-||++..|   +.+.|++.|++-++.
+T Consensus        16 ~~~~~~~~~ll~~l-g~~~~~~~-~~~CCG~~~~~~~g~~~~~~~~a~~n~~~   66 (291)
+T 5ODQ_B           16 AGVEAATRTVMEKL-GVELVDMT-GASCCPAPGVFGSFDQKTWLTLAARNLCI   66 (291)
+T ss_dssp             HHHHHHHHHHHHHT-TCEEEECT-TBCCCCCCCCCCHHCHHHHHHHHHHHHHH
+T ss_pred             ccHHHHHHHHHHHh-CCcEEeCC-CCCCCCccccccCcCHHHHHHHHHHHHHH
+Confidence            45566666666543 33234443 36678988775   466788888877765
+
+
+No 29
+>3P3G_A UDP-3-O-[3-hydroxymyristoyl] N-acetylglucosamine deacetylase (E.C.3.5.1.-); LIPID A BIOSYNTHESIS, LIPID A; HET: 3P3, UKW, SO4; 1.65A {Escherichia coli}
+Probab=24.88  E-value=63  Score=29.73  Aligned_cols=20  Identities=30%  Similarity=0.315  Sum_probs=14.8  Template_Neff=5.800
+
+Q 1vh2_A           47 PAAIHTLEHLLAGYMRDHLE   66 (152)
+Q Consensus        47 ~~~lHSlEHL~A~~lRn~~d   66 (152)
+                      ...++|+|||||...--..|
+T Consensus        71 ~~~V~TVEHLlAAL~glgID   90 (300)
+T 3P3G_A           71 DVRISTVEHLNAALAGLGID   90 (300)
+T ss_dssp             CCEEECCHHHHHHHHHHTCC
+T ss_pred             CeeEEhHHHHHHHHHHcCCc
+Confidence            35699999999987654433
+
+
+No 30
+>6CAX_A UDP-3-O-acyl-N-acetylglucosamine deacetylase (E.C.3.5.1.108); SSGCID, LpxC, lipid A biosynthesis; HET: EDO, EUY; 1.25A {Pseudomonas aeruginosa}
+Probab=24.42  E-value=65  Score=29.70  Aligned_cols=40  Identities=20%  Similarity=0.319  Sum_probs=23.4  Template_Neff=5.800
+
+Q 1vh2_A           47 PAAIHTLEHLLAGYMRDHLEGV-VDVS-P-----MGCRTGMYMAVIG   86 (152)
+Q Consensus        47 ~~~lHSlEHL~A~~lRn~~d~v-I~~~-P-----MGCrTGFYL~~~g   86 (152)
+                      ...++|+|||+|...--..|++ |.+. |     -|+.-.|.=.+..
+T Consensus        71 ~~~V~TVEHLlAAL~glgIDN~~Iev~g~EvPilDGSA~~fv~~i~~  117 (304)
+T 6CAX_A           71 DVKVDTVEHLLSAMAGLGIDNAYVELSASEVPIMDGSAGPFVFLIQS  117 (304)
+T ss_dssp             TEEEECCHHHHHHHHHHTCCCEEEEESSSBCBCTTSSSHHHHHHHHH
+T ss_pred             CeEEEeHHHHHHHHHHcCCceEEEEECCCCCCCCCCCcHHHHHHHHH
+Confidence            3569999999998766544332 2222 1     3555555544443
+
+
+No 31
+>2ESR_B Methyltransferase (E.C.2.1.1.-); Structural Genomics, hypothetical protein, streptococcus; HET: MSE, GLC; 1.8A {Streptococcus pyogenes} SCOP: c.66.1.46
+Probab=24.23  E-value=66  Score=23.40  Aligned_cols=17  Identities=18%  Similarity=0.092  Sum_probs=10.6  Template_Neff=11.600
+
+Q 1vh2_A           66 EGVVDVSPMGCRTGMYMAVI   85 (152)
+Q Consensus        66 d~vI~~~PMGCrTGFYL~~~   85 (152)
+                      .+++++   ||.+|.++...
+T Consensus        33 ~~vldi---G~g~g~~~~~~   49 (177)
+T 2ESR_B           33 GRVLDL---FAGSGGLAIEA   49 (177)
+T ss_dssp             CEEEET---TCTTSHHHHHH
+T ss_pred             CEEEEC---CCCCCHHHHHH
+Confidence            556665   68888765443
+
+
+No 32
+>1QF6_A THREONYL-TRNA SYNTHETASE/TRNA(THR) COMPLEX (E.C.6.1.1.3); THREONYL-TRNA SYNTHETASE, TRNA(THR), AMP, MRNA; HET: AMP; 2.9A {Escherichia coli} SCOP: d.104.1.1, d.67.1.1, c.51.1.1, d.15.10.1
+Probab=24.03  E-value=67  Score=30.13  Aligned_cols=57  Identities=19%  Similarity=0.281  Sum_probs=36.8  Template_Neff=10.100
+
+Q 1vh2_A           48 AAIHTLEHLLAGYMRDHLEG-VVDVSPMGCRTGMYMAVIGE--PDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        48 ~~lHSlEHL~A~~lRn~~d~-vI~~~PMGCrTGFYL~~~g~--~~~e~i~~~~~~~l~~il~  106 (152)
+                      ...||.-|+++..+++.-+. .+-+|+-- .-|||.-+.+.  .+. +.++.+++.++.+..
+T Consensus        70 ~~~~s~~~ll~~a~~~~~~~~~~~~~~~~-~~~~~~~~~~~~~~~~-~~l~~ie~~m~~ii~  129 (642)
+T 1QF6_A           70 IIRHSCAHLLGHAIKQLWPHTKMAIGPVI-DNGFYYDVDLDRTLTQ-EDVEALEKRMHELAE  129 (642)
+T ss_dssp             HHHHHHHHHHHHHHHHHCTTCEECCCCEE-TTEEEEEEECSSCCCH-HHHHHHHHHHHHEEE
+T ss_pred             HHHHHHHHHHHHHHHHHCCCCeEeccccc-CCeEEEEEeCCCCCCH-HHHHHHHHHHHHHHH
+Confidence            45899999999999987422 23333322 34788877764  444 445666777777664
+
+
+No 33
+>4FW5_C UDP-3-O-[3-hydroxymyristoyl] N-acetylglucosamine deacetylase (E.C.3.5.1.-); Hydrolase, Hydrolase-Hydrolase Inhibitor complex; HET: GOL, ACT, L58; 1.99A {Pseudomonas aeruginosa}
+Probab=23.90  E-value=68  Score=29.57  Aligned_cols=40  Identities=18%  Similarity=0.300  Sum_probs=24.0  Template_Neff=5.800
+
+Q 1vh2_A           47 PAAIHTLEHLLAGYMRDHLEG-VVDV-SP-----MGCRTGMYMAVIG   86 (152)
+Q Consensus        47 ~~~lHSlEHL~A~~lRn~~d~-vI~~-~P-----MGCrTGFYL~~~g   86 (152)
+                      ...++|+|||||...--..|+ .|.+ ||     -||.-.|.=.+..
+T Consensus        73 ~~~v~TVEHLLAAL~glgIdN~~Iev~g~EvPilDGSA~~f~~~i~~  119 (302)
+T 4FW5_C           73 DVKVDTVEHLLSAMAGLGIDNAYVELSASEVPIMDGSAGPFVFLIQS  119 (302)
+T ss_dssp             TEEEBCCHHHHHHHHHTTCCCEEEEESSSBCBCTTSSSHHHHHHHHH
+T ss_pred             CEEEEcHHHHHHHHHHcCCcEEEEEEcCCCCCCCCCCcHHHHHHHHH
+Confidence            456999999999876544333 2222 12     3666666655544
+
+
+No 34
+>4CE4_c MRPL27, MRPL28, MRPL47, MRPL30, MRPL32; RIBOSOME, MAMMALIAN MITOCHONDRIAL RIBOSOME, 39S; 4.9A {SUS SCROFA DOMESTICA}
+Probab=22.89  E-value=73  Score=28.34  Aligned_cols=59  Identities=10%  Similarity=0.186  Sum_probs=33.9  Template_Neff=7.800
+
+Q 1vh2_A           46 DPAAIHTLEHLLAGYMRDHL-EGV----VD--VSPMGCRTGMYM-AVIG------EPDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        46 ~~~~lHSlEHL~A~~lRn~~-d~v----I~--~~PMGCrTGFYL-~~~g------~~~~e~i~~~~~~~l~~il~  106 (152)
+                      ...-.||..|+++..+++.- +..    +.  .||.+ .-|||. +...      ..+.++ ++.+++.++.++.
+T Consensus       103 ~~~~~hSa~hlL~~Al~~~f~~~~~v~l~~~~~~~~~-~~~f~~D~~~~~~~~~~~~t~ed-l~~Ie~~m~~iI~  175 (301)
+T 4CE4_c          103 NKAYWRSCAMMMGCVIERAFKDEYVVSLVRAPEVPVI-AGAFCYDVVLDKRLDEWMPTKEN-LHSFTKDARALIY  175 (301)
+T ss_dssp             HHHHHHHHHHHHHHHHHHHTTTCSSCCEEECCCEEET-TTEEEEEEEECHHHHHSCCCHHH-HHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHHHHHcCCceEEEEEeCCCCCcc-CCeEEEEEEeCCCcccCCCChHH-HHHHHHHHHHHHh
+Confidence            34568999999999999874 322    11  45555 445766 3321      234444 4555555555553
+
+
+No 35
+>6IH0_A UDP-3-O-acyl-N-acetylglucosamine deacetylase (E.C.3.5.1.108); Inhibitor, Complex, ANTIBIOTIC, HYDROLASE-HYDROLASE INHIBITOR; HET: A5F, A5U; 1.21A {Aquifex aeolicus (strain VF5)}
+Probab=22.75  E-value=74  Score=29.02  Aligned_cols=20  Identities=25%  Similarity=0.273  Sum_probs=14.9  Template_Neff=5.800
+
+Q 1vh2_A           47 PAAIHTLEHLLAGYMRDHLE   66 (152)
+Q Consensus        47 ~~~lHSlEHL~A~~lRn~~d   66 (152)
+                      ...++|+|||||...--..|
+T Consensus        66 ~~~V~TVEHLlAAL~~lgId   85 (279)
+T 6IH0_A           66 GQRIKTVEHILSVLHLLEIT   85 (279)
+T ss_pred             CeeEEeHHHHHHHHHHcCCc
+Confidence            35699999999987665443
+
+
+No 36
+>6GB2_Bc Mitochondrial ribosomal protein L12, Mitochondrial; translation initiation, initiation factor IF2; HET: FME, SPM, 5GP, GSP, MG; 3.2A {Sus scrofa}
+Probab=21.80  E-value=79  Score=28.61  Aligned_cols=59  Identities=10%  Similarity=0.166  Sum_probs=34.7  Template_Neff=7.700
+
+Q 1vh2_A           46 DPAAIHTLEHLLAGYMRDHL-EGV-V--D---VSPMGCRTGMYM-AVIG------EPDEQGVMKAFEAALKDTAG  106 (152)
+Q Consensus        46 ~~~~lHSlEHL~A~~lRn~~-d~v-I--~---~~PMGCrTGFYL-~~~g------~~~~e~i~~~~~~~l~~il~  106 (152)
+                      ...-.||.-|+++..+++.- +.. +  -   .||.. .-|||. +...      ..+.+++ +.|++.++.++.
+T Consensus       136 ~~~~~hSaahlL~~Al~~~f~~~~~~~l~~~~~g~~~-~~~F~~D~~~~~~~~~~~it~edL-~~Ie~~m~~iI~  208 (334)
+T 6GB2_Bc         136 NKAYWRSCAMMMGCVIERAFKDEYVVSLVRAPEVPVI-AGAFCYDVVLDKRLDEWMPTKENL-HSFTKDARALIY  208 (334)
+T ss_pred             HHHHHHHHHHHHHHHHHHHcCcceEEEEEcCCCCCcc-CCeEEEEEEcCCcccCCCCCHHHH-HHHHHHHHHHHh
+Confidence            34568999999999999874 332 1  2   45665 456776 3332      1344443 445555555553
+
+
+No 37
+>2ML7_A Specific abundant protein 3; ginsentide, UNKNOWN FUNCTION; NMR {Panax ginseng}
+Probab=21.52  E-value=81  Score=20.39  Aligned_cols=11  Identities=27%  Similarity=0.673  Sum_probs=7.7  Template_Neff=1.900
+
+Q 1vh2_A           71 VSPMGCRTGMY   81 (152)
+Q Consensus        71 ~~PMGCrTGFY   81 (152)
+                      -||+||-.||-
+T Consensus        16 Cg~cGCL~G~C   26 (31)
+T 2ML7_A           16 CGNCGCLVGFC   26 (31)
+T ss_dssp             SSSCEESSSBE
+T ss_pred             ccccceeEEEe
+Confidence            46778877763
+
+
+No 38
+>5VWM_A UDP-3-O-acyl-N-acetylglucosamine deacetylase (E.C.3.5.1.108); inhibitor, Seattle Structural Genomics Center; HET: C90, EDO; 1.8A {Pseudomonas aeruginosa (strain ATCC 15692 / DSM 22644 / CIP 104116 / JCM 14847 / LMG 12228 / 1C / PRS 101 / PAO1)}
+Probab=20.88  E-value=85  Score=29.91  Aligned_cols=40  Identities=20%  Similarity=0.309  Sum_probs=24.4  Template_Neff=6.200
+
+Q 1vh2_A           47 PAAIHTLEHLLAGYMRDHLEG-VVDVS-P-----MGCRTGMYMAVIG   86 (152)
+Q Consensus        47 ~~~lHSlEHL~A~~lRn~~d~-vI~~~-P-----MGCrTGFYL~~~g   86 (152)
+                      ...++|+|||+|...--..|+ .|.+. |     -|+.-.|.=.+..
+T Consensus       167 ~~~V~TvEHllAAl~glgIdN~~Iev~g~EvPilDGSa~~fv~~l~~  213 (400)
+T 5VWM_A          167 DVKVDTVEHLLSAMAGLGIDNAYVELSASEVPIMDGSAGPFVFLIQS  213 (400)
+T ss_dssp             TEEEECCHHHHHHHHHHTCCCEEEEESSSBCBCTTSSSHHHHHHHHH
+T ss_pred             CeEEEeHHHHHHHHHHcCCceEEEEECCCCCCCCCCCcHHHHHHHHH
+Confidence            356999999999876654433 23322 2     3666666655544
+
+
