@@ -27,6 +27,7 @@ services:
       - preprocess:/preprocess
     environment:
       - MLFLOW_SERVER_URI=http://mlflow-server:8000
+    shm_size: 512mb
 volumes:
   mlflow:
   preprocess:
