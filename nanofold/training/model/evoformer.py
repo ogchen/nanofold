@@ -4,6 +4,7 @@ import torch
 from nanofold.training.model.msa_attention import MSAColumnAttention
 from nanofold.training.model.msa_attention import MSARowAttentionWithPairBias
 from nanofold.training.model.outer_product_mean import OuterProductMean
+from nanofold.training.model.pair_transition import PairTransition
 from nanofold.training.model.triangular_attention import TriangleAttentionStartingNode
 from nanofold.training.model.triangular_attention import TriangleAttentionEndingNode
 from nanofold.training.model.triangular_update import TriangleMultiplicationOutgoing
@@ -55,12 +56,7 @@ class EvoformerBlock(nn.Module):
         self.triangle_attention_ending = TriangleAttentionEndingNode(
             pair_embedding_size, num_pair_heads, num_triangular_attention_channels
         )
-        self.pair_transition = nn.Sequential(
-            nn.LayerNorm(pair_embedding_size),
-            nn.Linear(pair_embedding_size, pair_embedding_size * transition_multiplier),
-            nn.ReLU(),
-            nn.Linear(pair_embedding_size * transition_multiplier, pair_embedding_size),
-        )
+        self.pair_transition = PairTransition(pair_embedding_size, transition_multiplier)
 
     def forward(self, msa_rep, pair_rep):
         msa_rep = msa_rep + self.msa_dropout(self.msa_row_attention(msa_rep, pair_rep), dim=-3)
