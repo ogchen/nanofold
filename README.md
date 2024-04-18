@@ -20,7 +20,7 @@ wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_no
 gzip -d bfd-first_non_consensus_sequences.fasta.gz
 ```
 
-Download and unzip PDB70 for template search with
+Download and unzip PDB70 (56GB) for template search with
 ```bash
 wget https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200401.tar.gz
 mkdir pdb70 && tar -xf pdb70_from_mmcif_200401.tar.gz -C pdb70

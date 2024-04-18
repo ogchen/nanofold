@@ -1,5 +1,4 @@
 import gzip
-import logging
 import os
 import subprocess
 from pathlib import Path
@@ -23,7 +22,7 @@ class HHSearchRunner:
             "-v",
             "0",
             "-cpu",
-            "1",
+            "4",
         ]
 
     def cached_result(self, output):
@@ -48,10 +47,6 @@ class HHSearchRunner:
             return cached_result
 
         cmd = self.build_cmd(a2m_file, output)
-        try:
-            subprocess.run(cmd, capture_output=True, check=True, text=True)
-        except subprocess.CalledProcessError as e:
-            logging.error(e.stderr)
-            raise e
+        subprocess.run(cmd, check=True, text=True)
 
         return self.cached_result(output)
