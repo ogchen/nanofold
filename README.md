@@ -39,7 +39,7 @@ docker-compose -f docker/docker-compose.train.yml build
 ## Training
 Run the preprocessing script with
 ```bash
-docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta
+docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70
 ```
 This parses the downloaded mmCIF files to extract protein information, including the residue sequence and atom co-ordinates.
 It uses the jackhmmer tool to search the provided small BFD database and build multiple sequence alignments, before clustering
