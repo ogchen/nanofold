@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from nanofold.data_processing.db import DBManager
-from nanofold.data_processing.hhsearch import HHSearchRunner
+from nanofold.data_processing.hhblits import HHblitsRunner
 from nanofold.data_processing.ipc import dump_to_ipc
 from nanofold.data_processing.mmcif_processor import process_mmcif_files
 from nanofold.data_processing.msa_builder import build_msa
@@ -52,8 +52,8 @@ def main():
         num_cpus=1,
         max_sequences=500,
     )
-    hhsearch_runner = HHSearchRunner(
-        shutil.which("hhsearch"),
+    hhblits_runner = HHblitsRunner(
+        shutil.which("hhblits"),
         args.pdb70,
         template_cache_dir,
     )
@@ -66,7 +66,7 @@ def main():
         if not args.dump_only:
             build_msa(msa_runner, db_manager, executor, msa_output_dir)
             build_template(
-                hhsearch_runner,
+                hhblits_runner,
                 shutil.which("reformat.pl"),
                 msa_runner,
                 db_manager,

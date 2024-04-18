@@ -127,16 +127,16 @@ def extract_template_features(templates, db_manager, query_length, max_templates
     }
 
 
-def get_hhr(hhsearch_runner, reformat_bin, msa_runner, chain):
+def get_hhr(hhblits_runner, reformat_bin, msa_runner, chain):
     msa_sto = get_msa(msa_runner, chain)
     with NamedTemporaryFile(mode="w") as a2m_file:
         convert_to_a2m(reformat_bin, msa_sto, a2m_file.name)
         id = f"{chain['_id']['structure_id'].lower()}_{chain['_id']['chain_id']}"
-        return hhsearch_runner.run(a2m_file.name, id)
+        return hhblits_runner.run(a2m_file.name, id)
 
 
-def get_hhr_contents(hhsearch_runner, reformat_bin, msa_runner, executor, chains, batch_size=4):
-    get_result = partial(get_hhr, hhsearch_runner, reformat_bin, msa_runner)
+def get_hhr_contents(hhblits_runner, reformat_bin, msa_runner, executor, chains, batch_size=50):
+    get_result = partial(get_hhr, hhblits_runner, reformat_bin, msa_runner)
     for i, batch in enumerate(batched(chains, batch_size)):
         result = executor.map(get_result, batch)
         for chain in batch:
@@ -151,7 +151,7 @@ def get_hhr_contents(hhsearch_runner, reformat_bin, msa_runner, executor, chains
 
 
 def build_template(
-    hhsearch_runner,
+    hhblits_runner,
     reformat_bin,
     msa_runner,
     db_manager,
@@ -162,7 +162,7 @@ def build_template(
     chains = get_chains_to_process(db_manager, msa_output_dir)
     logging.info("Building template features")
     for chain, hhr_output in get_hhr_contents(
-        hhsearch_runner, reformat_bin, msa_runner, executor, chains
+        hhblits_runner, reformat_bin, msa_runner, executor, chains
     ):
         try:
             templates = parse_hhr(hhr_output)

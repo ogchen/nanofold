@@ -4,15 +4,15 @@ import subprocess
 from pathlib import Path
 
 
-class HHSearchRunner:
-    def __init__(self, hhsearch_bin, pdb70, cache_dir):
-        self.hhsearch_bin = hhsearch_bin
+class HHblitsRunner:
+    def __init__(self, bin, pdb70, cache_dir):
+        self.bin = bin
         self.pdb70 = pdb70
         self.cache_dir = cache_dir
 
     def build_cmd(self, a2m_file, output):
         return [
-            self.hhsearch_bin,
+            self.bin,
             "-i",
             a2m_file,
             "-o",
@@ -22,7 +22,9 @@ class HHSearchRunner:
             "-v",
             "0",
             "-cpu",
-            "4",
+            "1",
+            "-n",
+            "1",
         ]
 
     def cached_result(self, output):

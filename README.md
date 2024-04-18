@@ -42,8 +42,11 @@ Run the preprocessing script with
 docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70
 ```
 This parses the downloaded mmCIF files to extract protein information, including the residue sequence and atom co-ordinates.
-It uses the jackhmmer tool to search the provided small BFD database and build multiple sequence alignments, before clustering
+It uses the `jackhmmer` tool to search the provided small BFD database and build multiple sequence alignments (MSA), before clustering
 and computing various features to be used in training.
+The MSA computed by `jackhmmer` is then used to search the `PDB70` database to find templates. While the original Alphafold paper uses the `HHsearch` tool 
+for template searching, this is replaced with `HHblits` which provides significant speedup at the expense of lower sensitivity.
+
 
 Run the training script for `N` epochs:
 ```bash
