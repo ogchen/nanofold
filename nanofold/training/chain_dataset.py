@@ -11,6 +11,7 @@ from nanofold.common.residue_definitions import MSA_GAP
 from nanofold.common.residue_definitions import MSA_MASK_TOKEN
 from nanofold.common.residue_definitions import RESIDUE_INDEX
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
+from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
 
 
 SAMPLE_SIZE = 2
@@ -22,7 +23,7 @@ def accept_chain(row):
 
 def encode_one_hot(seq):
     indices = torch.tensor([RESIDUE_INDEX[residue] for residue in seq])
-    return torch.nn.functional.one_hot(indices, num_classes=len(RESIDUE_INDEX)).float()
+    return F.one_hot(indices, num_classes=len(RESIDUE_INDEX)).float()
 
 
 def mask_replace_msa(cluster_msa, cluster_profile):
@@ -120,6 +121,8 @@ class ChainDataset(IterableDataset):
         self.num_extra_msa = num_extra_msa
         self.table = table
         self.indices = indices
+        self.distogram_max = 50.75
+        self.distogram_bins = torch.arange(3.875, self.distogram_max, 1.25)
 
     @classmethod
     def construct_datasets(cls, features_file, train_split, *args, **kwargs):
@@ -151,6 +154,9 @@ class ChainDataset(IterableDataset):
         slice_column_msa = lambda col_name, slice_size: lambda r: [
             s[r["start"] : r["start"] + self.residue_crop_size] for s in r[col_name][:slice_size]
         ]
+        slice_column_template = lambda col_name: lambda r: [
+            t[r["start"] : r["start"] + self.residue_crop_size] for t in r[col_name]
+        ]
 
         while True:
             sampled_indices = np.random.choice(self.indices, SAMPLE_SIZE)
@@ -177,6 +183,8 @@ class ChainDataset(IterableDataset):
                 df[col_name] = df.apply(slice_column_msa(col_name, self.num_msa_clusters), axis=1)
             for col_name in ["extra_msa", "extra_msa_has_deletion", "extra_msa_deletion_value"]:
                 df[col_name] = df.apply(slice_column_msa(col_name, self.num_extra_msa), axis=1)
+            for col_name in ["template_mask", "template_sequence", "template_translations"]:
+                df[col_name] = df.apply(slice_column_template(col_name), axis=1)
 
             for row in df.itertuples():
                 if accept_chain(row):
@@ -226,17 +234,65 @@ class ChainDataset(IterableDataset):
             "extra_msa_feat": extra_msa_feat,
         }
 
+    def parse_template_features(self, row):
+        logging.info(f"Template sequence len {len(row.template_sequence)}")
+        if len(row.template_sequence) == 0:
+            return {
+                "template_pair_feat": torch.empty(
+                    (0, self.residue_crop_size, self.residue_crop_size, 84)
+                ),
+            }
+        template_mask = torch.from_numpy(np.stack(row.template_mask))
+        template_translations = torch.from_numpy(
+            np.stack(np.stack(row.template_translations).tolist())
+        )
+        aatype_index = torch.tensor(
+            [[RESIDUE_INDEX_MSA[residue] for residue in seq] for seq in row.template_sequence]
+        )
+        template_aatype = F.one_hot(aatype_index, num_classes=len(RESIDUE_INDEX_MSA))
+        num_res = template_aatype.shape[1]
+        template_aatype_pair = torch.cat(
+            [
+                torch.tile(template_aatype, (num_res, 1)).view(
+                    -1, num_res, num_res, len(RESIDUE_INDEX_MSA)
+                ),
+                torch.tile(template_aatype, (1, num_res)).view(
+                    -1, num_res, num_res, len(RESIDUE_INDEX_MSA)
+                ),
+            ],
+            dim=-1,
+        )
+
+        distance_mat = torch.norm(
+            template_translations.unsqueeze(-2) - template_translations.unsqueeze(-3), dim=-1
+        )
+        distance_mask = distance_mat <= self.distogram_max
+        distogram_index = (
+            torch.argmin(torch.abs(distance_mat.unsqueeze(-1) - self.distogram_bins), dim=-1)
+            * distance_mask
+            + len(self.distogram_bins) * ~distance_mask
+        )
+        template_distogram = F.one_hot(distogram_index, num_classes=len(self.distogram_bins) + 1)
+
+        template_mask_pair = template_mask.unsqueeze(-1) & template_mask.unsqueeze(-2)
+        return {
+            "template_pair_feat": torch.cat(
+                [template_distogram, template_aatype_pair, template_mask_pair.unsqueeze(-1)], dim=-1
+            ).float(),
+        }
+
     def parse_features(self, row):
         features = {
             "rotations": torch.from_numpy(
-                np.stack(np.vstack(row.rotations.tolist()).tolist())
+                np.stack(np.stack(row.rotations.tolist()).tolist())
             ).float(),
-            "translations": torch.from_numpy(np.vstack(row.translations.tolist())).float(),
+            "translations": torch.from_numpy(np.stack(row.translations.tolist())).float(),
             "local_coords": torch.tensor(
                 [[p[1] for p in get_atom_positions(r)] for r in row.sequence]
             ),
             "target_feat": encode_one_hot(row.sequence),
             "positions": torch.tensor(row.positions),
             **self.parse_msa_features(row),
+            **self.parse_template_features(row),
         }
         return features
