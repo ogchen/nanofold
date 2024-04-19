@@ -14,11 +14,8 @@ from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
 
 
-SAMPLE_SIZE = 2
-
-
-def accept_chain(row):
-    return np.random.rand() < max(min(row.length, 512), 256) / 512
+def accept_chain(length):
+    return np.random.rand() < max(min(length, 512), 256) / 512
 
 
 def encode_one_hot(seq):
@@ -71,9 +68,6 @@ def construct_extra_msa_feat(
     num_extra_msa,
 ):
     if len(extra_msa) > 0:
-        extra_msa = torch.from_numpy(np.stack(np.stack(extra_msa).tolist()))
-        extra_msa_has_deletion = torch.from_numpy(np.stack(extra_msa_has_deletion))
-        extra_msa_deletion_value = torch.from_numpy(np.stack(extra_msa_deletion_value))
         extra_msa_feat = torch.cat(
             [
                 extra_msa,
@@ -137,9 +131,6 @@ class ChainDataset(IterableDataset):
         indices = np.arange(table.num_rows)
         np.random.shuffle(indices)
         table = table.append_column(
-            "index",
-            [np.arange(table.num_rows)],
-        ).append_column(
             "length",
             pc.list_value_length(table["positions"]),
         )
@@ -148,66 +139,82 @@ class ChainDataset(IterableDataset):
         )
 
     def __iter__(self):
-        slice_column = lambda col_name: lambda r: r[col_name][
-            r["start"] : r["start"] + self.residue_crop_size
-        ]
-        slice_column_msa = lambda col_name, slice_size: lambda r: [
-            s[r["start"] : r["start"] + self.residue_crop_size] for s in r[col_name][:slice_size]
-        ]
-        slice_column_template = lambda col_name: lambda r: [
-            t[r["start"] : r["start"] + self.residue_crop_size] for t in r[col_name]
-        ]
-
         while True:
-            sampled_indices = np.random.choice(self.indices, SAMPLE_SIZE)
-            expression = pc.field("index").isin(sampled_indices) & (
-                pc.field("length") >= self.residue_crop_size
-            )
-            sample = self.table.filter(expression)
-            if len(sample) == 0:
+            sampled_index = np.random.choice(self.indices)
+            length = self.table.column("length")[sampled_index].as_py()
+            if length < self.residue_crop_size or not accept_chain(length):
                 continue
 
-            df = sample.to_pandas(use_threads=False)
-            df["start"] = df["length"].apply(
-                lambda x: np.random.randint(x - self.residue_crop_size + 1)
-            )
-            for col_name in ["positions", "sequence", "translations", "rotations"]:
-                df[col_name] = df.apply(slice_column(col_name), axis=1)
-            for col_name in [
-                "cluster_msa",
-                "cluster_has_deletion",
-                "cluster_deletion_value",
-                "cluster_deletion_mean",
-                "cluster_profile",
-            ]:
-                df[col_name] = df.apply(slice_column_msa(col_name, self.num_msa_clusters), axis=1)
-            for col_name in ["extra_msa", "extra_msa_has_deletion", "extra_msa_deletion_value"]:
-                df[col_name] = df.apply(slice_column_msa(col_name, self.num_extra_msa), axis=1)
-            for col_name in ["template_mask", "template_sequence", "template_translations"]:
-                df[col_name] = df.apply(slice_column_template(col_name), axis=1)
+            start = np.random.randint(length - self.residue_crop_size + 1)
 
-            for row in df.itertuples():
-                if accept_chain(row):
-                    yield self.parse_features(row)
+            slice_column_list = lambda col_name: pa.compute.list_slice(
+                self.table.column(col_name)[sampled_index], start, start + self.residue_crop_size
+            ).as_py()
+            slice_column_str = lambda col_name: pa.compute.utf8_slice_codeunits(
+                self.table.column(col_name)[sampled_index], start, start + self.residue_crop_size
+            ).as_py()
+            slice_column_nested_str = lambda col_name: [
+                pa.compute.utf8_slice_codeunits(x, start, start + self.residue_crop_size).as_py()
+                for x in self.table.column(col_name)[sampled_index]
+            ]
+            slice_column_nested_list = lambda col_name, max_sequences=None: [
+                pa.compute.list_slice(x, start, start + self.residue_crop_size).as_py()
+                for x in (
+                    pa.compute.list_slice(
+                        self.table.column(col_name)[sampled_index], 0, max_sequences
+                    )
+                    if max_sequences is not None
+                    else self.table.column(col_name)[sampled_index]
+                )
+            ]
+
+            row = {
+                "positions": slice_column_list("positions"),
+                "translations": slice_column_list("translations"),
+                "rotations": slice_column_list("rotations"),
+                "sequence": slice_column_str("sequence"),
+                "cluster_msa": slice_column_nested_list("cluster_msa", self.num_msa_clusters),
+                "cluster_has_deletion": slice_column_nested_list(
+                    "cluster_has_deletion", self.num_msa_clusters
+                ),
+                "cluster_deletion_value": slice_column_nested_list(
+                    "cluster_deletion_value", self.num_msa_clusters
+                ),
+                "cluster_deletion_mean": slice_column_nested_list(
+                    "cluster_deletion_mean", self.num_msa_clusters
+                ),
+                "cluster_profile": slice_column_nested_list(
+                    "cluster_profile", self.num_msa_clusters
+                ),
+                "extra_msa": slice_column_nested_list("extra_msa", self.num_extra_msa),
+                "extra_msa_has_deletion": slice_column_nested_list(
+                    "extra_msa_has_deletion", self.num_extra_msa
+                ),
+                "extra_msa_deletion_value": slice_column_nested_list(
+                    "extra_msa_deletion_value", self.num_extra_msa
+                ),
+                "template_mask": slice_column_nested_list("template_mask"),
+                "template_sequence": slice_column_nested_str("template_sequence"),
+                "template_translations": slice_column_nested_list("template_translations"),
+            }
+            yield self.parse_features(row)
 
     def parse_msa_features(self, row):
-        cluster_msa = torch.from_numpy(np.stack(np.stack(row.cluster_msa).tolist())).long()
-        cluster_profile = torch.from_numpy(np.stack(np.stack(row.cluster_profile).tolist()))
-        cluster_has_deletion = (
-            torch.from_numpy(np.stack(row.cluster_has_deletion)).long().unsqueeze(-1)
-        )
-        cluster_deletion_value = torch.from_numpy(np.stack(row.cluster_deletion_value)).unsqueeze(
-            -1
-        )
-        cluster_deletion_mean = torch.from_numpy(np.stack(row.cluster_deletion_mean)).unsqueeze(-1)
+        cluster_msa = torch.tensor(row["cluster_msa"], dtype=torch.long)
+        cluster_profile = torch.tensor(row["cluster_profile"])
+        cluster_has_deletion = torch.tensor(
+            row["cluster_has_deletion"], dtype=torch.long
+        ).unsqueeze(-1)
+        cluster_deletion_value = torch.tensor(row["cluster_deletion_value"]).unsqueeze(-1)
+        cluster_deletion_mean = torch.tensor(row["cluster_deletion_mean"]).unsqueeze(-1)
         replaced_cluster_msa, masked_msa_truth, cluster_mask = mask_replace_msa(
             cluster_msa, cluster_profile
         )
 
         extra_msa_feat = construct_extra_msa_feat(
-            row.extra_msa,
-            row.extra_msa_has_deletion,
-            row.extra_msa_deletion_value,
+            torch.tensor(row["extra_msa"]),
+            torch.tensor(row["extra_msa_has_deletion"]),
+            torch.tensor(row["extra_msa_deletion_value"]),
             cluster_centre_msa_feat=torch.cat(
                 [cluster_msa, cluster_has_deletion, cluster_deletion_value], dim=-1
             ),
@@ -235,19 +242,16 @@ class ChainDataset(IterableDataset):
         }
 
     def parse_template_features(self, row):
-        logging.info(f"Template sequence len {len(row.template_sequence)}")
-        if len(row.template_sequence) == 0:
+        if len(row["template_sequence"]) == 0:
             return {
                 "template_pair_feat": torch.empty(
                     (0, self.residue_crop_size, self.residue_crop_size, 84)
                 ),
             }
-        template_mask = torch.from_numpy(np.stack(row.template_mask))
-        template_translations = torch.from_numpy(
-            np.stack(np.stack(row.template_translations).tolist())
-        )
+        template_mask = torch.tensor(row["template_mask"])
+        template_translations = torch.tensor(row["template_translations"])
         aatype_index = torch.tensor(
-            [[RESIDUE_INDEX_MSA[residue] for residue in seq] for seq in row.template_sequence]
+            [[RESIDUE_INDEX_MSA[residue] for residue in seq] for seq in row["template_sequence"]]
         )
         template_aatype = F.one_hot(aatype_index, num_classes=len(RESIDUE_INDEX_MSA))
         num_res = template_aatype.shape[1]
@@ -283,15 +287,13 @@ class ChainDataset(IterableDataset):
 
     def parse_features(self, row):
         features = {
-            "rotations": torch.from_numpy(
-                np.stack(np.stack(row.rotations.tolist()).tolist())
-            ).float(),
-            "translations": torch.from_numpy(np.stack(row.translations.tolist())).float(),
+            "rotations": torch.tensor(row["rotations"]),
+            "translations": torch.tensor(row["translations"]),
             "local_coords": torch.tensor(
-                [[p[1] for p in get_atom_positions(r)] for r in row.sequence]
+                [[p[1] for p in get_atom_positions(r)] for r in row["sequence"]]
             ),
-            "target_feat": encode_one_hot(row.sequence),
-            "positions": torch.tensor(row.positions),
+            "target_feat": encode_one_hot(row["sequence"]),
+            "positions": torch.tensor(row["positions"]),
             **self.parse_msa_features(row),
             **self.parse_template_features(row),
         }

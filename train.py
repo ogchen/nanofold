@@ -62,7 +62,7 @@ def get_dataloaders(args, params):
             train_data,
             batch_size=params["batch_size"],
             pin_memory=True,
-            num_workers=2,
+            num_workers=4,
         ),
         torch.utils.data.DataLoader(
             test_data,
