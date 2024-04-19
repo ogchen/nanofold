@@ -58,9 +58,9 @@ def main():
         template_cache_dir,
     )
 
-    # if not args.dump_only:
-    # with ProcessPoolExecutor() as executor:
-    # process_mmcif_files(db_manager, executor, args.mmcif, args.batch)
+    if not args.dump_only:
+        with ProcessPoolExecutor() as executor:
+            process_mmcif_files(db_manager, executor, args.mmcif, args.batch)
 
     with ThreadPoolExecutor() as executor:
         if not args.dump_only:
