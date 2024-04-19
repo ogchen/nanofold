@@ -32,6 +32,7 @@ def to_chains_document(chains):
             "translations": c["translations"].tolist(),
             "sequence": c["sequence"],
             "positions": c["positions"],
+            "label_positions": c["label_positions"],
         }
         for c in chains
     ]

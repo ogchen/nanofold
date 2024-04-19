@@ -38,12 +38,6 @@ def test_file(request, data_dir):
             200,
             "EPATILLIDDHPMLRTGVKQLISMAPDITVVGEASNGEQGIELAESLDPDLILLDLNMPGMNGLETLDKLREKSLSGRIVVFSVSNHEEDVVTALKRGADGYLLKDMEPEDLLKALHQAAAGEMVLSEALTPVLAASLQLTPRERDILKLIAQGLPNKMIARRLDITESTVKVHVKHMLKKMKLKSRVEAAVWVHQERIF",
         ),
-        (
-            "1AGA",
-            0,
-            None,
-            None,
-        ),
     ],
     indirect=["test_file"],
 )

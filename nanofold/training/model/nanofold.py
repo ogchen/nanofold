@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import nn
 
@@ -9,6 +10,8 @@ from nanofold.training.model.input import InputEmbedding
 from nanofold.training.model.masked_msa import MaskedMSAPredictor
 from nanofold.training.model.recycle import RecyclingEmbedder
 from nanofold.training.model.structure import StructureModule
+from nanofold.training.model.template import TemplatePairStack
+from nanofold.training.model.template import TemplatePointwiseAttention
 
 
 class Nanofold(nn.Module):
@@ -24,6 +27,11 @@ class Nanofold(nn.Module):
         num_triangular_attention_channels,
         product_embedding_size,
         position_bins,
+        template_embedding_size,
+        num_template_channels,
+        num_template_heads,
+        num_template_blocks,
+        template_transition_multiplier,
         num_extra_msa_blocks,
         num_extra_msa_channels,
         num_evoformer_blocks,
@@ -50,6 +58,20 @@ class Nanofold(nn.Module):
         self.pair_embedding_size = pair_embedding_size
         self.input_embedder = InputEmbedding(pair_embedding_size, msa_embedding_size, position_bins)
         self.recycling_embedder = RecyclingEmbedder(pair_embedding_size, msa_embedding_size, device)
+        self.template_pair_stack = TemplatePairStack(
+            template_embedding_size,
+            num_template_channels,
+            num_template_heads,
+            num_template_blocks,
+            template_transition_multiplier,
+            device,
+        )
+        self.template_pointwise_attention = TemplatePointwiseAttention(
+            pair_embedding_size,
+            template_embedding_size,
+            num_template_heads,
+            num_template_channels,
+        )
         self.extra_msa_stack = ExtraMSAStack(
             pair_embedding_size,
             extra_msa_embedding_size,
@@ -109,6 +131,11 @@ class Nanofold(nn.Module):
             "num_triangular_update_channels": config["num_triangular_update_channels"],
             "num_triangular_attention_channels": config["num_triangular_attention_channels"],
             "product_embedding_size": config["product_embedding_size"],
+            "template_embedding_size": config["template_embedding_size"],
+            "num_template_channels": config["num_template_channels"],
+            "num_template_heads": config["num_template_heads"],
+            "num_template_blocks": config["num_template_blocks"],
+            "template_transition_multiplier": config["template_transition_multiplier"],
             "num_extra_msa_blocks": config["num_extra_msa_blocks"],
             "num_extra_msa_channels": config["num_extra_msa_channels"],
             "num_evoformer_blocks": config["num_evoformer_blocks"],
@@ -148,6 +175,17 @@ class Nanofold(nn.Module):
             torch.randint(self.num_recycle, (1,)) + 1 if self.training else self.num_recycle
         )
         fape_clamp = 10.0 if torch.rand(1) < 0.9 and self.training else None
+        max_num_templates = 4
+        if self.training:
+            num_templates = batch["template_pair_feat"].shape[1]
+            selected_templates = min(np.random.randint(num_templates + 1), max_num_templates)
+            if selected_templates == 0:
+                template_pair_feat = torch.empty_like(batch["template_pair_feat"][..., :0, :, :, :])
+            else:
+                template_index = torch.multinomial(torch.ones(num_templates), selected_templates)
+                template_pair_feat = batch["template_pair_feat"][..., template_index, :, :, :]
+        else:
+            template_pair_feat = batch["template_pair_feat"][..., :max_num_templates, :, :, :]
 
         s = batch["positions"].shape
         prev_msa_row = torch.zeros((*s, self.msa_embedding_size), device=self.device)
@@ -167,6 +205,9 @@ class Nanofold(nn.Module):
             )
             msa_rep[..., 0, :, :] = msa_rep[..., 0, :, :] + msa_row_update
             pair_rep = pair_rep + pair_rep_update
+
+            template_rep = self.template_pair_stack(template_pair_feat)
+            pair_rep = pair_rep + self.template_pointwise_attention(template_rep, pair_rep)
 
             pair_rep = self.extra_msa_stack(batch["extra_msa_feat"], pair_rep)
 

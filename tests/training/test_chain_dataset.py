@@ -23,11 +23,11 @@ def test_chain_dataset(arrow_file):
         num_msa_clusters,
         num_extra_msa,
     )
-    assert train_data.table.num_rows == 11
-    assert test_data.table.num_rows == 11
+    assert train_data.table.num_rows == 10
+    assert test_data.table.num_rows == 10
 
     assert len(train_data.indices) == 8
-    assert len(test_data.indices) == 3
+    assert len(test_data.indices) == 2
 
     batch = next(iter(train_data))
     assert batch["rotations"].shape == (residue_crop_size, 3, 3)

@@ -1,6 +1,7 @@
 import gzip
-import subprocess
+import logging
 import os
+import subprocess
 from pathlib import Path
 
 from nanofold.data_processing.sto_parser import truncate_sto
@@ -72,7 +73,7 @@ class MSARunner:
         try:
             subprocess.run(cmd, capture_output=True, check=True)
         except subprocess.CalledProcessError as e:
-            print(e.stderr.decode("utf-8"))
+            logging.error(e.stderr.decode("utf-8"))
             raise e
 
         self.truncate_sto(tmp_output)

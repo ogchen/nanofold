@@ -16,6 +16,9 @@ SCHEMA = pa.schema(
         pa.field("translations", pa.list_(pa.list_(pa.float32()))),
         pa.field("sequence", pa.string()),
         pa.field("positions", pa.list_(pa.int16())),
+        pa.field("template_mask", pa.list_(pa.list_(pa.bool_()))),
+        pa.field("template_sequence", pa.list_(pa.string())),
+        pa.field("template_translations", pa.list_(pa.list_(pa.list_(pa.float32())))),
         pa.field("cluster_msa", pa.list_(pa.list_(pa.list_(pa.bool_())))),
         pa.field("cluster_has_deletion", pa.list_(pa.list_(pa.bool_()))),
         pa.field("cluster_deletion_value", pa.list_(pa.list_(pa.float32()))),
@@ -29,7 +32,7 @@ SCHEMA = pa.schema(
 
 
 def get_ready_chains(db_manager, msa_output_dir):
-    chains = db_manager.chains().find({})
+    chains = db_manager.chains().find({"templates": {"$exists": True}})
     search_glob = os.path.join(msa_output_dir, "*.pkl.gz")
     msa_files = glob.glob(search_glob)
     found_ids = [Path(m).stem.split(".")[0] for m in msa_files]
@@ -64,6 +67,9 @@ def get_record_batch(executor, msa_feat_getter, chain_batch):
         pa.array([c["translations"] for c, _ in batch]),
         pa.array([c["sequence"] for c, _ in batch]),
         pa.array([c["positions"] for c, _ in batch]),
+        pa.array([c["templates"]["mask"] for c, _ in batch]),
+        pa.array([c["templates"]["sequence"] for c, _ in batch]),
+        pa.array([c["templates"]["translations"] for c, _ in batch]),
         pa.array([m["cluster_msa"].tolist() for _, m in batch]),
         pa.array([m["cluster_has_deletion"].tolist() for _, m in batch]),
         pa.array([m["cluster_deletion_value"].tolist() for _, m in batch]),

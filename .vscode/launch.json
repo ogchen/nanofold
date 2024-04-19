@@ -26,7 +26,7 @@
             "request": "launch",
             "program": "preprocess.py",
             "console": "integratedTerminal",
-            "args": "-m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta"
+            "args": "-m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70"
         },
         {
             "name": "Profile",

@@ -20,6 +20,12 @@ wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_no
 gzip -d bfd-first_non_consensus_sequences.fasta.gz
 ```
 
+Download and unzip PDB70 (56GB) for template search with
+```bash
+wget https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200401.tar.gz
+mkdir pdb70 && tar -xf pdb70_from_mmcif_200401.tar.gz -C pdb70
+```
+
 ### Docker
 Requires [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 for GPU support within containers.
@@ -33,11 +39,14 @@ docker-compose -f docker/docker-compose.train.yml build
 ## Training
 Run the preprocessing script with
 ```bash
-docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta
+docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70
 ```
 This parses the downloaded mmCIF files to extract protein information, including the residue sequence and atom co-ordinates.
-It uses the jackhmmer tool to search the provided small BFD database and build multiple sequence alignments, before clustering
+It uses the `jackhmmer` tool to search the provided small BFD database and build multiple sequence alignments (MSA), before clustering
 and computing various features to be used in training.
+The MSA computed by `jackhmmer` is then used to search the `PDB70` database to find templates. While the original Alphafold paper uses the `HHsearch` tool 
+for template searching, this is replaced with `HHblits` which provides significant speedup at the expense of lower sensitivity.
+
 
 Run the training script for `N` epochs:
 ```bash
@@ -52,7 +61,7 @@ docker-compose -f docker/docker-compose.train.yml run --rm train python train.py
 ## Profiling
 Run the pytorch profiler:
 ```bash
-docker run --rm -v $HOME/data:/data train python profiler.py -c config/config.json -i /preprocess/features.arrow --mode time --mode memory
+docker-compose -f docker/docker-compose.train.yml run --rm -v $HOME/data:/data train python profiler.py -c config/config.json -i /preprocess/features.arrow --mode time --mode memory
 ```
 The profiler spits out a `trace.json` and `snapshot.pickle` file in the mounted `/data/` volume.
 Load `trace.json` into [chrome://tracing](chrome://tracing/), and `snapshot.pickle` into [pytorch.org/memory_viz](https://pytorch.org/memory_viz).
