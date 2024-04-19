@@ -56,12 +56,11 @@ def main():
         params["num_extra_msa"],
     )
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=params["batch_size"])
-    next(iter(data_loader))
 
     if "time" in args.mode:
         with torch.profiler.profile(
             activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-            schedule=torch.profiler.schedule(skip_first=2, wait=1, warmup=1, active=2, repeat=1),
+            schedule=torch.profiler.schedule(skip_first=2, wait=1, warmup=1, active=1, repeat=1),
             with_stack=True,
             profile_memory=True,
             on_trace_ready=trace_handler,
@@ -69,6 +68,7 @@ def main():
             trainer = ProfiledTrainer(prof, params, loggers=[], checkpoint_save_freq=1)
             trainer.fit(data_loader, None, max_epoch=6)
     if "memory" in args.mode:
+        next(iter(data_loader))
         torch.cuda.memory._record_memory_history(max_entries=100000)
         trainer = Trainer(params, loggers=[], checkpoint_save_freq=1)
         trainer.fit(data_loader, None, max_epoch=1)
