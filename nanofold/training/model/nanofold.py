@@ -171,17 +171,7 @@ class Nanofold(nn.Module):
             torch.randint(self.num_recycle, (1,)) + 1 if self.training else self.num_recycle
         )
         fape_clamp = 10.0 if torch.rand(1) < 0.9 and self.training else None
-        max_num_templates = 4
-        if self.training:
-            num_templates = batch["template_pair_feat"].shape[1]
-            selected_templates = min(np.random.randint(num_templates + 1), max_num_templates)
-            if selected_templates == 0:
-                template_pair_feat = torch.empty_like(batch["template_pair_feat"][..., :0, :, :, :])
-            else:
-                template_index = torch.multinomial(torch.ones(num_templates), selected_templates)
-                template_pair_feat = batch["template_pair_feat"][..., template_index, :, :, :]
-        else:
-            template_pair_feat = batch["template_pair_feat"][..., :max_num_templates, :, :, :]
+        template_pair_feat = batch["template_pair_feat"][..., :4, :, :, :]
 
         s = batch["positions"].shape
         prev_msa_row = torch.zeros((*s, self.msa_embedding_size), device=self.device)
