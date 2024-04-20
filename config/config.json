@@ -40,7 +40,6 @@
     "num_ipa_value_points": 8,
     "num_ipa_heads": 9,
     "num_distogram_bins": 32,
-    "num_distogram_channels": 64,
     "num_lddt_bins": 50,
     "num_lddt_channels": 64,
     "learning_rate": 1e-3,

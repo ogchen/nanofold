@@ -45,7 +45,6 @@ class Nanofold(nn.Module):
         num_ipa_value_points,
         num_ipa_heads,
         num_distogram_bins,
-        num_distogram_channels,
         num_lddt_bins,
         num_lddt_channels,
         use_grad_checkpoint,
@@ -112,9 +111,7 @@ class Nanofold(nn.Module):
             num_lddt_channels,
             device,
         )
-        self.distogram_loss = DistogramLoss(
-            pair_embedding_size, num_distogram_bins, num_distogram_channels, device
-        )
+        self.distogram_loss = DistogramLoss(pair_embedding_size, num_distogram_bins, device)
         self.msa_predictor = MaskedMSAPredictor(msa_embedding_size)
         self.use_grad_checkpoint = use_grad_checkpoint
 
@@ -149,7 +146,6 @@ class Nanofold(nn.Module):
             "num_ipa_value_points": config["num_ipa_value_points"],
             "num_ipa_heads": config["num_ipa_heads"],
             "num_distogram_bins": config["num_distogram_bins"],
-            "num_distogram_channels": config["num_distogram_channels"],
             "num_lddt_bins": config["num_lddt_bins"],
             "num_lddt_channels": config["num_lddt_channels"],
             "use_grad_checkpoint": config["use_grad_checkpoint"],

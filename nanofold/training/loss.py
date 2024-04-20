@@ -31,20 +31,13 @@ def compute_fape_loss(frames, coords, frames_truth, coords_truth, length_scale=1
 
 
 class DistogramLoss(nn.Module):
-    def __init__(self, pair_embedding_size, num_bins, num_channels, device):
+    def __init__(self, pair_embedding_size, num_bins, device):
         super().__init__()
         self.bins = torch.arange(2, 22, 20 / num_bins, device=device)
-        self.projection = nn.Sequential(
-            nn.LayerNorm(pair_embedding_size),
-            nn.Linear(pair_embedding_size, num_channels),
-            nn.ReLU(),
-            nn.Linear(num_channels, num_channels),
-            nn.ReLU(),
-            nn.Linear(num_channels, len(self.bins)),
-        )
+        self.projection = nn.Linear(pair_embedding_size, len(self.bins))
 
     def forward(self, pair_rep, coords_truth):
-        logits = self.projection(pair_rep)
+        logits = self.projection(pair_rep + pair_rep.transpose(-3, -2))
         distance_mat = torch.norm(coords_truth.unsqueeze(-2) - coords_truth.unsqueeze(-3), dim=-1)
         index = torch.argmin(torch.abs(distance_mat.unsqueeze(-1) - self.bins), dim=-1)
         loss = nn.functional.cross_entropy(logits.transpose(-1, 1), index)
