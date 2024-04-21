@@ -50,9 +50,9 @@ def main():
         args.small_bfd,
         jackhmmer_results_path,
         num_cpus=1,
-        max_sequences=500,
+        max_sequences=5000,
     )
-    hhblits_runner = HHblitsRunner(
+    template_hhblits_runner = HHblitsRunner(
         shutil.which("hhblits"),
         args.pdb70,
         template_cache_dir,
@@ -66,7 +66,7 @@ def main():
         if not args.dump_only:
             build_msa(msa_runner, db_manager, executor, msa_output_dir)
             build_template(
-                hhblits_runner,
+                template_hhblits_runner,
                 shutil.which("reformat.pl"),
                 msa_runner,
                 db_manager,
