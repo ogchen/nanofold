@@ -164,7 +164,7 @@ class Nanofold(nn.Module):
         return self.evoformer(*args)
 
     def get_total_loss(self, fape_loss, conf_loss, aux_loss, dist_loss, msa_loss):
-        return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.3 * dist_loss + 2 * msa_loss
+        return 0.5 * fape_loss + 0.5 * aux_loss + 0.01 * conf_loss + 0.6 * dist_loss + 2 * msa_loss
 
     def forward(self, batch):
         num_recycle = (
