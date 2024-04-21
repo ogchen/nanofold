@@ -170,7 +170,7 @@ class Nanofold(nn.Module):
         num_recycle = (
             torch.randint(self.num_recycle, (1,)) + 1 if self.training else self.num_recycle
         )
-        fape_clamp = 10.0 if torch.rand(1) < 0.9 and self.training else None
+        fape_clamp = 20.0 if torch.rand(1) < 0.9 and self.training else None
         template_pair_feat = batch["template_pair_feat"][..., :4, :, :, :]
 
         s = batch["positions"].shape

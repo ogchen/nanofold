@@ -4,7 +4,7 @@ from torch import nn
 from nanofold.training.frame import Frame
 
 
-def compute_fape_loss(frames, coords, frames_truth, coords_truth, length_scale=10.0, clamp=10.0):
+def compute_fape_loss(frames, coords, frames_truth, coords_truth, length_scale=10.0, clamp=20.0):
     """Compute the frame-aligned point error (FAPE) between two sets of frames and coordinates.
     Args:
         frames (Frame): The predicted frames.
