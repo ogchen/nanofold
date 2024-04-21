@@ -14,10 +14,11 @@ class Logger:
             return
         metric_ordering = [
             "total_loss",
-            "msa_loss",
+            "dist_loss",
+            "dist_coords_loss",
             "fape_loss",
             "aux_loss",
-            "dist_loss",
+            "msa_loss",
             "conf_loss",
             "chain_plddt",
             "chain_lddt",

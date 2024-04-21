@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 
+from nanofold.training.loss import compute_distogram_coord_loss
 from nanofold.training.loss import compute_fape_loss
 from nanofold.training.loss import LDDTPredictor
 from nanofold.training.frame import Frame
@@ -130,7 +131,14 @@ class StructureModule(nn.Module):
         batched_frames = Frame(frames.rotations.unsqueeze(-3), frames.translations.unsqueeze(-2))
         coords = Frame.apply(batched_frames, local_coords)
 
-        chain_lddt, chain_plddt, fape_loss, conf_loss, aux_loss = None, None, None, None, None
+        chain_lddt, chain_plddt, fape_loss, conf_loss, aux_loss, dist_coords_loss = (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
         if frames_truth is not None:
             batched_frames_truth = Frame(
                 frames_truth.rotations.unsqueeze(-3), frames_truth.translations.unsqueeze(-2)
@@ -138,9 +146,9 @@ class StructureModule(nn.Module):
             coords_truth = Frame.apply(batched_frames_truth, local_coords)
             fape_loss = compute_fape_loss(
                 frames,
-                coords.view(*coords.shape[:-3], -1, *coords.shape[-1:]),
+                coords.flatten(start_dim=-3, end_dim=-2),
                 frames_truth,
-                coords_truth.view(*coords_truth.shape[:-3], -1, *coords_truth.shape[-1:]),
+                coords_truth.flatten(start_dim=-3, end_dim=-2),
                 clamp=fape_clamp,
             )
             aux_loss = torch.stack(aux_losses).mean()
@@ -150,4 +158,9 @@ class StructureModule(nn.Module):
             conf_loss, chain_plddt = self.lddt_predictor(single, residue_LDDT_truth)
             chain_lddt = residue_LDDT_truth.mean(dim=-1)
 
-        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss
+            dist_coords_loss = compute_distogram_coord_loss(
+                coords[..., :, 1, :],
+                coords_truth[..., :, 1, :],
+            )
+
+        return coords, chain_plddt, chain_lddt, fape_loss, conf_loss, aux_loss, dist_coords_loss

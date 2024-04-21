@@ -30,6 +30,12 @@ def compute_fape_loss(frames, coords, frames_truth, coords_truth, length_scale=1
     return (1 / length_scale) * norm.mean()
 
 
+def compute_distogram_coord_loss(coords, coords_truth, clamp=20.0):
+    distance_mat_truth = torch.norm(coords_truth.unsqueeze(-2) - coords_truth.unsqueeze(-3), dim=-1)
+    distance_mat = torch.norm(coords.unsqueeze(-2) - coords.unsqueeze(-3), dim=-1)
+    return torch.mean(torch.clamp(torch.abs(distance_mat - distance_mat_truth), max=clamp))
+
+
 class DistogramLoss(nn.Module):
     def __init__(self, pair_embedding_size, num_bins, device):
         super().__init__()
