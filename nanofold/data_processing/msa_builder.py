@@ -22,9 +22,9 @@ def get_chains_to_process(db_manager, msa_output_dir):
     search_glob = os.path.join(msa_output_dir, "*.pkl.gz")
     msa_files = glob.glob(search_glob)
     found_ids = [Path(m).stem.split(".")[0] for m in msa_files]
-    return [
-        c for c in chains if f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids
-    ]
+    for c in chains:
+        if f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids:
+            yield c
 
 
 def get_msa(msa_runner, chain):
@@ -40,9 +40,7 @@ def get_sto_contents(msa_runner, executor, chains, batch_size=100):
     get_result = partial(get_msa, msa_runner)
     for i, batch in enumerate(batched(chains, batch_size)):
         result = executor.map(get_result, batch)
-        logging.info(
-            f"Fetched small BFD alignments for {i * batch_size + len(batch)}/{len(chains)} chains"
-        )
+        logging.info(f"Fetched small BFD alignments for {i * batch_size + len(batch)} chains")
         for chain in batch:
             try:
                 yield chain, next(result)
@@ -135,8 +133,7 @@ def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=64, num_ext
 
 def build_msa(msa_runner, db_manager, executor, msa_output_dir):
     chains = get_chains_to_process(db_manager, msa_output_dir)
-    total_num_chains = db_manager.chains().count_documents({})
-    logging.info(f"Found {len(chains)}/{total_num_chains} chains missing MSA")
+    logging.info("Building MSA features for chains")
     for chain, sto_contents in get_sto_contents(msa_runner, executor, chains):
         try:
             alignments, deletion_matrix = parse_msa(StringIO(sto_contents))
