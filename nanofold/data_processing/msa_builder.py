@@ -9,6 +9,7 @@ from functools import partial
 from io import StringIO
 from itertools import batched
 from pathlib import Path
+from scipy.sparse import coo_array
 from tempfile import NamedTemporaryFile
 
 from nanofold.data_processing.sto_parser import parse_msa
@@ -131,6 +132,17 @@ def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=64, num_ext
     return {**msa_feat, **extra_msa_feat}
 
 
+def to_sparse_features(msa_feat):
+    result = {}
+    for k, v in msa_feat.items():
+        square_arr = np.moveaxis(v, 1, 0).reshape(v.shape[1], -1)
+        sparse_arr = coo_array(square_arr)
+        result[f"{k}_shape"] = square_arr.shape
+        result[f"{k}_data"] = sparse_arr.data.tolist()
+        result[f"{k}_coords"] = [c.tolist() for c in sparse_arr.coords]
+    return result
+
+
 def build_msa(msa_runner, db_manager, executor, msa_output_dir):
     chains = get_chains_to_process(db_manager, msa_output_dir)
     logging.info("Building MSA features for chains")
@@ -140,7 +152,7 @@ def build_msa(msa_runner, db_manager, executor, msa_output_dir):
             if alignments[0] != chain["sequence"]:
                 logging.error(f"Chain {chain['_id']} has a mismatching sequence and alignment")
                 continue
-            features = parse_msa_features(alignments, deletion_matrix)
+            features = to_sparse_features(parse_msa_features(alignments, deletion_matrix))
             with gzip.open(
                 msa_output_dir
                 / f"{chain['_id']['structure_id']}_{chain['_id']['chain_id']}.pkl.gz",
