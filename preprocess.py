@@ -42,21 +42,32 @@ def main():
     ipc_output_path = args.output / "features.arrow"
     jackhmmer_results_path = args.output / "small_bfd_cache"
     jackhmmer_results_path.mkdir(exist_ok=True)
+    uniclust30_cache_dir = args.output / "uniclust30_cache"
+    uniclust30_cache_dir.mkdir(exist_ok=True)
     template_cache_dir = args.output / "templates_cache"
     template_cache_dir.mkdir(exist_ok=True)
 
     db_manager = DBManager(uri=os.getenv("MONGODB_URI"))
-    msa_runner = MSARunner(
+    small_bfd_msa_search = MSARunner(
         shutil.which("jackhmmer"),
         args.small_bfd,
         jackhmmer_results_path,
         num_cpus=1,
         max_sequences=5000,
     )
-    template_hhblits_runner = HHblitsRunner(
+    uniclust30_msa_search = HHblitsRunner(
+        shutil.which("hhblits"),
+        args.uniclust30,
+        uniclust30_cache_dir,
+        num_iterations=3,
+        num_cpu=8,
+        output_format="a3m",
+    )
+    pdb70_template_search = HHblitsRunner(
         shutil.which("hhblits"),
         args.pdb70,
         template_cache_dir,
+        num_iterations=1,
     )
 
     if not args.dump_only:
