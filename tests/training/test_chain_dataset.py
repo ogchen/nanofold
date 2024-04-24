@@ -23,10 +23,10 @@ def test_chain_dataset(arrow_file):
         num_msa_clusters,
         num_extra_msa,
     )
-    assert train_data.table.num_rows == 10
-    assert test_data.table.num_rows == 10
+    assert train_data.table.num_rows == 8
+    assert test_data.table.num_rows == 8
 
-    assert len(train_data.indices) == 8
+    assert len(train_data.indices) == 6
     assert len(test_data.indices) == 2
 
     batch = next(iter(train_data))
