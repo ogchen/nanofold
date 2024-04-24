@@ -24,7 +24,10 @@ def get_chains_to_process(db_manager, msa_output_dir):
     msa_files = glob.glob(search_glob)
     found_ids = [Path(m).stem.split(".")[0] for m in msa_files]
     for c in chains:
-        if f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids:
+        if (
+            f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids
+            and len(c["sequence"]) >= 32
+        ):
             yield c
 
 
@@ -48,6 +51,7 @@ def get_sto_contents(msa_runner, executor, chains, batch_size=100):
             except Exception as e:
                 logging.error(f"Failure fetching alignment contents for chain {chain['_id']}: {e}")
                 continue
+        logging.info(f"Fetched small BFD alignments for {i * batch_size + len(batch)} chains")
 
 
 def encode_one_hot_alignments(alignments):
