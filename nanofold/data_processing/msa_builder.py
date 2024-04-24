@@ -44,7 +44,6 @@ def get_sto_contents(msa_runner, executor, chains, batch_size=100):
     get_result = partial(get_msa, msa_runner)
     for i, batch in enumerate(batched(chains, batch_size)):
         result = executor.map(get_result, batch)
-        logging.info(f"Fetched small BFD alignments for {i * batch_size + len(batch)} chains")
         for chain in batch:
             try:
                 yield chain, next(result)
