@@ -139,11 +139,11 @@ class ChainDataset(IterableDataset):
             table, indices[train_size:], *args, **kwargs
         )
 
-    def extract_and_slice_msa(self, col_name, start, sequence_slice):
+    def extract_and_slice_msa(self, col_name, start, index, sequence_slice):
         sparse_matrix = torch.sparse_coo_tensor(
-            self.table.column(f"{col_name}_coords")[1].as_py(),
-            self.table.column(f"{col_name}_data")[1].as_py(),
-            self.table.column(f"{col_name}_shape")[1].as_py(),
+            self.table.column(f"{col_name}_coords")[index].as_py(),
+            self.table.column(f"{col_name}_data")[index].as_py(),
+            self.table.column(f"{col_name}_shape")[index].as_py(),
         )
         dense_matrix = (
             torch.stack([sparse_matrix[i] for i in range(start, start + self.residue_crop_size)])
@@ -196,7 +196,9 @@ class ChainDataset(IterableDataset):
                     "template_translations": slice_column_nested_list("template_translations"),
                 }
                 | {
-                    msa_field: self.extract_and_slice_msa(msa_field, start, self.num_msa_clusters)
+                    msa_field: self.extract_and_slice_msa(
+                        msa_field, start, sampled_index, self.num_msa_clusters
+                    )
                     for msa_field in [
                         "cluster_msa",
                         "cluster_profile",
@@ -206,7 +208,9 @@ class ChainDataset(IterableDataset):
                     ]
                 }
                 | {
-                    msa_field: self.extract_and_slice_msa(msa_field, start, self.num_extra_msa)
+                    msa_field: self.extract_and_slice_msa(
+                        msa_field, start, sampled_index, self.num_extra_msa
+                    )
                     for msa_field in [
                         "extra_msa",
                         "extra_msa_has_deletion",
