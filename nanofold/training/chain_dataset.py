@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import IterableDataset
 
+from nanofold.common.msa_features import MSA_FIELDS
 from nanofold.common.residue_definitions import get_atom_positions
 from nanofold.common.residue_definitions import MSA_GAP
 from nanofold.common.residue_definitions import MSA_MASK_TOKEN
@@ -71,8 +72,8 @@ def construct_extra_msa_feat(
         extra_msa_feat = torch.cat(
             [
                 extra_msa,
-                extra_msa_has_deletion.unsqueeze(-1),
-                extra_msa_deletion_value.unsqueeze(-1),
+                extra_msa_has_deletion,
+                extra_msa_deletion_value,
             ],
             dim=-1,
         )
@@ -138,6 +139,22 @@ class ChainDataset(IterableDataset):
             table, indices[train_size:], *args, **kwargs
         )
 
+    def extract_and_slice_msa(self, col_name, start, index, sequence_slice):
+        sparse_matrix = torch.sparse_coo_tensor(
+            self.table.column(f"{col_name}_coords")[index].as_py(),
+            self.table.column(f"{col_name}_data")[index].as_py(),
+            self.table.column(f"{col_name}_shape")[index].as_py(),
+        )
+        dense_matrix = (
+            torch.stack([sparse_matrix[i] for i in range(start, start + self.residue_crop_size)])
+            .to_dense()
+            .reshape(self.residue_crop_size, -1, MSA_FIELDS[col_name].feat_size)
+            .transpose(0, 1)
+        )
+        if sequence_slice is not None:
+            dense_matrix = dense_matrix[:sequence_slice]
+        return dense_matrix
+
     def __iter__(self):
         while True:
             sampled_index = np.random.choice(self.indices)
@@ -168,53 +185,55 @@ class ChainDataset(IterableDataset):
                 )
             ]
 
-            row = {
-                "positions": slice_column_list("positions"),
-                "translations": slice_column_list("translations"),
-                "rotations": slice_column_list("rotations"),
-                "sequence": slice_column_str("sequence"),
-                "cluster_msa": slice_column_nested_list("cluster_msa", self.num_msa_clusters),
-                "cluster_has_deletion": slice_column_nested_list(
-                    "cluster_has_deletion", self.num_msa_clusters
-                ),
-                "cluster_deletion_value": slice_column_nested_list(
-                    "cluster_deletion_value", self.num_msa_clusters
-                ),
-                "cluster_deletion_mean": slice_column_nested_list(
-                    "cluster_deletion_mean", self.num_msa_clusters
-                ),
-                "cluster_profile": slice_column_nested_list(
-                    "cluster_profile", self.num_msa_clusters
-                ),
-                "extra_msa": slice_column_nested_list("extra_msa", self.num_extra_msa),
-                "extra_msa_has_deletion": slice_column_nested_list(
-                    "extra_msa_has_deletion", self.num_extra_msa
-                ),
-                "extra_msa_deletion_value": slice_column_nested_list(
-                    "extra_msa_deletion_value", self.num_extra_msa
-                ),
-                "template_mask": slice_column_nested_list("template_mask"),
-                "template_sequence": slice_column_nested_str("template_sequence"),
-                "template_translations": slice_column_nested_list("template_translations"),
-            }
+            row = (
+                {
+                    "positions": slice_column_list("positions"),
+                    "translations": slice_column_list("translations"),
+                    "rotations": slice_column_list("rotations"),
+                    "sequence": slice_column_str("sequence"),
+                    "template_mask": slice_column_nested_list("template_mask"),
+                    "template_sequence": slice_column_nested_str("template_sequence"),
+                    "template_translations": slice_column_nested_list("template_translations"),
+                }
+                | {
+                    msa_field: self.extract_and_slice_msa(
+                        msa_field, start, sampled_index, self.num_msa_clusters
+                    )
+                    for msa_field in [
+                        "cluster_msa",
+                        "cluster_profile",
+                        "cluster_has_deletion",
+                        "cluster_deletion_value",
+                        "cluster_deletion_mean",
+                    ]
+                }
+                | {
+                    msa_field: self.extract_and_slice_msa(
+                        msa_field, start, sampled_index, self.num_extra_msa
+                    )
+                    for msa_field in [
+                        "extra_msa",
+                        "extra_msa_has_deletion",
+                        "extra_msa_deletion_value",
+                    ]
+                }
+            )
             yield self.parse_features(row)
 
     def parse_msa_features(self, row):
-        cluster_msa = torch.tensor(row["cluster_msa"], dtype=torch.long)
-        cluster_profile = torch.tensor(row["cluster_profile"])
-        cluster_has_deletion = torch.tensor(
-            row["cluster_has_deletion"], dtype=torch.long
-        ).unsqueeze(-1)
-        cluster_deletion_value = torch.tensor(row["cluster_deletion_value"]).unsqueeze(-1)
-        cluster_deletion_mean = torch.tensor(row["cluster_deletion_mean"]).unsqueeze(-1)
+        cluster_msa = row["cluster_msa"].long()
+        cluster_profile = row["cluster_profile"]
+        cluster_has_deletion = row["cluster_has_deletion"].long()
+        cluster_deletion_value = row["cluster_deletion_value"]
+        cluster_deletion_mean = row["cluster_deletion_mean"]
         replaced_cluster_msa, masked_msa_truth, cluster_mask = mask_replace_msa(
             cluster_msa, cluster_profile
         )
 
         extra_msa_feat = construct_extra_msa_feat(
-            torch.tensor(row["extra_msa"]),
-            torch.tensor(row["extra_msa_has_deletion"]),
-            torch.tensor(row["extra_msa_deletion_value"]),
+            row["extra_msa"],
+            row["extra_msa_has_deletion"],
+            row["extra_msa_deletion_value"],
             cluster_centre_msa_feat=torch.cat(
                 [cluster_msa, cluster_has_deletion, cluster_deletion_value], dim=-1
             ),

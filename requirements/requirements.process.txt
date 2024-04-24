@@ -3,3 +3,4 @@ numpy
 pyarrow
 pytest
 pymongo
+scipy

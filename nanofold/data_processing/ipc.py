@@ -8,6 +8,17 @@ from functools import partial
 from itertools import batched
 from pathlib import Path
 
+from nanofold.common.msa_features import MSA_FIELDS
+
+
+def get_msa_schema_fields(name, pa_type):
+    return [
+        pa.field(f"{name}_shape", pa.list_(pa.int32())),
+        pa.field(f"{name}_data", pa.list_(pa_type())),
+        pa.field(f"{name}_coords", pa.list_(pa.list_(pa.int32()))),
+    ]
+
+
 SCHEMA = pa.schema(
     [
         pa.field("structure_id", pa.string()),
@@ -19,14 +30,11 @@ SCHEMA = pa.schema(
         pa.field("template_mask", pa.list_(pa.list_(pa.bool_()))),
         pa.field("template_sequence", pa.list_(pa.string())),
         pa.field("template_translations", pa.list_(pa.list_(pa.list_(pa.float32())))),
-        pa.field("cluster_msa", pa.list_(pa.list_(pa.list_(pa.bool_())))),
-        pa.field("cluster_has_deletion", pa.list_(pa.list_(pa.bool_()))),
-        pa.field("cluster_deletion_value", pa.list_(pa.list_(pa.float32()))),
-        pa.field("cluster_deletion_mean", pa.list_(pa.list_(pa.float32()))),
-        pa.field("cluster_profile", pa.list_(pa.list_(pa.list_(pa.float32())))),
-        pa.field("extra_msa", pa.list_(pa.list_(pa.list_(pa.bool_())))),
-        pa.field("extra_msa_has_deletion", pa.list_(pa.list_(pa.bool_()))),
-        pa.field("extra_msa_deletion_value", pa.list_(pa.list_(pa.float32()))),
+    ]
+    + [
+        field
+        for name, meta in MSA_FIELDS.items()
+        for field in get_msa_schema_fields(name, meta.pa_type)
     ]
 )
 
@@ -70,14 +78,10 @@ def get_record_batch(executor, msa_feat_getter, chain_batch):
         pa.array([c["templates"]["mask"] for c, _ in batch]),
         pa.array([c["templates"]["sequence"] for c, _ in batch]),
         pa.array([c["templates"]["translations"] for c, _ in batch]),
-        pa.array([m["cluster_msa"].tolist() for _, m in batch]),
-        pa.array([m["cluster_has_deletion"].tolist() for _, m in batch]),
-        pa.array([m["cluster_deletion_value"].tolist() for _, m in batch]),
-        pa.array([m["cluster_deletion_mean"].tolist() for _, m in batch]),
-        pa.array([m["cluster_profile"].tolist() for _, m in batch]),
-        pa.array([m["extra_msa"].tolist() for _, m in batch]),
-        pa.array([m["extra_msa_has_deletion"].tolist() for _, m in batch]),
-        pa.array([m["extra_msa_deletion_value"].tolist() for _, m in batch]),
+    ] + [
+        pa.array([m[f"{field}_{app}"] for _, m in batch])
+        for field in MSA_FIELDS.keys()
+        for app in ["shape", "data", "coords"]
     ]
 
 
