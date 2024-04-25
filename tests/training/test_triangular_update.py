@@ -22,7 +22,7 @@ def test_triangle_multiplication_outgoing():
                     a = model.gate_a(pair_rep[x, i, k]) * model.linear_a(pair_rep[x, i, k])
                     b = model.gate_b(pair_rep[x, j, k]) * model.linear_b(pair_rep[x, j, k])
                     sum += a * b
-                update = model.linear_update(model.layer_norm_update(sum))
+                update = model.update_transition(sum)
                 gate = model.gate(pair_rep[x, i, j])
                 assert torch.allclose(result[x, i, j], gate * update, atol=1e-3)
 
@@ -45,6 +45,6 @@ def test_triangle_multiplication_incoming():
                     a = model.gate_a(pair_rep[x, k, i]) * model.linear_a(pair_rep[x, k, i])
                     b = model.gate_b(pair_rep[x, k, j]) * model.linear_b(pair_rep[x, k, j])
                     sum += a * b
-                update = model.linear_update(model.layer_norm_update(sum))
+                update = model.update_transition(sum)
                 gate = model.gate(pair_rep[x, i, j])
                 assert torch.allclose(result[x, i, j], gate * update, atol=1e-3)
