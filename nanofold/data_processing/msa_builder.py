@@ -94,12 +94,10 @@ def get_msa_feat(alignments, deletion_matrix, num_msa_clusters, batch_size=500):
 
 
 def preprocess_msa(alignments, deletion_matrix):
-    indices = np.arange(1, len(alignments))
-    np.random.shuffle(indices)
-    alignments_one_hot = encode_one_hot_alignments(
-        [alignments[0], *[alignments[i] for i in indices]]
-    )
-    deletion_matrix = np.array([deletion_matrix[0], *[deletion_matrix[i] for i in indices]])
+    indices = np.arange(len(alignments))
+    np.random.shuffle(indices[1:])
+    alignments_one_hot = encode_one_hot_alignments([alignments[i] for i in indices])
+    deletion_matrix = np.array([deletion_matrix[i] for i in indices])
     return alignments_one_hot, deletion_matrix
 
 
