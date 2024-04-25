@@ -60,13 +60,13 @@ def get_dataloaders(args, params):
     return (
         torch.utils.data.DataLoader(
             train_data,
-            batch_size=params["batch_size"],
+            batch_size=None,
             pin_memory=True,
             num_workers=4,
         ),
         torch.utils.data.DataLoader(
             test_data,
-            batch_size=params["eval_batch_size"],
+            batch_size=None,
             pin_memory=True,
             num_workers=1,
         ),

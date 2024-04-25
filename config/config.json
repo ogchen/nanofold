@@ -7,8 +7,6 @@
     "use_grad_checkpoint": true,
     "clip_norm": 0.1,
     "num_recycle": 4,
-    "batch_size": 1,
-    "eval_batch_size": 1,
     "residue_crop_size": 64,
     "train_split": 0.8,
     "single_embedding_size": 192,
