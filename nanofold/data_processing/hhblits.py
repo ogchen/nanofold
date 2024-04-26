@@ -41,18 +41,13 @@ class HHblitsRunner:
     def cached_result(self, output):
         zip_output = Path(f"{output}.gz")
 
-        if zip_output.exists():
+        def zip_result():
             with gzip.open(zip_output, "rt") as gz_f:
                 for line in gz_f:
                     yield line
-        if output.exists() and os.path.getsize(output) > 0:
-            with open(output) as f:
-                content = f.read()
-                with gzip.open(zip_output, "wb") as gz_f:
-                    gz_f.write(content.encode())
-            os.remove(output)
-            for l in content:
-                yield l
+
+        if zip_output.exists():
+            return zip_result
 
     def run(self, a2m_file, id):
         output = self.cache_dir / f"{id}.{self.output_format}"

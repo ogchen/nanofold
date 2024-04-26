@@ -136,11 +136,13 @@ def to_sparse_features(msa_feat):
 def get_msa(
     uniclust30_msa_search, small_bfd_msa_search, chain, num_msa_clusters=64, num_extra_seq=1024
 ):
+    small_bfd_result = execute_msa_search(small_bfd_msa_search, chain)
     small_bfd_alignments, small_bfd_deletion_matrix = sto_parser.extract_alignments(
-        execute_msa_search(small_bfd_msa_search, chain)
+        small_bfd_result()
     )
+    uniclust30_result = execute_msa_search(uniclust30_msa_search, chain)
     uniclust30_alignments, uniclust30_deletion_matrix = a3m_parser.extract_alignments(
-        execute_msa_search(uniclust30_msa_search, chain)
+        uniclust30_result()
     )
 
     if uniclust30_alignments[0] != small_bfd_alignments[0]:
