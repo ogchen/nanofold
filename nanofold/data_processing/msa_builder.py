@@ -154,7 +154,11 @@ def get_msa(
                 d[: len(uniclust30_deletion_matrix[0])] for d in small_bfd_deletion_matrix
             ]
         else:
-            raise ValueError("Query sequence for small_bfd and uniclust30 do not match")
+            logging.warn(
+                f"Query sequence for small_bfd and uniclust30 do not match for {chain['_id']}, using only uniclust30 MSA"
+            )
+            small_bfd_alignments = []
+            small_bfd_deletion_matrix = []
 
     alignments = uniclust30_alignments
     deletion_matrix = uniclust30_deletion_matrix
