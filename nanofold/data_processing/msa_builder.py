@@ -20,11 +20,13 @@ from nanofold.data_processing import a3m_parser
 from nanofold.data_processing import sto_parser
 
 
-def get_chains_to_process(db_manager, output_dir):
+def get_chains_to_process(db_manager, output_dir=None):
     chains = db_manager.chains().find({}, {"_id": 1, "sequence": 1})
-    search_glob = os.path.join(output_dir, "*.gz")
-    found_files = glob.glob(search_glob)
-    found_ids = [Path(f).stem.split(".")[0] for f in found_files]
+    found_ids = []
+    if output_dir is not None:
+        search_glob = os.path.join(output_dir, "*.gz")
+        found_files = glob.glob(search_glob)
+        found_ids = [Path(f).stem.split(".")[0] for f in found_files]
 
     for c in chains:
         if (
