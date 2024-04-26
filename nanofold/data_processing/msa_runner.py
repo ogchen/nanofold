@@ -50,6 +50,15 @@ class MSARunner:
         if zip_output.exists():
             return zip_result
 
+        if output.exists() and os.path.getsize(output) > 0:
+            with open(output) as f:
+                content = f.read()
+                with gzip.open(zip_output, "wb") as gz_f:
+                    gz_f.write(content.encode())
+            os.remove(output)
+            return lambda: content
+        return None
+
     def truncate_sto(self, output):
         if self.max_sequences is not None:
             with open(output, mode="r+") as f:

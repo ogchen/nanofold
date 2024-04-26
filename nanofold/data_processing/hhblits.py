@@ -49,6 +49,15 @@ class HHblitsRunner:
         if zip_output.exists():
             return zip_result
 
+        if output.exists() and os.path.getsize(output) > 0:
+            with open(output) as f:
+                content = f.read()
+                with gzip.open(zip_output, "wb") as gz_f:
+                    gz_f.write(content.encode())
+            os.remove(output)
+            return lambda: content
+        return None
+
     def run(self, a2m_file, id):
         output = self.cache_dir / f"{id}.{self.output_format}"
         cached_result = self.cached_result(output)
