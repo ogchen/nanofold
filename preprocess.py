@@ -83,6 +83,22 @@ def main():
             logging.info("Prefetching MSA from Uniclust30")
             prefetch_msa(uniclust30_msa_search, db_manager, executor, uniclust30_cache_dir)
 
+        with ProcessPoolExecutor(max_workers=8) as executor:
+            build_msa(
+                small_bfd_msa_search, uniclust30_msa_search, db_manager, executor, msa_output_dir
+            )
+
+    with ThreadPoolExecutor() as executor:
+        if not args.dump_only:
+            build_template(
+                pdb70_template_search,
+                shutil.which("reformat.pl"),
+                small_bfd_msa_search,
+                db_manager,
+                executor,
+                msa_output_dir,
+            )
+        dump_to_ipc(db_manager, msa_output_dir, ipc_output_path, executor)
 
 
 if __name__ == "__main__":
