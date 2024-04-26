@@ -20,11 +20,12 @@ from nanofold.data_processing import a3m_parser
 from nanofold.data_processing import sto_parser
 
 
-def get_chains_to_process(db_manager, msa_output_dir):
+def get_chains_to_process(db_manager, output_dir):
     chains = db_manager.chains().find({}, {"_id": 1, "sequence": 1})
-    search_glob = os.path.join(msa_output_dir, "*.pkl.gz")
-    msa_files = glob.glob(search_glob)
-    found_ids = [Path(m).stem.split(".")[0] for m in msa_files]
+    search_glob = os.path.join(output_dir, "*.gz")
+    found_files = glob.glob(search_glob)
+    found_ids = [Path(f).stem.split(".")[0] for f in found_files]
+
     for c in chains:
         if (
             f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids
