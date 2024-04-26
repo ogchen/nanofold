@@ -10,6 +10,7 @@ from nanofold.data_processing.db import DBManager
 from nanofold.data_processing.hhblits import HHblitsRunner
 from nanofold.data_processing.ipc import dump_to_ipc
 from nanofold.data_processing.mmcif_processor import process_mmcif_files
+from nanofold.data_processing.msa_builder import prefetch_msa
 from nanofold.data_processing.msa_builder import build_msa
 from nanofold.data_processing.msa_runner import MSARunner
 from nanofold.data_processing.template import build_template
@@ -74,18 +75,14 @@ def main():
         with ProcessPoolExecutor() as executor:
             process_mmcif_files(db_manager, executor, args.mmcif, args.batch)
 
-    with ThreadPoolExecutor() as executor:
-        if not args.dump_only:
-            build_msa(msa_runner, db_manager, executor, msa_output_dir)
-            build_template(
-                template_hhblits_runner,
-                shutil.which("reformat.pl"),
-                msa_runner,
-                db_manager,
-                executor,
-                msa_output_dir,
-            )
-        dump_to_ipc(db_manager, msa_output_dir, ipc_output_path, executor)
+        with ThreadPoolExecutor() as executor:
+            logging.info("Prefetching MSA from small BFD")
+            prefetch_msa(small_bfd_msa_search, db_manager, executor, jackhmmer_results_path)
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            logging.info("Prefetching MSA from Uniclust30")
+            prefetch_msa(uniclust30_msa_search, db_manager, executor, uniclust30_cache_dir)
+
 
 
 if __name__ == "__main__":

@@ -168,6 +168,21 @@ def get_msa(
     )
 
 
+def prefetch_msa(msa_runner, db_manager, executor, output_dir, batch_size=50):
+    chains = get_chains_to_process(db_manager, output_dir)
+    prefetch = partial(execute_msa_search, msa_runner)
+
+    for j, chain_batch in enumerate(batched(chains, batch_size)):
+        result = executor.map(prefetch, chain_batch)
+        for i, c in enumerate(chain_batch):
+            try:
+                next(result)
+            except Exception as e:
+                logging.error(f"Failure while prefetching MSA for chain {c['_id']}: {e}")
+                raise e
+            logging.info(f"Prefetched raw MSA for {j * batch_size + i} chains")
+
+
 def build_msa(
     small_bfd_msa_search,
     uniclust30_msa_search,
@@ -196,5 +211,5 @@ def build_msa(
                     pickle.dump(features, f)
             except Exception as e:
                 logging.error(f"Failure fetching alignment contents for chain {c['_id']}: {e}")
-                raise e
+                continue
             logging.info(f"Fetched MSA alignments for {j * batch_size + i} chains")
