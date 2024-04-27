@@ -205,20 +205,27 @@ def build_msa(
     get_msa_func = partial(get_msa, uniclust30_msa_search, small_bfd_msa_search)
 
     for j, chain_batch in enumerate(batched(chains, batch_size)):
-        chain_batch_small = [c for c in chain_batch if len(c["sequence"]) < 700]
+        chain_batch_small = [c for c in chain_batch if len(c["sequence"]) < 600]
+        chain_batch_large = [c for c in chain_batch if c not in chain_batch_small]
         result = itertools.chain(
-            executor.map(get_msa_func, chain_batch_small),
-            (get_msa_func(c) for c in chain_batch if c not in chain_batch_small),
+            zip(chain_batch_small, executor.map(get_msa_func, chain_batch_small)),
+            ((c, get_msa_func(c)) for c in chain_batch_large),
         )
-        for i, c in enumerate(chain_batch):
+        i = 0
+        while True:
             try:
-                features = next(result)
+                c, features = next(result)
                 with gzip.open(
                     msa_output_dir / f"{c['_id']['structure_id']}_{c['_id']['chain_id']}.pkl.gz",
                     "wb",
                 ) as f:
                     pickle.dump(features, f)
+            except StopIteration:
+                break
             except Exception as e:
-                logging.error(f"Failure fetching alignment contents for chain {c['_id']}: {e}")
+                logging.error(
+                    f"Failure fetching alignment contents for chain {c['_id']}: {repr(e)}"
+                )
                 continue
             logging.info(f"Fetched MSA alignments for {j * batch_size + i} chains")
+            i += 1
