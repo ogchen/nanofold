@@ -83,7 +83,7 @@ def main():
             logging.info("Prefetching MSA from Uniclust30")
             prefetch_msa(uniclust30_msa_search, db_manager, executor, uniclust30_cache_dir)
 
-        with ProcessPoolExecutor(max_workers=8) as executor:
+        with ProcessPoolExecutor(max_workers=6) as executor:
             build_msa(
                 small_bfd_msa_search, uniclust30_msa_search, db_manager, executor, msa_output_dir
             )
