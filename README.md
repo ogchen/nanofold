@@ -20,6 +20,12 @@ wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_no
 gzip -d bfd-first_non_consensus_sequences.fasta.gz
 ```
 
+Download and unzip Uniclust30 with
+```bash
+aria2c https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/uniclust30_2016_03.tgz
+tar -xf uniclust30_2016_03.tgz
+```
+
 Download and unzip PDB70 (56GB) for template search with
 ```bash
 wget https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200401.tar.gz
@@ -39,7 +45,7 @@ docker-compose -f docker/docker-compose.train.yml build
 ## Training
 Run the preprocessing script with
 ```bash
-docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -o /preprocess/ --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70
+docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -c /preprocess/ -o /preprocess/features.arrow --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70 --uniclust30 /data/uniclust30_2016_03/uniclust30_2016_03
 ```
 This parses the downloaded mmCIF files to extract protein information, including the residue sequence and atom co-ordinates.
 It uses the `jackhmmer` tool to search the provided small BFD database and build multiple sequence alignments (MSA), before clustering

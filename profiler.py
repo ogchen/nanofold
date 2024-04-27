@@ -55,7 +55,7 @@ def main():
         params["num_msa_clusters"],
         params["num_extra_msa"],
     )
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=params["batch_size"])
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=None)
 
     if "time" in args.mode:
         with torch.profiler.profile(
@@ -68,10 +68,16 @@ def main():
             trainer = ProfiledTrainer(prof, params, loggers=[], checkpoint_save_freq=1)
             trainer.fit(data_loader, None, max_epoch=6)
     if "memory" in args.mode:
-        next(iter(data_loader))
+        for _ in range(50):
+            batch = next(iter(data_loader))
+            if (
+                len(batch["extra_msa_feat"]) == params["num_extra_msa"]
+                and len(batch["target_feat"]) == params["residue_crop_size"]
+            ):
+                break
         torch.cuda.memory._record_memory_history(max_entries=100000)
         trainer = Trainer(params, loggers=[], checkpoint_save_freq=1)
-        trainer.fit(data_loader, None, max_epoch=1)
+        trainer.fit([batch], None, max_epoch=1)
         torch.cuda.memory._dump_snapshot("/data/snapshot.pickle")
         torch.cuda.memory._record_memory_history(enabled=None)
 

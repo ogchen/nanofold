@@ -1,5 +1,4 @@
 from torch import nn
-import math
 
 from nanofold.training.model.util import LinearWithView
 
@@ -32,7 +31,7 @@ class MSARowAttentionWithPairBias(nn.Module):
         b = self.bias(pair_rep) if pair_rep is not None else None
         g = self.gate(msa_rep)
 
-        weights = (q.transpose(-2, -3) @ k.movedim(-3, -1)) / math.sqrt(self.num_channels)
+        weights = (q.transpose(-2, -3) @ k.movedim(-3, -1)) / (self.num_channels**0.5)
         if b is not None:
             weights = weights + b.movedim(-1, -3).unsqueeze(-4)
         weights = nn.functional.softmax(weights, dim=-1)
@@ -71,7 +70,7 @@ class MSAColumnGlobalAttention(nn.Module):
         v = self.value(msa_rep)
         g = self.gate(msa_rep)
 
-        weights = (q @ k.movedim(-3, -1)) / math.sqrt(self.num_channels)
+        weights = (q @ k.movedim(-3, -1)) / (self.num_channels**0.5)
         weights = nn.functional.softmax(weights, dim=-1)
         attention = g * (weights @ v.transpose(-2, -3)).unsqueeze(-4)
         msa_rep = self.projection(attention.flatten(start_dim=-2))

@@ -19,14 +19,39 @@ def extract_sequence_names(input, max_sequences):
     return sequences
 
 
+def compress_alignment_gaps(alignments):
+    query_mask = [i for i, c in enumerate(alignments[0]) if c != "-"]
+    return ["".join([a[i] for i in query_mask]) for a in alignments]
+
+
+def compute_deletion_matrix(alignments):
+    query = alignments[0]
+    deletion_matrix = []
+
+    for sequence in alignments:
+        deletion_row = []
+        deletion_count = 0
+        for seq_res, query_res in zip(sequence, query):
+            if seq_res != "-" and query_res == "-":
+                deletion_count += 1
+            elif query_res != "-":
+                deletion_row.append(deletion_count)
+                deletion_count = 0
+        deletion_matrix.append(deletion_row)
+    return deletion_matrix
+
+
 def extract_alignments(input):
-    input.seek(0)
     alignments = OrderedDict()
     for line in input:
         if is_alignment_line(line):
             line = line.split()
             alignments[line[0]] = alignments.get(line[0], "") + line[1]
-    return alignments
+    alignments = list(alignments.values())
+    if not all([len(a) == len(alignments[0]) for a in alignments]):
+        raise ValueError("MSA sequences are not of equal length")
+    deletion_matrix = compute_deletion_matrix(alignments)
+    return compress_alignment_gaps(alignments), deletion_matrix
 
 
 def filter_sto_by_sequences(input, sequences):
@@ -47,42 +72,6 @@ def filter_sto_by_sequences(input, sequences):
 def truncate_sto(input, max_sequences):
     sequences = extract_sequence_names(input, max_sequences)
     return filter_sto_by_sequences(input, sequences)
-
-
-def compress_alignment_gaps(alignments):
-    query_mask = [i for i, c in enumerate(alignments[0]) if c != "-"]
-    return ["".join([a[i] for i in query_mask]) for a in alignments]
-
-
-def compute_deletion_matrix(alignments):
-    query = alignments[0]
-    deletion_matrix = []
-
-    for sequence in alignments:
-        deletion_vec = []
-        deletion_count = 0
-        for seq_res, query_res in zip(sequence, query):
-            if seq_res != "-" and query_res == "-":
-                deletion_count += 1
-            elif query_res != "-":
-                deletion_vec.append(deletion_count)
-                deletion_count = 0
-        deletion_matrix.append(deletion_vec)
-    return deletion_matrix
-
-
-def parse_msa(input, num_samples=None):
-    alignments = list(extract_alignments(input).values())
-    if not all([len(a) == len(alignments[0]) for a in alignments]):
-        raise ValueError("MSA sequences are not of equal length")
-    if num_samples is not None and len(alignments) > num_samples:
-        alignments = [
-            alignments[0],
-            *np.random.choice(alignments, num_samples - 1, replace=False).tolist(),
-        ]
-    compressed_alignments = compress_alignment_gaps(alignments)
-    deletion_matrix = compute_deletion_matrix(alignments)
-    return compressed_alignments, deletion_matrix
 
 
 def convert_to_a2m(reformat_bin, msa_sto, a2m_file):

@@ -41,18 +41,23 @@ class MSARunner:
 
     def cached_result(self, output):
         zip_output = Path(f"{output}.gz")
-        content = None
+
+        def zip_result():
+            with gzip.open(zip_output, "rt") as gz_f:
+                for line in gz_f:
+                    yield line
 
         if zip_output.exists():
-            with gzip.open(zip_output, "rb") as gz_f:
-                content = gz_f.read().decode()
+            return zip_result
+
         if output.exists() and os.path.getsize(output) > 0:
             with open(output) as f:
                 content = f.read()
                 with gzip.open(zip_output, "wb") as gz_f:
                     gz_f.write(content.encode())
             os.remove(output)
-        return content
+            return lambda: content
+        return None
 
     def truncate_sto(self, output):
         if self.max_sequences is not None:

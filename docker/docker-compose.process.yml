@@ -4,6 +4,7 @@ services:
     image: mongo:7.0
     volumes:
       - db:/data/db
+    command: --wiredTigerCacheSizeGB 1
 
   data_processing:
     build:

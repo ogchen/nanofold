@@ -1,5 +1,6 @@
 import glob
 import gzip
+import itertools
 import logging
 import math
 import numpy as np
@@ -12,42 +13,36 @@ from pathlib import Path
 from scipy.sparse import coo_array
 from tempfile import NamedTemporaryFile
 
-from nanofold.data_processing.sto_parser import parse_msa
 from nanofold.common.residue_definitions import RESIDUE_INDEX
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
 from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
+from nanofold.data_processing import a3m_parser
+from nanofold.data_processing import sto_parser
 
 
-def get_chains_to_process(db_manager, msa_output_dir):
+def get_chains_to_process(db_manager, output_dir=None):
     chains = db_manager.chains().find({}, {"_id": 1, "sequence": 1})
-    search_glob = os.path.join(msa_output_dir, "*.pkl.gz")
-    msa_files = glob.glob(search_glob)
-    found_ids = [Path(m).stem.split(".")[0] for m in msa_files]
+    found_ids = []
+    if output_dir is not None:
+        search_glob = os.path.join(output_dir, "*.gz")
+        found_files = glob.glob(search_glob)
+        found_ids = [Path(f).stem.split(".")[0] for f in found_files]
+
     for c in chains:
-        if f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids:
+        if (
+            f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids
+            and len(c["sequence"]) >= 32
+        ):
             yield c
 
 
-def get_msa(msa_runner, chain):
+def execute_msa_search(msa_runner, chain):
     with NamedTemporaryFile(mode="w") as tmp:
         id = f"{chain['_id']['structure_id'].lower()}_{chain['_id']['chain_id']}"
         fasta = f">{id}\n{chain['sequence']}"
         tmp.writelines(fasta)
         tmp.flush()
         return msa_runner.run(tmp.name, id)
-
-
-def get_sto_contents(msa_runner, executor, chains, batch_size=100):
-    get_result = partial(get_msa, msa_runner)
-    for i, batch in enumerate(batched(chains, batch_size)):
-        result = executor.map(get_result, batch)
-        logging.info(f"Fetched small BFD alignments for {i * batch_size + len(batch)} chains")
-        for chain in batch:
-            try:
-                yield chain, next(result)
-            except Exception as e:
-                logging.error(f"Failure fetching alignment contents for chain {chain['_id']}: {e}")
-                continue
 
 
 def encode_one_hot_alignments(alignments):
@@ -102,12 +97,10 @@ def get_msa_feat(alignments, deletion_matrix, num_msa_clusters, batch_size=500):
 
 
 def preprocess_msa(alignments, deletion_matrix):
-    indices = np.arange(1, len(alignments))
-    np.random.shuffle(indices)
-    alignments_one_hot = encode_one_hot_alignments(
-        [alignments[0], *[alignments[i] for i in indices]]
-    )
-    deletion_matrix = np.array([deletion_matrix[0], *[deletion_matrix[i] for i in indices]])
+    indices = np.arange(len(alignments))
+    np.random.shuffle(indices[1:])
+    alignments_one_hot = encode_one_hot_alignments([alignments[i] for i in indices])
+    deletion_matrix = np.array([deletion_matrix[i] for i in indices])
     return alignments_one_hot, deletion_matrix
 
 
@@ -123,7 +116,7 @@ def get_extra_msa_seq(alignments_one_hot, deletion_matrix, num_msa_clusters, num
     }
 
 
-def parse_msa_features(alignments, deletion_matrix, num_msa_clusters=64, num_extra_seq=128):
+def parse_msa_features(alignments, deletion_matrix, num_msa_clusters, num_extra_seq):
     alignments_one_hot, deletion_matrix = preprocess_msa(alignments, deletion_matrix)
     msa_feat = get_msa_feat(alignments_one_hot, deletion_matrix, num_msa_clusters)
     extra_msa_feat = get_extra_msa_seq(
@@ -143,22 +136,96 @@ def to_sparse_features(msa_feat):
     return result
 
 
-def build_msa(msa_runner, db_manager, executor, msa_output_dir):
-    chains = get_chains_to_process(db_manager, msa_output_dir)
-    logging.info("Building MSA features for chains")
-    for chain, sto_contents in get_sto_contents(msa_runner, executor, chains):
-        try:
-            alignments, deletion_matrix = parse_msa(StringIO(sto_contents))
-            if alignments[0] != chain["sequence"]:
-                logging.error(f"Chain {chain['_id']} has a mismatching sequence and alignment")
+def get_msa(
+    uniclust30_msa_search, small_bfd_msa_search, chain, num_msa_clusters=64, num_extra_seq=1024
+):
+    small_bfd_result = execute_msa_search(small_bfd_msa_search, chain)
+    small_bfd_alignments, small_bfd_deletion_matrix = sto_parser.extract_alignments(
+        small_bfd_result()
+    )
+    uniclust30_result = execute_msa_search(uniclust30_msa_search, chain)
+    uniclust30_alignments, uniclust30_deletion_matrix = a3m_parser.extract_alignments(
+        uniclust30_result()
+    )
+
+    if uniclust30_alignments[0] != small_bfd_alignments[0]:
+        if small_bfd_alignments[0].startswith(uniclust30_alignments[0]):
+            small_bfd_alignments = [
+                s[: len(uniclust30_alignments[0])] for s in small_bfd_alignments
+            ]
+            small_bfd_deletion_matrix = [
+                d[: len(uniclust30_deletion_matrix[0])] for d in small_bfd_deletion_matrix
+            ]
+        else:
+            logging.warn(
+                f"Query sequence for small_bfd and uniclust30 do not match for {chain['_id']}, using only uniclust30 MSA"
+            )
+            small_bfd_alignments = []
+            small_bfd_deletion_matrix = []
+
+    alignments = uniclust30_alignments
+    deletion_matrix = uniclust30_deletion_matrix
+    for s, d in zip(small_bfd_alignments[1:], small_bfd_deletion_matrix[1:]):
+        if s not in alignments:
+            alignments.append(s)
+            deletion_matrix.append(d)
+
+    if alignments[0] != chain["sequence"]:
+        raise ValueError("Query sequence does not match the first sequence in the MSA")
+    return to_sparse_features(
+        parse_msa_features(alignments, deletion_matrix, num_msa_clusters, num_extra_seq)
+    )
+
+
+def prefetch_msa(msa_runner, db_manager, executor, output_dir, batch_size=50):
+    chains = get_chains_to_process(db_manager, output_dir)
+    prefetch = partial(execute_msa_search, msa_runner)
+
+    for j, chain_batch in enumerate(batched(chains, batch_size)):
+        result = executor.map(prefetch, chain_batch)
+        for i, c in enumerate(chain_batch):
+            try:
+                next(result)
+            except Exception as e:
+                logging.error(f"Failure while prefetching MSA for chain {c['_id']}: {repr(e)}")
                 continue
-            features = to_sparse_features(parse_msa_features(alignments, deletion_matrix))
-            with gzip.open(
-                msa_output_dir
-                / f"{chain['_id']['structure_id']}_{chain['_id']['chain_id']}.pkl.gz",
-                "wb",
-            ) as f:
-                pickle.dump(features, f)
-            db_manager.chains().update_one({"_id": chain["_id"]}, {"$set": {"msa_feat": True}})
-        except Exception as e:
-            logging.error(f"Failed to build msa for chain {chain['_id']}: {e}")
+            logging.info(f"Prefetched raw MSA for {j * batch_size + i} chains")
+
+
+def build_msa(
+    small_bfd_msa_search,
+    uniclust30_msa_search,
+    db_manager,
+    executor,
+    msa_output_dir,
+    batch_size=50,
+):
+    chains = get_chains_to_process(db_manager, msa_output_dir)
+
+    get_msa_func = partial(get_msa, uniclust30_msa_search, small_bfd_msa_search)
+
+    for j, chain_batch in enumerate(batched(chains, batch_size)):
+        chain_batch_small = [c for c in chain_batch if len(c["sequence"]) < 600]
+        chain_batch_large = [c for c in chain_batch if c not in chain_batch_small]
+        result = itertools.chain(
+            zip(chain_batch_small, executor.map(get_msa_func, chain_batch_small)),
+            ((c, get_msa_func(c)) for c in chain_batch_large),
+        )
+        i = 0
+        while True:
+            try:
+                c, features = next(result)
+                with gzip.open(
+                    msa_output_dir / f"{c['_id']['structure_id']}_{c['_id']['chain_id']}.pkl.gz",
+                    "wb",
+                ) as f:
+                    pickle.dump(features, f)
+            except StopIteration:
+                break
+            except Exception as e:
+                logging.error(
+                    f"Failure fetching alignment contents for chain {c['_id']}: {repr(e)}"
+                )
+                continue
+            logging.info(f"Fetched MSA alignments for {j * batch_size + i} chains")
+            i += 1
