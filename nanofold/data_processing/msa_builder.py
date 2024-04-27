@@ -187,8 +187,8 @@ def prefetch_msa(msa_runner, db_manager, executor, output_dir, batch_size=50):
             try:
                 next(result)
             except Exception as e:
-                logging.error(f"Failure while prefetching MSA for chain {c['_id']}: {e}")
-                raise e
+                logging.error(f"Failure while prefetching MSA for chain {c['_id']}: {repr(e)}")
+                continue
             logging.info(f"Prefetched raw MSA for {j * batch_size + i} chains")
 
 
