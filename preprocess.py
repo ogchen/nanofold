@@ -22,7 +22,8 @@ def parse_args():
         "-b", "--batch", help="Batch size of files to process", default=1000, type=int
     )
     parser.add_argument("-m", "--mmcif", help="Directory containing mmcif files", type=Path)
-    parser.add_argument("-o", "--output", help="Directory to store output files", type=Path)
+    parser.add_argument("-c", "--cache", help="Directory to store cache files", type=Path)
+    parser.add_argument("-o", "--output", help="Output features Arrow file", type=Path)
     parser.add_argument("-s", "--small_bfd", help="Small BFD file", type=Path)
     parser.add_argument("-p", "--pdb70", help="PDB70 database", type=Path)
     parser.add_argument("-u", "--uniclust30", help="Uniclust30 database", type=Path)
@@ -38,14 +39,13 @@ def main():
         level=getattr(logging, args.logging.upper()),
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    msa_output_dir = args.output / "msa"
+    msa_output_dir = args.cache / "msa"
     msa_output_dir.mkdir(exist_ok=True)
-    ipc_output_path = args.output / "features.arrow"
-    jackhmmer_results_path = args.output / "small_bfd_cache"
+    jackhmmer_results_path = args.cache / "small_bfd_cache"
     jackhmmer_results_path.mkdir(exist_ok=True)
-    uniclust30_cache_dir = args.output / "uniclust30_cache"
+    uniclust30_cache_dir = args.cache / "uniclust30_cache"
     uniclust30_cache_dir.mkdir(exist_ok=True)
-    template_cache_dir = args.output / "templates_cache"
+    template_cache_dir = args.cache / "templates_cache"
     template_cache_dir.mkdir(exist_ok=True)
 
     db_manager = DBManager(uri=os.getenv("MONGODB_URI"))
@@ -98,7 +98,7 @@ def main():
                 executor,
                 msa_output_dir,
             )
-        dump_to_ipc(db_manager, msa_output_dir, ipc_output_path, executor)
+        dump_to_ipc(db_manager, msa_output_dir, args.output, executor)
 
 
 if __name__ == "__main__":
