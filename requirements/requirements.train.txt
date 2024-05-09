@@ -1,8 +1,6 @@
 biopython
 pytest
-torch
 torchinfo
 mlflow
 pyarrow
 numpy
---extra-index-url https://download.pytorch.org/whl/cu121
