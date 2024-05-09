@@ -1,3 +1,9 @@
+import torch.nn as nn
+
+from nanofold.training.model.attention_pair_bias import AttentionPairBias
+from nanofold.training.model.conditioned_transition_block import ConditionedTransitionBlock
+
+
 class DiffusionTransformer(nn.Module):
     def __init__(self, atom_embedding_size, atom_pair_embedding_size, num_block, num_head):
         super().__init__()

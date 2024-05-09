@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from nanofold.training.model.atom_transformer import AtomTransformer
+
 
 class AtomAttentionEncoder(nn.Module):
     def __init__(
