@@ -85,7 +85,12 @@ def main():
 
         with ProcessPoolExecutor(max_workers=6) as executor:
             build_msa(
-                small_bfd_msa_search, uniclust30_msa_search, db_manager, executor, msa_output_dir
+                small_bfd_msa_search,
+                uniclust30_msa_search,
+                db_manager,
+                executor,
+                msa_output_dir,
+                include_dirs=[jackhmmer_results_path, uniclust30_cache_dir],
             )
 
     with ThreadPoolExecutor() as executor:

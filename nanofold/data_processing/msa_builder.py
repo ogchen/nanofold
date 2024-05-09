@@ -214,9 +214,12 @@ def build_msa(
     db_manager,
     executor,
     msa_output_dir,
+    include_dirs,
     batch_size=50,
 ):
-    chains = get_chains_to_process(db_manager, msa_output_dir)
+    chains = get_chains_to_process(
+        db_manager, exclude_dir=msa_output_dir, include_dirs=include_dirs
+    )
 
     get_msa_func = partial(get_msa, uniclust30_msa_search, small_bfd_msa_search)
 
