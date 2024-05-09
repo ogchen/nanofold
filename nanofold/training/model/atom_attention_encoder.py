@@ -22,7 +22,10 @@ class AtomAttentionEncoder(nn.Module):
         self.linear_pos_offset = nn.Linear(3, atom_pair_embedding_size, bias=False)
         self.linear_inv_sq_dist = nn.Linear(1, atom_pair_embedding_size, bias=False)
         self.linear_mask = nn.Linear(1, atom_pair_embedding_size, bias=False)
-        self.conditioning_transition = nn.Sequential(
+        self.conditioning_transition_a = nn.Sequential(
+            nn.ReLU(), nn.Linear(atom_embedding_size, atom_pair_embedding_size, bias=False)
+        )
+        self.conditioning_transition_b = nn.Sequential(
             nn.ReLU(), nn.Linear(atom_embedding_size, atom_pair_embedding_size, bias=False)
         )
         self.pair_mlp = nn.Sequential(
@@ -61,8 +64,8 @@ class AtomAttentionEncoder(nn.Module):
             raise NotImplementedError("r is not None")
         pair_rep = (
             pair_rep
-            + self.conditioning_transition(c.unsqueeze(-2))
-            + self.conditioning_transition(c.unsqueeze(-3))
+            + self.conditioning_transition_a(c.unsqueeze(-2))
+            + self.conditioning_transition_b(c.unsqueeze(-3))
         )
         pair_rep = pair_rep + self.pair_mlp(pair_rep)
         q = self.projection(self.atom_transformer(q, c, pair_rep))
