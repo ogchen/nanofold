@@ -6,8 +6,8 @@ class OuterProductMean(nn.Module):
     def __init__(self, pair_embedding_size, msa_embedding_size, product_embedding_size):
         super().__init__()
         self.layer_norm = nn.LayerNorm(msa_embedding_size)
-        self.linear_a = nn.Linear(msa_embedding_size, product_embedding_size)
-        self.linear_b = nn.Linear(msa_embedding_size, product_embedding_size)
+        self.linear_a = nn.Linear(msa_embedding_size, product_embedding_size, bias=False)
+        self.linear_b = nn.Linear(msa_embedding_size, product_embedding_size, bias=False)
         self.projection = nn.Linear(
             product_embedding_size * product_embedding_size, pair_embedding_size
         )
