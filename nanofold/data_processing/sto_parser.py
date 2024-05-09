@@ -76,7 +76,8 @@ def truncate_sto(input, max_sequences):
 
 def convert_to_a2m(reformat_bin, msa_sto, a2m_file):
     with NamedTemporaryFile(mode="w") as tmp:
-        tmp.write(msa_sto)
+        for s in msa_sto:
+            tmp.write(s)
         tmp.flush()
         cmd = [reformat_bin, "sto", "a2m", tmp.name, a2m_file]
         subprocess.run(cmd, capture_output=True, check=True)
