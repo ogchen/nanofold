@@ -20,20 +20,36 @@ from nanofold.data_processing import a3m_parser
 from nanofold.data_processing import sto_parser
 
 
-def get_chains_to_process(db_manager, output_dir=None):
+def get_chains_to_process(db_manager, exclude_dir=None, include_dirs=None, max_chains=None):
     chains = db_manager.chains().find({}, {"_id": 1, "sequence": 1})
-    found_ids = []
-    if output_dir is not None:
-        search_glob = os.path.join(output_dir, "*.gz")
-        found_files = glob.glob(search_glob)
-        found_ids = [Path(f).stem.split(".")[0] for f in found_files]
+    exclude_ids = set()
+    include_ids = None
+
+    if exclude_dir is not None:
+        search_glob = os.path.join(exclude_dir, "*.gz")
+        exclude_ids = set([Path(f).stem.split(".")[0] for f in glob.glob(search_glob)])
+
+    if include_dirs is not None:
+        include_ids = [
+            set([Path(f).stem.split(".")[0] for f in glob.glob(os.path.join(d, "*.gz"))])
+            for d in include_dirs
+        ]
+        include_ids = set.intersection(*include_ids)
 
     for c in chains:
         if (
-            f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids
+            f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in exclude_ids
+            and (
+                include_ids is None
+                or f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" in include_ids
+            )
             and len(c["sequence"]) >= 32
         ):
             yield c
+            if max_chains is not None:
+                max_chains -= 1
+                if max_chains <= 0:
+                    break
 
 
 def execute_msa_search(msa_runner, chain):
