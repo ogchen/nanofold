@@ -22,4 +22,4 @@ class DropoutByDimension(nn.Module):
     def forward(self, x, dim):
         shape = list(x.shape)
         shape[dim] = 1
-        return x * self.dropout(torch.ones(shape, device=x.device))
+        return x * self.dropout(x.new_ones(shape))

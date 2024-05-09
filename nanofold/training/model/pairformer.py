@@ -49,7 +49,7 @@ class PairformerBlock(nn.Module):
         pair_rep = pair_rep + self.pair_dropout(self.triangle_attention_ending(pair_rep), dim=-2)
         pair_rep = pair_rep + self.pair_transition(pair_rep)
 
-        beta = torch.zeros(pair_rep.shape[:-2], device=pair_rep.device)
+        beta = pair_rep.new_zeros(pair_rep.shape[:-2])
         if single_rep is not None:
             single_rep = single_rep + self.attention_pair_bias(single_rep, None, pair_rep, beta)
             single_rep = single_rep + self.single_transition(single_rep)
