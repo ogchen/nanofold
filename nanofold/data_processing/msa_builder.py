@@ -13,8 +13,7 @@ from pathlib import Path
 from scipy.sparse import coo_array
 from tempfile import NamedTemporaryFile
 
-from nanofold.common.residue_definitions import RESIDUE_INDEX
-from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
+from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
 from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 from nanofold.data_processing import a3m_parser
 from nanofold.data_processing import sto_parser
@@ -64,10 +63,7 @@ def execute_msa_search(msa_runner, chain):
 def encode_one_hot_alignments(alignments):
     indices = np.array(
         [
-            [
-                RESIDUE_INDEX_MSA_WITH_MASK.get(r, RESIDUE_INDEX_MSA_WITH_MASK[UNKNOWN_RESIDUE[0]])
-                for r in a
-            ]
+            [RESIDUE_INDEX_MSA.get(r, RESIDUE_INDEX_MSA[UNKNOWN_RESIDUE[0]]) for r in a]
             for a in alignments
         ]
     )
