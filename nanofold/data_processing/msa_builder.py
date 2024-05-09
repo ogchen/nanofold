@@ -67,7 +67,7 @@ def encode_one_hot_alignments(alignments):
             for a in alignments
         ]
     )
-    return np.eye(len(RESIDUE_INDEX_MSA_WITH_MASK))[indices]
+    return np.eye(len(RESIDUE_INDEX_MSA))[indices]
 
 
 def normalize_to_unit(x):
