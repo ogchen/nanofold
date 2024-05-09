@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from nanofold.common.residue_definitions import RESIDUE_INDEX
+from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
 from nanofold.training.model.atom_attention_encoder import AtomAttentionEncoder
 
 
@@ -25,6 +27,7 @@ class InputEmbedding(nn.Module):
             num_queries,
             num_keys,
         )
+        self.embedding_size = token_embedding_size + len(RESIDUE_INDEX) + len(RESIDUE_INDEX_MSA) + 1
 
     def forward(self, batch):
         ref_pos = batch["ref_pos"]
