@@ -1,4 +1,5 @@
-from torch import nn
+import torch
+import torch.nn as nn
 
 
 class TriangleMultiplicationOutgoing(nn.Module):
@@ -24,14 +25,7 @@ class TriangleMultiplicationOutgoing(nn.Module):
         )
 
     def update(self, a, b):
-        return (
-            (
-                a.unsqueeze(-3).movedim(-2, -1).unsqueeze(-2)
-                @ b.unsqueeze(-4).movedim(-2, -1).unsqueeze(-1)
-            )
-            .squeeze(-1)
-            .squeeze(-1)
-        )
+        return torch.einsum("...bikc,...bjkc->...bijc", a, b)
 
     def forward(self, pair_rep):
         pair_rep = self.layer_norm_pair(pair_rep)
@@ -48,14 +42,7 @@ class TriangleMultiplicationIncoming(TriangleMultiplicationOutgoing):
         super().__init__(pair_embedding_size, num_channels)
 
     def update(self, a, b):
-        return (
-            (
-                a.movedim(-3, -1).unsqueeze(-3).unsqueeze(-2)
-                @ b.movedim(-3, -1).unsqueeze(-4).unsqueeze(-1)
-            )
-            .squeeze(-1)
-            .squeeze(-1)
-        )
+        return torch.einsum("...bkic,...bkjc->...bijc", a, b)
 
     def forward(self, pair_rep):
         return super().forward(pair_rep)
