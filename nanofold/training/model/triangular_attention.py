@@ -1,4 +1,5 @@
-from torch import nn
+import torch.nn as nn
+import torch.nn.functional as F
 
 from nanofold.training.model.util import LinearWithView
 
@@ -17,11 +18,12 @@ class TriangleAttentionStartingNode(nn.Module):
         self.out_proj = nn.Linear(num_channels * num_heads, pair_embedding_size, bias=False)
 
     def attention(self, q, k, v, b):
-        weight = q.movedim(-3, -2) @ k.movedim(-3, -1) / (self.num_channels**2) + b.movedim(
-            -1, -3
-        ).unsqueeze(-4)
-        attention = nn.functional.softmax(weight, dim=-1)
-        return (attention @ v.transpose(-2, -3)).movedim(-3, -2)
+        return F.scaled_dot_product_attention(
+            q.transpose(-3, -2),
+            k.transpose(-3, -2),
+            v.transpose(-3, -2),
+            b.movedim(-1, -3).unsqueeze(-4),
+        ).movedim(-3, -2)
 
     def forward(self, pair_rep):
         pair_rep = self.layer_norm(pair_rep)
@@ -40,11 +42,12 @@ class TriangleAttentionEndingNode(TriangleAttentionStartingNode):
         super().__init__(pair_embedding_size, num_heads, num_channels)
 
     def attention(self, q, k, v, b):
-        weight = q.movedim(-4, -2) @ k.movedim(-4, -1) / (self.num_channels**2) + b.movedim(
-            -1, -3
-        ).transpose(-1, -2).unsqueeze(-4)
-        attention = nn.functional.softmax(weight, dim=-1)
-        return (attention @ v.movedim(-4, -2)).transpose(-4, -2).movedim(-3, -2)
+        return F.scaled_dot_product_attention(
+            q.movedim(-4, -2),
+            k.movedim(-4, -2),
+            v.movedim(-4, -2),
+            b.movedim(-1, -3).transpose(-1, -2).unsqueeze(-4),
+        ).movedim(-2, -4)
 
     def forward(self, pair_rep):
         return super().forward(pair_rep)

@@ -43,12 +43,14 @@ class AttentionPairBias(nn.Module):
         v = self.value(a)
         b = self.bias(pair_rep) + beta.unsqueeze(-1)
         g = self.gate(a)
-        weights = (q.movedim(-3, -2) @ k.movedim(-3, -1)) / (
-            self.embedding_size**0.5
-        ) + b.movedim(-1, -3)
-        weights = F.softmax(weights, dim=-1)
-        attention = (weights @ v.movedim(-2, -3)) * g.movedim(-2, -3)
-        a = self.projection_a(attention.movedim(-3, -2).flatten(start_dim=-2))
+
+        attention = F.scaled_dot_product_attention(
+            q.transpose(-3, -2),
+            k.transpose(-3, -2),
+            v.transpose(-3, -2),
+            b.movedim(-1, -3),
+        ) * g.transpose(-3, -2)
+        a = self.projection_a(attention.transpose(-3, -2).flatten(start_dim=-2))
 
         if s is not None:
             a = self.projection_out(s) * a
