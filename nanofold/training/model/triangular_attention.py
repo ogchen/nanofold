@@ -14,7 +14,7 @@ class TriangleAttentionStartingNode(nn.Module):
         self.value = LinearWithView(pair_embedding_size, (num_heads, num_channels), bias=False)
         self.bias = nn.Linear(pair_embedding_size, num_heads, bias=False)
         self.gate = LinearWithView(pair_embedding_size, (num_heads, num_channels), bias=False)
-        self.out_proj = nn.Linear(num_channels * num_heads, pair_embedding_size)
+        self.out_proj = nn.Linear(num_channels * num_heads, pair_embedding_size, bias=False)
 
     def attention(self, q, k, v, b):
         weight = q.movedim(-3, -2) @ k.movedim(-3, -1) / (self.num_channels**2) + b.movedim(

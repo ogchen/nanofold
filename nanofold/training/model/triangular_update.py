@@ -6,20 +6,20 @@ class TriangleMultiplicationOutgoing(nn.Module):
         super().__init__()
         self.layer_norm_pair = nn.LayerNorm(pair_embedding_size)
         self.gate_a = nn.Sequential(
-            nn.Linear(pair_embedding_size, num_channels),
+            nn.Linear(pair_embedding_size, num_channels, bias=False),
             nn.Sigmoid(),
         )
         self.gate_b = nn.Sequential(
-            nn.Linear(pair_embedding_size, num_channels),
+            nn.Linear(pair_embedding_size, num_channels, bias=False),
             nn.Sigmoid(),
         )
-        self.linear_a = nn.Linear(pair_embedding_size, num_channels)
-        self.linear_b = nn.Linear(pair_embedding_size, num_channels)
+        self.linear_a = nn.Linear(pair_embedding_size, num_channels, bias=False)
+        self.linear_b = nn.Linear(pair_embedding_size, num_channels, bias=False)
         self.update_transition = nn.Sequential(
-            nn.LayerNorm(num_channels), nn.Linear(num_channels, pair_embedding_size)
+            nn.LayerNorm(num_channels), nn.Linear(num_channels, pair_embedding_size, bias=False)
         )
         self.gate = nn.Sequential(
-            nn.Linear(pair_embedding_size, pair_embedding_size),
+            nn.Linear(pair_embedding_size, pair_embedding_size, bias=False),
             nn.Sigmoid(),
         )
 
