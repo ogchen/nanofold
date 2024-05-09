@@ -1,28 +1,35 @@
-from torch import nn
+import torch
+import torch.nn as nn
 
-from nanofold.common.residue_definitions import RESIDUE_INDEX
+from nanofold.training.model.atom_attention_encoder import AtomAttentionEncoder
 
 
 class InputEmbedding(nn.Module):
-    def __init__(self, pair_embedding_size, msa_embedding_size, position_bins, msa_input_size=49):
+    def __init__(
+        self,
+        atom_embedding_size,
+        atom_pair_embedding_size,
+        token_embedding_size,
+        num_block,
+        num_head,
+        num_queries,
+        num_keys,
+    ):
         super().__init__()
-        self.bins = position_bins
-        target_input_size = len(RESIDUE_INDEX)
-        self.linear_a = nn.Linear(target_input_size, pair_embedding_size)
-        self.linear_b = nn.Linear(target_input_size, pair_embedding_size)
-        self.linear_c = nn.Linear(target_input_size, msa_embedding_size)
-        self.linear_position = nn.Linear(2 * self.bins + 1, pair_embedding_size)
-        self.linear_msa = nn.Linear(msa_input_size, msa_embedding_size)
+        self.atom_attention_encoder = AtomAttentionEncoder(
+            atom_embedding_size,
+            atom_pair_embedding_size,
+            token_embedding_size,
+            num_block,
+            num_head,
+            num_queries,
+            num_keys,
+        )
 
-    def forward(self, target_feat, residue_index, msa_feat):
-        a = self.linear_a(target_feat)
-        b = self.linear_b(target_feat)
-        z = a.unsqueeze(-2) + b.unsqueeze(-3)
-
-        d = residue_index.unsqueeze(-1) - residue_index.unsqueeze(-2)
-        d = d.clamp(min=-self.bins, max=self.bins) + self.bins
-        p = nn.functional.one_hot(d.long(), num_classes=2 * self.bins + 1).float()
-        z = z + self.linear_position(p)
-
-        m = self.linear_msa(msa_feat) + self.linear_c(target_feat.unsqueeze(-3))
-        return m, z
+    def forward(self, batch):
+        ref_pos = batch["ref_pos"]
+        ref_space_uid = batch["ref_space_uid"]
+        a, _, _, _ = self.atom_attention_encoder(ref_pos, ref_space_uid, None, None, None)
+        return torch.concat(
+            [a, batch["restype"], batch["profile"], batch["deletion_mean"].unsqueeze(-1)], dim=-1
+        )
