@@ -131,20 +131,24 @@ class ChainDataset(IterableDataset):
             yield self.parse_features(row, length)
 
     def parse_template_features(self, row, length):
-        if len(row["template_sequence"]) == 0:
-            return {
-                "template_pair_feat": torch.empty((0, length, length, 84)),
-            }
-        template_backbone_frame_mask = torch.tensor(row["template_mask"])
-        template_translations = torch.tensor(row["template_translations"])
-        template_rotations = torch.tensor(row["template_rotations"])
+        if len(row["template_sequence"]) != 0:
+            template_backbone_frame_mask = torch.empty(0, length)
+            template_translations = torch.empty(0, length, 3)
+            template_rotations = torch.empty(0, length, 3, 3)
+            aatype_index = torch.empty(0, length, dtype=torch.long)
+        else:
+            template_backbone_frame_mask = torch.tensor(row["template_mask"])
+            template_translations = torch.tensor(row["template_translations"])
+            template_rotations = torch.tensor(row["template_rotations"])
+            aatype_index = torch.tensor(
+                [
+                    [RESIDUE_INDEX_MSA[residue] for residue in seq]
+                    for seq in row["template_sequence"]
+                ]
+            )
         frames = Frame(template_rotations.unsqueeze(-3), template_translations.unsqueeze(-2))
         template_unit_vector = Frame.apply(
             Frame.inverse(frames), template_translations.unsqueeze(-3)
-        )
-
-        aatype_index = torch.tensor(
-            [[RESIDUE_INDEX_MSA[residue] for residue in seq] for seq in row["template_sequence"]]
         )
         template_restype = F.one_hot(aatype_index, num_classes=len(RESIDUE_INDEX_MSA))
 
