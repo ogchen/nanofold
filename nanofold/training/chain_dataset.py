@@ -131,10 +131,10 @@ class ChainDataset(IterableDataset):
             yield self.parse_features(row, length)
 
     def parse_template_features(self, row, length):
-        if len(row["template_sequence"]) != 0:
-            template_backbone_frame_mask = torch.empty(0, length)
-            template_translations = torch.empty(0, length, 3)
-            template_rotations = torch.empty(0, length, 3, 3)
+        if len(row["template_sequence"]) == 0:
+            template_backbone_frame_mask = torch.empty(0, length, dtype=torch.bool)
+            template_translations = torch.empty(0, length, 3, dtype=torch.float32)
+            template_rotations = torch.empty(0, length, 3, 3, dtype=torch.float32)
             aatype_index = torch.empty(0, length, dtype=torch.long)
         else:
             template_backbone_frame_mask = torch.tensor(row["template_mask"])
