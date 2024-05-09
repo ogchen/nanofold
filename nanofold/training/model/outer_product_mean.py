@@ -16,6 +16,6 @@ class OuterProductMean(nn.Module):
         msa_rep = self.layer_norm(msa_rep)
         a = self.linear_a(msa_rep)
         b = self.linear_b(msa_rep)
-        outer = a.unsqueeze(-2).unsqueeze(-1) @ b.unsqueeze(-3).unsqueeze(-2)
-        outer = torch.mean(outer, dim=-5).flatten(start_dim=-2)
+        norm = 1 / msa_rep.size(-3)
+        outer = norm * torch.einsum("...abc,...ade->...bdce", a, b).flatten(start_dim=-2)
         return self.projection(outer)
