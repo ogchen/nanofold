@@ -99,7 +99,7 @@ def extract_template_features(templates, db_manager, query_length, max_templates
     for template in templates:
         chain = db_manager.chains().find_one(
             {"_id": {"structure_id": template["id"][0].lower(), "chain_id": template["id"][1]}},
-            {"label_positions": 1, "sequence": 1, "translations": 1},
+            {"label_positions": 1, "sequence": 1, "translations": 1, "rotations": 1},
         )
         if chain is not None:
             pad_iterable = lambda x, fill: (
@@ -111,11 +111,15 @@ def extract_template_features(templates, db_manager, query_length, max_templates
             translations = [
                 chain["translations"][i] if i is not None else [0.0] * 3 for i in positions
             ]
+            rotations = [
+                chain["rotations"][i] if i is not None else [[0.0] * 3] * 3 for i in positions
+            ]
             results.append(
                 {
                     "mask": mask,
                     "sequence": sequence,
                     "translations": translations,
+                    "rotations": rotations,
                 }
             )
             if len(results) >= max_templates:
@@ -124,6 +128,7 @@ def extract_template_features(templates, db_manager, query_length, max_templates
         "sequence": [r["sequence"] for r in results],
         "mask": [r["mask"] for r in results],
         "translations": [r["translations"] for r in results],
+        "rotations": [r["rotations"] for r in results],
     }
 
 
