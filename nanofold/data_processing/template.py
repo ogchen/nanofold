@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile
 
 from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 from nanofold.common.residue_definitions import MSA_GAP
-from nanofold.data_processing.msa_builder import get_msa
+from nanofold.data_processing.msa_builder import execute_msa_search
 from nanofold.data_processing.sto_parser import convert_to_a2m
 from nanofold.data_processing.hhr_parser import parse_hhr
 
@@ -128,9 +128,9 @@ def extract_template_features(templates, db_manager, query_length, max_templates
 
 
 def get_hhr(hhblits_runner, reformat_bin, msa_runner, chain):
-    msa_sto = get_msa(msa_runner, chain)
+    msa_sto = execute_msa_search(msa_runner, chain)
     with NamedTemporaryFile(mode="w") as a2m_file:
-        convert_to_a2m(reformat_bin, msa_sto, a2m_file.name)
+        convert_to_a2m(reformat_bin, msa_sto(), a2m_file.name)
         id = f"{chain['_id']['structure_id'].lower()}_{chain['_id']['chain_id']}"
         return hhblits_runner.run(a2m_file.name, id)
 
@@ -165,7 +165,7 @@ def build_template(
         hhblits_runner, reformat_bin, msa_runner, executor, chains
     ):
         try:
-            templates = parse_hhr(hhr_output)
+            templates = parse_hhr(hhr_output())
             features = extract_template_features(
                 templates, db_manager, len(chain["sequence"]), max_templates
             )
@@ -173,5 +173,6 @@ def build_template(
                 {"_id": chain["_id"]},
                 {"$set": {"templates": features}},
             )
+            logging.info("Built template features for chain %s", chain["_id"])
         except Exception as e:
             logging.error(f"Failed to build template features for chain {chain['_id']}: {e}")
