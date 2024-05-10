@@ -173,10 +173,15 @@ class ChainDataset(IterableDataset):
             .expand(*residue_index.size(), local_coords.size(-1))
             .reshape(-1)
         )
+        rotations = torch.tensor(row["rotations"])
+        translations = torch.tensor(row["translations"])
+        coords_truth = Frame.apply(
+            Frame(rotations.unsqueeze(-3), translations.unsqueeze(-2)), local_coords
+        ).flatten(start_dim=-3, end_dim=-2)
 
         features = {
-            "rotations": torch.tensor(row["rotations"]),
-            "translations": torch.tensor(row["translations"]),
+            "coords_truth": coords_truth,
+            "translations": translations,
             "local_coords": local_coords,
             "residue_index": residue_index,
             "restype": encode_one_hot(row["sequence"]),
