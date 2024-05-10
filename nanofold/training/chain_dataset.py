@@ -11,22 +11,11 @@ from nanofold.common.residue_definitions import get_atom_positions
 from nanofold.common.residue_definitions import RESIDUE_INDEX
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
 from nanofold.training.frame import Frame
+from nanofold.training.util import uniform_random_rotation
 
 
 def accept_chain(length):
     return np.random.rand() < max(min(length, 512), 256) / 512
-
-
-def quaternion_to_rotation_matrix(quaternion):
-    quaternion = torch.concat([torch.ones(quaternion.size(0), 1), quaternion], dim=-1)
-    quaternion = quaternion / torch.linalg.vector_norm(quaternion, dim=-1, keepdim=True)
-
-    a, b, c, d = (quaternion[..., 0], quaternion[..., 1], quaternion[..., 2], quaternion[..., 3])
-
-    r0 = torch.stack([a**2 + b**2 - c**2 - d**2, 2 * (b * c - a * d), 2 * (a * c + b * d)], dim=-1)
-    r1 = torch.stack([2 * (b * c + a * d), a**2 - b**2 + c**2 - d**2, 2 * (c * d - a * b)], dim=-1)
-    r2 = torch.stack([2 * (b * d - a * c), 2 * (a * b + c * d), a**2 - b**2 - c**2 + d**2], dim=-1)
-    return torch.stack([r0, r1, r2], dim=-2)
 
 
 def encode_one_hot(seq):
@@ -175,8 +164,7 @@ class ChainDataset(IterableDataset):
             [[p[1] for p in get_atom_positions(r)] for r in row["sequence"]]
         )
         residue_index = torch.tensor(row["positions"])
-        random_quaternions = torch.rand(local_coords.size(0), 3) * 100
-        random_rotations = quaternion_to_rotation_matrix(random_quaternions)
+        random_rotations = uniform_random_rotation(local_coords.size(0))
         random_translations = torch.rand(local_coords.size(0), 3) * 100
         frames = Frame(random_rotations.unsqueeze(-3), random_translations.unsqueeze(-2))
         ref_pos = Frame.apply(frames, local_coords).view(-1, 3)
