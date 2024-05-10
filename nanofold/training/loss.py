@@ -1,8 +1,20 @@
 import torch
-from torch import nn
+import torch.nn as nn
+import torch.nn.functional as F
 
 from nanofold.training.frame import Frame
 
+
+def compute_smooth_lddt_loss(x, x_gt):
+    dist = torch.linalg.vector_norm(x.unsqueeze(-3) - x.unsqueeze(-2), dim=-1)
+    dist_gt = torch.linalg.vector_norm(x_gt.unsqueeze(-3) - x_gt.unsqueeze(-2), dim=-1)
+    diff = torch.abs(dist - dist_gt)
+    e = 0.25 * (
+        F.sigmoid(0.5 - diff) + F.sigmoid(1 - diff) + F.sigmoid(2 - diff) + F.sigmoid(4 - diff)
+    )
+    mask = dist_gt < 15.0
+    torch.diagonal(mask, dim1=-2, dim2=-1).zero_()
+    return torch.sum(mask * e) / torch.sum(mask)
 
 def compute_fape_loss(frames, coords, frames_truth, coords_truth, length_scale=10.0, clamp=10.0):
     """Compute the frame-aligned point error (FAPE) between two sets of frames and coordinates.
