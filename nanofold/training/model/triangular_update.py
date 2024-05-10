@@ -25,7 +25,7 @@ class TriangleMultiplicationOutgoing(nn.Module):
         )
 
     def update(self, a, b):
-        return torch.einsum("...bikc,...bjkc->...bijc", a, b)
+        return torch.einsum("...ikc,...jkc->...ijc", a, b)
 
     def forward(self, pair_rep):
         pair_rep = self.layer_norm_pair(pair_rep)
@@ -42,7 +42,7 @@ class TriangleMultiplicationIncoming(TriangleMultiplicationOutgoing):
         super().__init__(pair_embedding_size, num_channels)
 
     def update(self, a, b):
-        return torch.einsum("...bkic,...bkjc->...bijc", a, b)
+        return torch.einsum("...kic,...kjc->...ijc", a, b)
 
     def forward(self, pair_rep):
         return super().forward(pair_rep)
