@@ -7,8 +7,9 @@ from nanofold.training.model.diffusion_transformer import DiffusionTransformer
 class AtomTransformer(nn.Module):
     def __init__(
         self,
-        atom_embedding_size,
-        atom_pair_embedding_size,
+        q_embedding_size,
+        c_embedding_size,
+        p_embedding_size,
         num_block,
         num_head,
         num_queries,
@@ -18,7 +19,7 @@ class AtomTransformer(nn.Module):
         self.num_queries = num_queries
         self.num_keys = num_keys
         self.diffusion_transformer = DiffusionTransformer(
-            atom_embedding_size, atom_pair_embedding_size, num_block, num_head
+            q_embedding_size, c_embedding_size, p_embedding_size, num_block, num_head
         )
 
     def forward(self, q, c, pair_rep):

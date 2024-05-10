@@ -38,6 +38,7 @@ class AtomAttentionEncoder(nn.Module):
         )
         self.atom_transformer = AtomTransformer(
             atom_embedding_size,
+            atom_embedding_size,
             atom_pair_embedding_size,
             num_block,
             num_head,

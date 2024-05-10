@@ -5,14 +5,14 @@ from nanofold.training.model.conditioned_transition_block import ConditionedTran
 
 
 class DiffusionTransformerBlock(nn.Module):
-    def __init__(self, atom_embedding_size, atom_pair_embedding_size, num_head):
+    def __init__(self, a_embedding_size, s_embedding_size, pair_embedding_size, num_head):
 
         super().__init__()
         self.attention_pair_bias = AttentionPairBias(
-            num_head, atom_embedding_size, atom_embedding_size, atom_pair_embedding_size
+            num_head, a_embedding_size, s_embedding_size, pair_embedding_size
         )
         self.conditioned_transition_block = ConditionedTransitionBlock(
-            atom_embedding_size, atom_embedding_size
+            a_embedding_size, s_embedding_size
         )
 
     def forward(self, a, s, pair_rep, beta):
@@ -22,11 +22,15 @@ class DiffusionTransformerBlock(nn.Module):
 
 
 class DiffusionTransformer(nn.Module):
-    def __init__(self, atom_embedding_size, atom_pair_embedding_size, num_block, num_head):
+    def __init__(
+        self, a_embedding_size, s_embedding_size, pair_embedding_size, num_block, num_head
+    ):
         super().__init__()
         self.blocks = nn.ModuleList(
             [
-                DiffusionTransformerBlock(atom_embedding_size, atom_pair_embedding_size, num_head)
+                DiffusionTransformerBlock(
+                    a_embedding_size, s_embedding_size, pair_embedding_size, num_head
+                )
                 for _ in range(num_block)
             ]
         )

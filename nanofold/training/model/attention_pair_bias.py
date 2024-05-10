@@ -41,7 +41,7 @@ class AttentionPairBias(nn.Module):
         q = self.query(a)
         k = self.key(a)
         v = self.value(a)
-        b = self.bias(pair_rep) + beta.unsqueeze(-1)
+        b = self.bias(pair_rep) + beta.unsqueeze(-1) if beta is not None else self.bias(pair_rep)
         g = self.gate(a)
 
         attention = F.scaled_dot_product_attention(
