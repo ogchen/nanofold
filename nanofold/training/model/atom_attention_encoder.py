@@ -10,6 +10,8 @@ class AtomAttentionEncoder(nn.Module):
         atom_embedding_size,
         atom_pair_embedding_size,
         token_embedding_size,
+        single_embedding_size,
+        pair_embedding_size,
         num_block,
         num_head,
         num_queries,
@@ -28,6 +30,15 @@ class AtomAttentionEncoder(nn.Module):
         self.conditioning_transition_b = nn.Sequential(
             nn.ReLU(), nn.Linear(atom_embedding_size, atom_pair_embedding_size, bias=False)
         )
+        self.single_embedder = nn.Sequential(
+            nn.LayerNorm(single_embedding_size),
+            nn.Linear(single_embedding_size, atom_embedding_size, bias=False),
+        )
+        self.pair_embedder = nn.Sequential(
+            nn.LayerNorm(pair_embedding_size),
+            nn.Linear(pair_embedding_size, atom_pair_embedding_size, bias=False),
+        )
+        self.noisy_position_embedder = nn.Linear(3, atom_embedding_size, bias=False)
         self.pair_mlp = nn.Sequential(
             nn.ReLU(),
             nn.Linear(atom_pair_embedding_size, atom_pair_embedding_size, bias=False),
@@ -62,7 +73,9 @@ class AtomAttentionEncoder(nn.Module):
 
         q = c
         if r is not None:
-            raise NotImplementedError("r is not None")
+            c = c + self.single_embedder(torch.tile(s, (3, 1)))
+            pair_rep = pair_rep + self.pair_embedder(torch.tile(z, (3, 3, 1)))
+            q = q + self.noisy_position_embedder(r)
         pair_rep = (
             pair_rep
             + self.conditioning_transition_a(c.unsqueeze(-2))
