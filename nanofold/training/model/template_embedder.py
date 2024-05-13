@@ -26,11 +26,11 @@ class TemplateEmbedder(nn.Module):
         self.linear = nn.Linear(template_input_size, template_embedding_size)
         self.layer_norm = nn.LayerNorm(template_embedding_size)
         self.transition = nn.Sequential(
-            nn.ReLU(), nn.Linear(template_embedding_size, template_embedding_size, bias=False)
+            nn.ReLU(), nn.Linear(template_embedding_size, pair_embedding_size, bias=False)
         )
         self.pairformer_stack = Pairformer(
             0,
-            pair_embedding_size,
+            template_embedding_size,
             num_triangular_update_channels,
             num_triangular_attention_channels,
             num_triangular_attention_heads,
@@ -64,5 +64,4 @@ class TemplateEmbedder(nn.Module):
         v = self.pair_embedder(pair_rep.unsqueeze(-4)) + self.linear(a)
         _, v = self.pairformer_stack(None, v)
         u = self.layer_norm(v).mean(dim=-4)
-        u = self.transition(u)
-        return u
+        return self.transition(u)
