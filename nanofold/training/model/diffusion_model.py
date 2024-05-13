@@ -41,6 +41,7 @@ class DiffusionModel(nn.Module):
         p=7,
     ):
         super().__init__()
+        self.inference = inference
         self.batch_size = batch_size
         self.normal = torch.distributions.MultivariateNormal(torch.zeros(3), torch.eye(3))
         self.gamma_0 = gamma_0
@@ -114,7 +115,7 @@ class DiffusionModel(nn.Module):
         stacked_single, stacked_pair = self.diffusion_conditioning(
             t, features, input, trunk, pair_rep
         )
-        r = x_noisy * (t**2 + self.data_std_dev**2) ** -0.5
+        r = x_noisy / torch.sqrt(t**2 + self.data_std_dev**2)
         a, q_skip, c_skip, p_skip = self.atom_attention_encoder(
             features["ref_pos"], features["ref_space_uid"], r, trunk, stacked_pair
         )
@@ -122,10 +123,9 @@ class DiffusionModel(nn.Module):
         a = self.diffusion_transformer(a, stacked_single, stacked_pair, beta=None)
         a = self.layer_norm(a)
         r_update = self.atom_attention_decoder(a, q_skip, c_skip, p_skip)
-        x_out = (
-            x_noisy * self.data_std_dev**2 / (self.data_std_dev**2 + t**2)
-            + r_update * self.data_std_dev * t / (self.data_std_dev**2 + t**2) ** 0.5
-        )
+        x_out = x_noisy * self.data_std_dev**2 / (
+            self.data_std_dev**2 + t**2
+        ) + r_update * self.data_std_dev * t / torch.sqrt(self.data_std_dev**2 + t**2)
         return x_out
 
     @torch.no_grad
