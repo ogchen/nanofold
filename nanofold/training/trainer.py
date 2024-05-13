@@ -59,8 +59,13 @@ class Trainer:
             self.scheduler.load_state_dict(checkpoint["scheduler"])
 
     def load_batch(self, batch):
+        cpu_features = ["msa", "has_deletion", "deletion_value"]
         return {
-            k: v.to(self.params["device"]) if isinstance(v, torch.Tensor) else v
+            k: (
+                v.to(self.params["device"])
+                if isinstance(v, torch.Tensor) and k not in cpu_features
+                else v
+            )
             for k, v in batch.items()
         }
 

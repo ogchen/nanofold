@@ -110,7 +110,7 @@ class MSAModule(nn.Module):
         deletion_value = features["deletion_value"]
         msa = torch.concat([msa, has_deletion, deletion_value], dim=-1)
         index = torch.randperm(msa.size(-3))[: self.num_msa_samples]
-        msa_rep = self.linear_msa(msa[index])
+        msa_rep = self.linear_msa(msa[index].to(input.device))
         msa_rep = msa_rep + self.linear_input(input)
 
         for block in self.blocks:
