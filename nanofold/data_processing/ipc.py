@@ -91,7 +91,7 @@ def get_record_batch(executor, msa_feat_getter, chain_batch):
     ]
 
 
-def dump_to_ipc(db_manager, msa_output_dir, output, executor, batch_size=20):
+def dump_to_ipc(db_manager, msa_output_dir, output, executor, batch_size=10):
     logging.info(f"Writing features to {output}")
     chains = get_ready_chains(db_manager, msa_output_dir)
     msa_feat_getter = partial(get_msa_features, msa_output_dir)
