@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -28,6 +29,6 @@ class MSAPairWeightedAveraging(nn.Module):
         b = self.bias(pair_rep)
         g = self.gate(msa_rep)
         w = F.softmax(b, dim=-2)
-        o = g.transpose(-2, -3) * (w.movedim(-1, -3) @ v.movedim(-3, -2))
-        msa_rep = self.proj(o.movedim(-3, -2).flatten(start_dim=-2))
+        o = torch.einsum("...sihc,...ijh,...sjhc->...sihc", g, w, v)
+        msa_rep = self.proj(o.flatten(start_dim=-2))
         return msa_rep

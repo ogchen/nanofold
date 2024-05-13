@@ -17,5 +17,5 @@ class OuterProductMean(nn.Module):
         a = self.linear_a(msa_rep)
         b = self.linear_b(msa_rep)
         norm = 1 / msa_rep.size(-3)
-        outer = norm * torch.einsum("...abc,...ade->...bdce", a, b).flatten(start_dim=-2)
+        outer = norm * torch.einsum("...sic,...sjd->...ijcd", a, b).flatten(start_dim=-2)
         return self.projection(outer)
