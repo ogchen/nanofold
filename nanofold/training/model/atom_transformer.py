@@ -25,14 +25,14 @@ class AtomTransformer(nn.Module):
     def forward(self, q, c, pair_rep):
         device = pair_rep.device
         centres = torch.arange(
-            (self.num_queries - 1) / 2, q.size(0), self.num_queries, device=device
+            (self.num_queries - 1) / 2, q.size(-2), self.num_queries, device=device
         )
         row_mask = (
-            torch.abs(torch.arange(pair_rep.size(0), device=device).unsqueeze(-1) - centres)
+            torch.abs(torch.arange(pair_rep.size(-3), device=device).unsqueeze(-1) - centres)
             < self.num_queries / 2
         )
         col_mask = (
-            torch.abs(torch.arange(pair_rep.size(1), device=device).unsqueeze(-1) - centres)
+            torch.abs(torch.arange(pair_rep.size(-2), device=device).unsqueeze(-1) - centres)
             < self.num_keys / 2
         )
         mask = torch.any(row_mask.unsqueeze(-2) & col_mask.unsqueeze(-3), dim=-1)

@@ -83,5 +83,5 @@ class AtomAttentionEncoder(nn.Module):
         )
         pair_rep = pair_rep + self.pair_mlp(pair_rep)
         q = self.projection(self.atom_transformer(q, c, pair_rep))
-        a = torch.mean(q.view(-1, self.atoms_per_residue, q.size(-1)), dim=-2)
+        a = torch.mean(q.view(*q.shape[:-2], -1, self.atoms_per_residue, q.size(-1)), dim=-2)
         return a, q, c, pair_rep
