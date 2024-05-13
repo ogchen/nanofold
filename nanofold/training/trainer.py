@@ -47,7 +47,8 @@ class Trainer:
             total_iters=self.params["lr_warmup"],
         )
         self.scaler = torch.cuda.amp.GradScaler(
-            enabled=self.params["use_amp"] and self.params["device"] == "cuda",
+            enabled=(self.params["use_amp"] or self.params.get("disable_scaler", False))
+            and self.params["device"] == "cuda",
         )
         self.epoch = 0
         if checkpoint is not None:

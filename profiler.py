@@ -48,6 +48,7 @@ def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
     params = load_config(args.config)
+    params["disable_scaler"] = True
     dataset, _ = ChainDataset.construct_datasets(
         args.input,
         1.0,
