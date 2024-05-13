@@ -30,6 +30,7 @@ class DiffusionModel(nn.Module):
         num_diffusion_transformer_blocks,
         num_diffusion_transformer_heads,
         position_bins,
+        inference=False,
         gamma_0=0.8,
         gamma_min=1.0,
         noise_scale=1.003,
@@ -90,14 +91,16 @@ class DiffusionModel(nn.Module):
             nn.Linear(stacked_single_embedding_size, token_embedding_size, bias=False),
         )
         self.layer_norm = nn.LayerNorm(token_embedding_size)
-        self.schedule = (
-            data_std_dev
-            * (
-                s_max ** (1 / p)
-                + torch.arange(0, 1, 1 / steps) * (s_min ** (1 / p) - s_max ** (1 / p))
+        if inference:
+            self.register_buffer(
+                "schedule",
+                data_std_dev
+                * (
+                    s_max ** (1 / p)
+                    + torch.arange(0, 1, 1 / steps) * (s_min ** (1 / p) - s_max ** (1 / p))
+                )
+                ** p,
             )
-            ** p
-        )
 
     def centre_random_augmentation(self, x):
         batch_dims = x.shape[:-2]
@@ -125,13 +128,13 @@ class DiffusionModel(nn.Module):
         )
         return x_out
 
+    @torch.no_grad
     def sample_diffusion(self, features, input, trunk, pair_rep):
-        schedule = self.schedule.to(trunk.device)
-        x = schedule[0] * self.normal.sample(features["local_coords"].shape[:-1]).flatten(
+        x = self.schedule[0] * self.normal.sample(features["local_coords"].shape[:-1]).flatten(
             start_dim=-3, end_dim=-2
         ).to(trunk.device)
 
-        for c_prev, c in zip(schedule[:-1], schedule[1:]):
+        for c_prev, c in zip(self.schedule[:-1], self.schedule[1:]):
             x = self.centre_random_augmentation(x)
             gamma = self.gamma_0 if c > self.gamma_min else 0
             t = c_prev * (gamma + 1)
@@ -169,4 +172,7 @@ class DiffusionModel(nn.Module):
         return diffusion_loss.mean()
 
     def forward(self, features, input, trunk, pair_rep):
-        return self.train_diffusion(features, input, trunk, pair_rep)
+        if self.inference:
+            return self.sample_diffusion(features, input, trunk, pair_rep)
+        else:
+            return self.train_diffusion(features, input, trunk, pair_rep)
