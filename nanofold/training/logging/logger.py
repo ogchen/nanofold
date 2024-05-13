@@ -14,13 +14,8 @@ class Logger:
             return
         metric_ordering = [
             "total_loss",
-            "msa_loss",
-            "fape_loss",
-            "aux_loss",
+            "diffusion_loss",
             "dist_loss",
-            "conf_loss",
-            "chain_plddt",
-            "chain_lddt",
         ]
         metrics = [
             f"{m} | train: {train_metrics.get(m):.4f}, test: {test_metrics.get(m):.4f}"
