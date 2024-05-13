@@ -73,8 +73,10 @@ class AtomAttentionEncoder(nn.Module):
 
         q = c
         if r is not None:
-            c = c + self.single_embedder(torch.tile(s, (3, 1)))
-            pair_rep = pair_rep + self.pair_embedder(torch.tile(z, (3, 3, 1)))
+            c = c + self.single_embedder(torch.tile(s, (self.atoms_per_residue, 1)))
+            pair_rep = pair_rep + self.pair_embedder(
+                torch.tile(z, (self.atoms_per_residue, self.atoms_per_residue, 1))
+            )
             q = q + self.noisy_position_embedder(r)
         pair_rep = (
             pair_rep
