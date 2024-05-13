@@ -12,9 +12,10 @@ def compute_smooth_lddt_loss(x, x_gt):
     )
     mask = dist_gt < 15.0
     torch.diagonal(mask, dim1=-2, dim2=-1).zero_()
-    return torch.sum(mask * e, dim=(-2, -1), keepdim=True) / torch.sum(
+    lddt = torch.sum(mask * e, dim=(-2, -1), keepdim=True) / torch.sum(
         mask, dim=(-2, -1), keepdim=True
     )
+    return 1 - lddt
 
 
 class DistogramLoss(nn.Module):
