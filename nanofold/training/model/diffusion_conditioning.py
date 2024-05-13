@@ -8,7 +8,7 @@ from nanofold.training.model.transition import Transition
 
 def fourier_embedding(t, c):
     normal = torch.distributions.MultivariateNormal(torch.zeros(c), torch.eye(c))
-    w, b = normal.sample([2])
+    w, b = normal.sample([2]).to(t.device)
     return torch.cos(2 * math.pi * (t * w + b))
 
 
@@ -64,9 +64,7 @@ class DiffusionConditioning(nn.Module):
             pair_rep = pair_rep + transition(pair_rep)
         single = torch.concat([input, trunk], dim=-1)
         single = self.single(single)
-        n = fourier_embedding(
-            0.25 * math.log(t / self.data_std_dev), self.fourier_embedding_size
-        ).to(single.device)
+        n = fourier_embedding(0.25 * torch.log(t / self.data_std_dev), self.fourier_embedding_size)
         single = single + self.n_embedder(n)
         for transition in self.single_transition:
             single = single + transition(single)
