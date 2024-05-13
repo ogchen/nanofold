@@ -23,7 +23,7 @@ def rigid_align(x, x_truth):
     x_mean = x.mean(dim=-2, keepdim=True)
     x = x - x_mean
     x_truth = x_truth - x_truth.mean(dim=-2, keepdim=True)
-    product = torch.einsum("...la,...lb->...ab", x, x_truth)
+    product = torch.einsum("...la,...lb->...ab", x_truth, x)
     U, _, V = torch.svd(product.float())
     R = U @ V
     is_reflection = torch.linalg.det(R.float()).unsqueeze(-1).unsqueeze(-1) < 0
