@@ -18,6 +18,7 @@ class TemplateEmbedder(nn.Module):
         num_blocks,
     ):
         super().__init__()
+        self.template_embedding_size = template_embedding_size
         self.pair_embedder = nn.Sequential(
             nn.LayerNorm(pair_embedding_size),
             nn.Linear(pair_embedding_size, template_embedding_size, bias=False),
@@ -44,6 +45,11 @@ class TemplateEmbedder(nn.Module):
         template_distogram = features["template_distogram"]
         template_unit_vector = features["template_unit_vector"]
         template_restype = features["template_restype"]
+
+        if template_restype.size(-3) == 0:
+            return self.transition(
+                pair_rep.new_zeros(*pair_rep.shape[:-1], self.template_embedding_size)
+            )
 
         s = template_restype.shape
         num_res = s[-2]
