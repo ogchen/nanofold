@@ -93,14 +93,14 @@ class DiffusionModel(nn.Module):
         )
         self.layer_norm = nn.LayerNorm(token_embedding_size)
         if inference:
+            steps = torch.arange(steps) / (steps - 1)
+            schedule = (
+                data_std_dev
+                * (s_max ** (1 / p) + steps * (s_min ** (1 / p) - s_max ** (1 / p))) ** p
+            )
             self.register_buffer(
                 "schedule",
-                data_std_dev
-                * (
-                    s_max ** (1 / p)
-                    + torch.arange(0, 1, 1 / steps) * (s_min ** (1 / p) - s_max ** (1 / p))
-                )
-                ** p,
+                torch.cat([schedule, torch.zeros_like(schedule[:1])]),
             )
 
     def centre_random_augmentation(self, x):
