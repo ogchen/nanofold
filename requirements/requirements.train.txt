@@ -4,4 +4,4 @@ torchinfo
 mlflow
 pyarrow
 numpy
-pytorch
+torch
