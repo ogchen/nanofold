@@ -13,27 +13,42 @@ from pathlib import Path
 from scipy.sparse import coo_array
 from tempfile import NamedTemporaryFile
 
-from nanofold.common.residue_definitions import RESIDUE_INDEX
-from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
+from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
 from nanofold.common.residue_definitions import UNKNOWN_RESIDUE
 from nanofold.data_processing import a3m_parser
 from nanofold.data_processing import sto_parser
 
 
-def get_chains_to_process(db_manager, output_dir=None):
+def get_chains_to_process(db_manager, exclude_dir=None, include_dirs=None, max_chains=None):
     chains = db_manager.chains().find({}, {"_id": 1, "sequence": 1})
-    found_ids = []
-    if output_dir is not None:
-        search_glob = os.path.join(output_dir, "*.gz")
-        found_files = glob.glob(search_glob)
-        found_ids = [Path(f).stem.split(".")[0] for f in found_files]
+    exclude_ids = set()
+    include_ids = None
+
+    if exclude_dir is not None:
+        search_glob = os.path.join(exclude_dir, "*.gz")
+        exclude_ids = set([Path(f).stem.split(".")[0] for f in glob.glob(search_glob)])
+
+    if include_dirs is not None:
+        include_ids = [
+            set([Path(f).stem.split(".")[0] for f in glob.glob(os.path.join(d, "*.gz"))])
+            for d in include_dirs
+        ]
+        include_ids = set.intersection(*include_ids)
 
     for c in chains:
         if (
-            f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in found_ids
+            f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" not in exclude_ids
+            and (
+                include_ids is None
+                or f"{c['_id']['structure_id']}_{c['_id']['chain_id']}" in include_ids
+            )
             and len(c["sequence"]) >= 32
         ):
             yield c
+            if max_chains is not None:
+                max_chains -= 1
+                if max_chains <= 0:
+                    break
 
 
 def execute_msa_search(msa_runner, chain):
@@ -48,52 +63,15 @@ def execute_msa_search(msa_runner, chain):
 def encode_one_hot_alignments(alignments):
     indices = np.array(
         [
-            [
-                RESIDUE_INDEX_MSA_WITH_MASK.get(r, RESIDUE_INDEX_MSA_WITH_MASK[UNKNOWN_RESIDUE[0]])
-                for r in a
-            ]
+            [RESIDUE_INDEX_MSA.get(r, RESIDUE_INDEX_MSA[UNKNOWN_RESIDUE[0]]) for r in a]
             for a in alignments
         ]
     )
-    return np.eye(len(RESIDUE_INDEX_MSA_WITH_MASK))[indices]
+    return np.eye(len(RESIDUE_INDEX_MSA))[indices]
 
 
 def normalize_to_unit(x):
     return 2 / math.pi * np.arctan(x / 3)
-
-
-def get_msa_feat(alignments, deletion_matrix, num_msa_clusters, batch_size=500):
-    cluster_msa = alignments[:num_msa_clusters]
-    cluster_index = np.argmax(cluster_msa[..., : len(RESIDUE_INDEX)], axis=-1)[:, np.newaxis, :]
-    cluster_profile = np.copy(cluster_msa)
-    cluster_deletion_mean = np.copy(deletion_matrix[:num_msa_clusters])
-    cluster_counts = np.ones(len(cluster_msa))
-
-    for i in range(num_msa_clusters, len(alignments), batch_size):
-        batch_alignments = alignments[i : i + batch_size]
-        batch_deletion_matrix = deletion_matrix[i : i + batch_size]
-        difference = (
-            cluster_index
-            - np.argmax(batch_alignments[..., : len(RESIDUE_INDEX)], axis=-1)[np.newaxis, :, :]
-        )
-        closest_cluster = np.argmin(np.sum(difference == 0, axis=-1), axis=0)
-        for j, k in enumerate(closest_cluster):
-            cluster_profile[k] += batch_alignments[j]
-            cluster_counts[k] += 1
-            cluster_deletion_mean[k] += batch_deletion_matrix[j]
-
-    cluster_has_deletion = deletion_matrix[:num_msa_clusters] > 0
-    cluster_deletion_value = normalize_to_unit(deletion_matrix[:num_msa_clusters])
-    cluster_deletion_mean = normalize_to_unit(cluster_deletion_mean / cluster_counts[:, np.newaxis])
-    cluster_profile = cluster_profile / cluster_counts[:, np.newaxis, np.newaxis]
-
-    return {
-        "cluster_msa": cluster_msa.astype(np.bool_),
-        "cluster_has_deletion": cluster_has_deletion.astype(np.bool_),
-        "cluster_deletion_value": cluster_deletion_value.astype(np.float32),
-        "cluster_deletion_mean": cluster_deletion_mean.astype(np.float32),
-        "cluster_profile": cluster_profile.astype(np.float32),
-    }
 
 
 def preprocess_msa(alignments, deletion_matrix):
@@ -104,25 +82,16 @@ def preprocess_msa(alignments, deletion_matrix):
     return alignments_one_hot, deletion_matrix
 
 
-def get_extra_msa_seq(alignments_one_hot, deletion_matrix, num_msa_clusters, num_extra_seq):
-    extra_msa = alignments_one_hot[num_msa_clusters:][:num_extra_seq]
-    extra_msa_has_deletion = deletion_matrix[num_msa_clusters:][:num_extra_seq] > 0
-    extra_msa_deletion_value = normalize_to_unit(deletion_matrix[num_msa_clusters:][:num_extra_seq])
-
-    return {
-        "extra_msa": extra_msa.astype(np.bool_),
-        "extra_msa_has_deletion": extra_msa_has_deletion.astype(np.bool_),
-        "extra_msa_deletion_value": extra_msa_deletion_value.astype(np.float32),
-    }
-
-
-def parse_msa_features(alignments, deletion_matrix, num_msa_clusters, num_extra_seq):
+def parse_msa_features(alignments, deletion_matrix, num_seq):
     alignments_one_hot, deletion_matrix = preprocess_msa(alignments, deletion_matrix)
-    msa_feat = get_msa_feat(alignments_one_hot, deletion_matrix, num_msa_clusters)
-    extra_msa_feat = get_extra_msa_seq(
-        alignments_one_hot, deletion_matrix, len(msa_feat["cluster_msa"]), num_extra_seq
-    )
-    return {**msa_feat, **extra_msa_feat}
+    return {
+        "msa": alignments_one_hot[:num_seq],
+        "has_deletion": (deletion_matrix[:num_seq] > 0),
+        "deletion_value": normalize_to_unit(deletion_matrix[:num_seq]),
+    }, {
+        "profile": np.mean(alignments_one_hot, axis=0),
+        "deletion_mean": np.mean(deletion_matrix, axis=0),
+    }
 
 
 def to_sparse_features(msa_feat):
@@ -136,9 +105,7 @@ def to_sparse_features(msa_feat):
     return result
 
 
-def get_msa(
-    uniclust30_msa_search, small_bfd_msa_search, chain, num_msa_clusters=64, num_extra_seq=1024
-):
+def get_msa(uniclust30_msa_search, small_bfd_msa_search, chain, num_seq=4096):
     small_bfd_result = execute_msa_search(small_bfd_msa_search, chain)
     small_bfd_alignments, small_bfd_deletion_matrix = sto_parser.extract_alignments(
         small_bfd_result()
@@ -172,9 +139,8 @@ def get_msa(
 
     if alignments[0] != chain["sequence"]:
         raise ValueError("Query sequence does not match the first sequence in the MSA")
-    return to_sparse_features(
-        parse_msa_features(alignments, deletion_matrix, num_msa_clusters, num_extra_seq)
-    )
+    msa_features, profile_features = parse_msa_features(alignments, deletion_matrix, num_seq)
+    return {**to_sparse_features(msa_features), **profile_features}
 
 
 def prefetch_msa(msa_runner, db_manager, executor, output_dir, batch_size=50):
@@ -198,23 +164,28 @@ def build_msa(
     db_manager,
     executor,
     msa_output_dir,
+    include_dirs,
     batch_size=50,
 ):
-    chains = get_chains_to_process(db_manager, msa_output_dir)
+    chains = get_chains_to_process(
+        db_manager, exclude_dir=msa_output_dir, include_dirs=include_dirs
+    )
 
     get_msa_func = partial(get_msa, uniclust30_msa_search, small_bfd_msa_search)
 
     for j, chain_batch in enumerate(batched(chains, batch_size)):
         chain_batch_small = [c for c in chain_batch if len(c["sequence"]) < 600]
         chain_batch_large = [c for c in chain_batch if c not in chain_batch_small]
+        chain_batch = itertools.chain(chain_batch_small, chain_batch_large)
         result = itertools.chain(
-            zip(chain_batch_small, executor.map(get_msa_func, chain_batch_small)),
-            ((c, get_msa_func(c)) for c in chain_batch_large),
+            executor.map(get_msa_func, chain_batch_small),
+            (get_msa_func(c) for c in chain_batch_large),
         )
         i = 0
         while True:
             try:
-                c, features = next(result)
+                c = next(chain_batch)
+                features = next(result)
                 with gzip.open(
                     msa_output_dir / f"{c['_id']['structure_id']}_{c['_id']['chain_id']}.pkl.gz",
                     "wb",

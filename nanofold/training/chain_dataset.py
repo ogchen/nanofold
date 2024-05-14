@@ -6,13 +6,12 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import IterableDataset
 
-from nanofold.common.msa_features import MSA_FIELDS
+from nanofold.common.msa_metadata import COMPRESSED_MSA_FIELDS
 from nanofold.common.residue_definitions import get_atom_positions
-from nanofold.common.residue_definitions import MSA_GAP
-from nanofold.common.residue_definitions import MSA_MASK_TOKEN
 from nanofold.common.residue_definitions import RESIDUE_INDEX
-from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA_WITH_MASK
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
+from nanofold.training.frame import Frame
+from nanofold.training.util import uniform_random_rotation
 
 
 def accept_chain(length):
@@ -24,61 +23,11 @@ def encode_one_hot(seq):
     return F.one_hot(indices, num_classes=len(RESIDUE_INDEX)).float()
 
 
-def mask_replace_msa(cluster_msa, cluster_profile):
-    cluster_mask = torch.rand(cluster_msa.shape[:-1]) < 0.15
-    replace_mask = F.one_hot(
-        RESIDUE_INDEX_MSA_WITH_MASK[MSA_MASK_TOKEN]
-        * torch.ones(cluster_mask.shape, dtype=torch.long),
-        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
-    )
-    replace_uniform = F.one_hot(
-        torch.randint(len(RESIDUE_INDEX), cluster_mask.shape),
-        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
-    )
-    replace_sampled = F.one_hot(
-        torch.multinomial(cluster_profile.flatten(end_dim=-2), 1, replacement=True).reshape(
-            cluster_profile.shape[:-1]
-        ),
-        num_classes=len(RESIDUE_INDEX_MSA_WITH_MASK),
-    )
-    replace_p = torch.rand(cluster_mask.shape).unsqueeze(-1)
-    replace_value = (
-        (replace_p < 0.1) * replace_uniform
-        + ((replace_p >= 0.1) & (replace_p < 0.2)) * replace_sampled
-        + ((replace_p >= 0.2) & (replace_p < 0.9)) * replace_mask
-        + (replace_p >= 0.9) * cluster_msa
-    )
-
-    masked_msa_truth = cluster_mask.unsqueeze(-1) * cluster_msa
-    replaced_cluster_msa = cluster_msa - masked_msa_truth + replace_value
-    return replaced_cluster_msa, masked_msa_truth, cluster_mask
-
-
-def construct_extra_msa_feat(
-    extra_msa,
-    extra_msa_has_deletion,
-    extra_msa_deletion_value,
-    cluster_centre_msa_feat,
-    num_extra_msa,
-):
-    extra_msa_feat = torch.cat(
-        [
-            extra_msa,
-            extra_msa_has_deletion,
-            extra_msa_deletion_value,
-        ],
-        dim=-1,
-    )[:num_extra_msa]
-    extra_msa_feat = torch.cat([extra_msa_feat, cluster_centre_msa_feat], dim=0)[:num_extra_msa]
-    return extra_msa_feat
-
-
 class ChainDataset(IterableDataset):
-    def __init__(self, table, indices, residue_crop_size, num_msa_clusters, num_extra_msa):
+    def __init__(self, table, indices, residue_crop_size, num_msa):
         super().__init__()
         self.residue_crop_size = residue_crop_size
-        self.num_msa_clusters = num_msa_clusters
-        self.num_extra_msa = num_extra_msa
+        self.num_msa = num_msa
         self.table = table
         self.indices = indices
         self.distogram_max = 50.75
@@ -113,7 +62,7 @@ class ChainDataset(IterableDataset):
         dense_matrix = (
             torch.stack([sparse_matrix[i] for i in range(start, start + length)])
             .to_dense()
-            .reshape(length, -1, MSA_FIELDS[col_name].feat_size)
+            .reshape(length, -1, COMPRESSED_MSA_FIELDS[col_name].feat_size)
             .transpose(0, 1)
         )
         if sequence_slice is not None:
@@ -151,101 +100,46 @@ class ChainDataset(IterableDataset):
                 )
             ]
 
-            row = (
-                {
-                    "positions": slice_column_list("positions"),
-                    "translations": slice_column_list("translations"),
-                    "rotations": slice_column_list("rotations"),
-                    "sequence": slice_column_str("sequence"),
-                    "template_mask": slice_column_nested_list("template_mask"),
-                    "template_sequence": slice_column_nested_str("template_sequence"),
-                    "template_translations": slice_column_nested_list("template_translations"),
-                }
-                | {
-                    msa_field: self.extract_and_slice_msa(
-                        msa_field, start, sampled_index, self.num_msa_clusters, length
-                    )
-                    for msa_field in [
-                        "cluster_msa",
-                        "cluster_profile",
-                        "cluster_has_deletion",
-                        "cluster_deletion_value",
-                        "cluster_deletion_mean",
-                    ]
-                }
-                | {
-                    msa_field: self.extract_and_slice_msa(
-                        msa_field, start, sampled_index, self.num_extra_msa, length
-                    )
-                    for msa_field in [
-                        "extra_msa",
-                        "extra_msa_has_deletion",
-                        "extra_msa_deletion_value",
-                    ]
-                }
-            )
+            row = {
+                "positions": slice_column_list("positions"),
+                "translations": slice_column_list("translations"),
+                "rotations": slice_column_list("rotations"),
+                "sequence": slice_column_str("sequence"),
+                "template_mask": slice_column_nested_list("template_mask"),
+                "template_sequence": slice_column_nested_str("template_sequence"),
+                "template_translations": slice_column_nested_list("template_translations"),
+                "template_rotations": slice_column_nested_list("template_rotations"),
+                "profile": slice_column_list("profile"),
+                "deletion_mean": slice_column_list("deletion_mean"),
+            } | {
+                msa_field: self.extract_and_slice_msa(
+                    msa_field, start, sampled_index, self.num_msa, length
+                )
+                for msa_field in COMPRESSED_MSA_FIELDS.keys()
+            }
             yield self.parse_features(row, length)
-
-    def parse_msa_features(self, row):
-        cluster_msa = row["cluster_msa"].float()
-        cluster_profile = row["cluster_profile"]
-        cluster_has_deletion = row["cluster_has_deletion"]
-        cluster_deletion_value = row["cluster_deletion_value"]
-        cluster_deletion_mean = row["cluster_deletion_mean"]
-        replaced_cluster_msa, masked_msa_truth, cluster_mask = mask_replace_msa(
-            cluster_msa, cluster_profile
-        )
-
-        extra_msa_feat = construct_extra_msa_feat(
-            row["extra_msa"],
-            row["extra_msa_has_deletion"],
-            row["extra_msa_deletion_value"],
-            cluster_centre_msa_feat=torch.cat(
-                [cluster_msa, cluster_has_deletion, cluster_deletion_value], dim=-1
-            ),
-            num_extra_msa=self.num_extra_msa,
-        )
-
-        msa_feat = torch.cat(
-            [
-                replaced_cluster_msa,
-                cluster_has_deletion,
-                cluster_deletion_value,
-                cluster_deletion_mean,
-                cluster_profile,
-            ],
-            dim=-1,
-        )
-        return {
-            "cluster_mask": cluster_mask,
-            "masked_msa_truth": masked_msa_truth,
-            "msa_feat": msa_feat,
-            "extra_msa_feat": extra_msa_feat,
-        }
 
     def parse_template_features(self, row, length):
         if len(row["template_sequence"]) == 0:
-            return {
-                "template_pair_feat": torch.empty((0, length, length, 84)),
-            }
-        template_mask = torch.tensor(row["template_mask"])
-        template_translations = torch.tensor(row["template_translations"])
-        aatype_index = torch.tensor(
-            [[RESIDUE_INDEX_MSA[residue] for residue in seq] for seq in row["template_sequence"]]
+            template_backbone_frame_mask = torch.empty(0, length, dtype=torch.bool)
+            template_translations = torch.empty(0, length, 3, dtype=torch.float32)
+            template_rotations = torch.empty(0, length, 3, 3, dtype=torch.float32)
+            aatype_index = torch.empty(0, length, dtype=torch.long)
+        else:
+            template_backbone_frame_mask = torch.tensor(row["template_mask"])
+            template_translations = torch.tensor(row["template_translations"])
+            template_rotations = torch.tensor(row["template_rotations"])
+            aatype_index = torch.tensor(
+                [
+                    [RESIDUE_INDEX_MSA[residue] for residue in seq]
+                    for seq in row["template_sequence"]
+                ]
+            )
+        frames = Frame(template_rotations.unsqueeze(-3), template_translations.unsqueeze(-2))
+        template_unit_vector = Frame.apply(
+            Frame.inverse(frames), template_translations.unsqueeze(-3)
         )
-        template_aatype = F.one_hot(aatype_index, num_classes=len(RESIDUE_INDEX_MSA))
-        num_res = template_aatype.shape[1]
-        template_aatype_pair = torch.cat(
-            [
-                torch.tile(template_aatype, (num_res, 1)).view(
-                    -1, num_res, num_res, len(RESIDUE_INDEX_MSA)
-                ),
-                torch.tile(template_aatype, (1, num_res)).view(
-                    -1, num_res, num_res, len(RESIDUE_INDEX_MSA)
-                ),
-            ],
-            dim=-1,
-        )
+        template_restype = F.one_hot(aatype_index, num_classes=len(RESIDUE_INDEX_MSA))
 
         distance_mat = torch.norm(
             template_translations.unsqueeze(-2) - template_translations.unsqueeze(-3), dim=-1
@@ -258,23 +152,46 @@ class ChainDataset(IterableDataset):
         )
         template_distogram = F.one_hot(distogram_index, num_classes=len(self.distogram_bins) + 1)
 
-        template_mask_pair = template_mask.unsqueeze(-1) & template_mask.unsqueeze(-2)
         return {
-            "template_pair_feat": torch.cat(
-                [template_distogram, template_aatype_pair, template_mask_pair.unsqueeze(-1)], dim=-1
-            ).float(),
+            "template_restype": template_restype,
+            "template_backbone_frame_mask": template_backbone_frame_mask,
+            "template_distogram": template_distogram,
+            "template_unit_vector": template_unit_vector,
         }
 
     def parse_features(self, row, length):
+        local_coords = torch.tensor(
+            [[p[1] for p in get_atom_positions(r)] for r in row["sequence"]]
+        )
+        residue_index = torch.tensor(row["positions"])
+        random_rotations = uniform_random_rotation(local_coords.size(0))
+        random_translations = torch.rand(local_coords.size(0), 3) * 100
+        frames = Frame(random_rotations.unsqueeze(-3), random_translations.unsqueeze(-2))
+        ref_pos = Frame.apply(frames, local_coords).view(-1, 3)
+        ref_space_uid = (
+            residue_index.unsqueeze(-1)
+            .expand(*residue_index.size(), local_coords.size(-1))
+            .reshape(-1)
+        )
+        rotations = torch.tensor(row["rotations"])
+        translations = torch.tensor(row["translations"])
+        coords_truth = Frame.apply(
+            Frame(rotations.unsqueeze(-3), translations.unsqueeze(-2)), local_coords
+        ).flatten(start_dim=-3, end_dim=-2)
+
         features = {
-            "rotations": torch.tensor(row["rotations"]),
-            "translations": torch.tensor(row["translations"]),
-            "local_coords": torch.tensor(
-                [[p[1] for p in get_atom_positions(r)] for r in row["sequence"]]
-            ),
-            "target_feat": encode_one_hot(row["sequence"]),
-            "positions": torch.tensor(row["positions"]),
-            **self.parse_msa_features(row),
+            "coords_truth": coords_truth,
+            "translations": translations,
+            "local_coords": local_coords,
+            "residue_index": residue_index,
+            "restype": encode_one_hot(row["sequence"]),
+            "ref_pos": ref_pos,
+            "ref_space_uid": ref_space_uid,
+            "msa": row["msa"],
+            "has_deletion": row["has_deletion"],
+            "deletion_value": row["deletion_value"],
+            "profile": torch.tensor(row["profile"]),
+            "deletion_mean": torch.tensor(row["deletion_mean"]),
             **self.parse_template_features(row, length),
         }
         return features

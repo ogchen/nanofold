@@ -1,5 +1,5 @@
 def parse_hhr(hhr_contents):
-    lines = hhr_contents.splitlines()
+    lines = list(hhr_contents)
     result = {}
 
     current_id, query = None, None

@@ -26,14 +26,6 @@ class Trainer:
     def setup_model(self, checkpoint):
         self.model = Nanofold(**Nanofold.get_args(self.params))
         self.model = self.model.to(self.params["device"])
-        compile_model = lambda m: torch.compile(
-            m,
-            disable=not self.params["compile_model"],
-            dynamic=False,
-            mode=self.params.get("compilation_mode", "default"),
-        )
-        self.train_model = compile_model(self.model)
-        self.eval_model = compile_model(self.model)
 
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),
@@ -47,7 +39,8 @@ class Trainer:
             total_iters=self.params["lr_warmup"],
         )
         self.scaler = torch.cuda.amp.GradScaler(
-            enabled=self.params["use_amp"] and self.params["device"] == "cuda",
+            enabled=(self.params["use_amp"] or self.params.get("disable_scaler", False))
+            and self.params["device"] == "cuda",
         )
         self.epoch = 0
         if checkpoint is not None:
@@ -58,8 +51,13 @@ class Trainer:
             self.scheduler.load_state_dict(checkpoint["scheduler"])
 
     def load_batch(self, batch):
+        cpu_features = ["msa", "has_deletion", "deletion_value"]
         return {
-            k: v.to(self.params["device"]) if isinstance(v, torch.Tensor) else v
+            k: (
+                v.to(self.params["device"])
+                if isinstance(v, torch.Tensor) and k not in cpu_features
+                else v
+            )
             for k, v in batch.items()
         }
 
@@ -69,7 +67,7 @@ class Trainer:
             self.params["device"],
             enabled=self.params["use_amp"] and self.params["device"] == "cuda",
         ):
-            out = self.train_model(batch)
+            out = self.model(batch)
         self.scaler.scale(out["total_loss"]).backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.params["clip_norm"])
         self.scaler.step(self.optimizer)
@@ -86,7 +84,7 @@ class Trainer:
             self.params["device"],
             enabled=self.params["use_amp"] and self.params["device"] == "cuda",
         ):
-            out = self.eval_model(batch)
+            out = self.model(batch)
         self.model.train()
         return {k: v.item() for k, v in out.items() if k != "coords"}
 

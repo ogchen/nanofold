@@ -1,4 +1,5 @@
-from torch import nn
+import torch
+import torch.nn as nn
 
 
 class TriangleMultiplicationOutgoing(nn.Module):
@@ -6,32 +7,25 @@ class TriangleMultiplicationOutgoing(nn.Module):
         super().__init__()
         self.layer_norm_pair = nn.LayerNorm(pair_embedding_size)
         self.gate_a = nn.Sequential(
-            nn.Linear(pair_embedding_size, num_channels),
+            nn.Linear(pair_embedding_size, num_channels, bias=False),
             nn.Sigmoid(),
         )
         self.gate_b = nn.Sequential(
-            nn.Linear(pair_embedding_size, num_channels),
+            nn.Linear(pair_embedding_size, num_channels, bias=False),
             nn.Sigmoid(),
         )
-        self.linear_a = nn.Linear(pair_embedding_size, num_channels)
-        self.linear_b = nn.Linear(pair_embedding_size, num_channels)
+        self.linear_a = nn.Linear(pair_embedding_size, num_channels, bias=False)
+        self.linear_b = nn.Linear(pair_embedding_size, num_channels, bias=False)
         self.update_transition = nn.Sequential(
-            nn.LayerNorm(num_channels), nn.Linear(num_channels, pair_embedding_size)
+            nn.LayerNorm(num_channels), nn.Linear(num_channels, pair_embedding_size, bias=False)
         )
         self.gate = nn.Sequential(
-            nn.Linear(pair_embedding_size, pair_embedding_size),
+            nn.Linear(pair_embedding_size, pair_embedding_size, bias=False),
             nn.Sigmoid(),
         )
 
     def update(self, a, b):
-        return (
-            (
-                a.unsqueeze(-3).movedim(-2, -1).unsqueeze(-2)
-                @ b.unsqueeze(-4).movedim(-2, -1).unsqueeze(-1)
-            )
-            .squeeze(-1)
-            .squeeze(-1)
-        )
+        return torch.einsum("...ikc,...jkc->...ijc", a, b)
 
     def forward(self, pair_rep):
         pair_rep = self.layer_norm_pair(pair_rep)
@@ -48,14 +42,7 @@ class TriangleMultiplicationIncoming(TriangleMultiplicationOutgoing):
         super().__init__(pair_embedding_size, num_channels)
 
     def update(self, a, b):
-        return (
-            (
-                a.movedim(-3, -1).unsqueeze(-3).unsqueeze(-2)
-                @ b.movedim(-3, -1).unsqueeze(-4).unsqueeze(-1)
-            )
-            .squeeze(-1)
-            .squeeze(-1)
-        )
+        return torch.einsum("...kic,...kjc->...ijc", a, b)
 
     def forward(self, pair_rep):
         return super().forward(pair_rep)

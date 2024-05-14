@@ -8,7 +8,7 @@ from functools import partial
 from itertools import batched
 from pathlib import Path
 
-from nanofold.common.msa_features import MSA_FIELDS
+from nanofold.common.msa_metadata import COMPRESSED_MSA_FIELDS
 
 
 def get_msa_schema_fields(name, pa_type):
@@ -30,10 +30,13 @@ SCHEMA = pa.schema(
         pa.field("template_mask", pa.list_(pa.list_(pa.bool_()))),
         pa.field("template_sequence", pa.list_(pa.string())),
         pa.field("template_translations", pa.list_(pa.list_(pa.list_(pa.float32())))),
+        pa.field("template_rotations", pa.list_(pa.list_(pa.list_(pa.list_(pa.float32()))))),
+        pa.field("profile", pa.list_(pa.list_(pa.float32()))),
+        pa.field("deletion_mean", pa.list_(pa.float32())),
     ]
     + [
         field
-        for name, meta in MSA_FIELDS.items()
+        for name, meta in COMPRESSED_MSA_FIELDS.items()
         for field in get_msa_schema_fields(name, meta.pa_type)
     ]
 )
@@ -78,14 +81,17 @@ def get_record_batch(executor, msa_feat_getter, chain_batch):
         pa.array([c["templates"]["mask"] for c, _ in batch]),
         pa.array([c["templates"]["sequence"] for c, _ in batch]),
         pa.array([c["templates"]["translations"] for c, _ in batch]),
+        pa.array([c["templates"]["rotations"] for c, _ in batch]),
+        pa.array([m["profile"].tolist() for _, m in batch]),
+        pa.array([m["deletion_mean"] for _, m in batch]),
     ] + [
         pa.array([m[f"{field}_{app}"] for _, m in batch])
-        for field in MSA_FIELDS.keys()
+        for field in COMPRESSED_MSA_FIELDS.keys()
         for app in ["shape", "data", "coords"]
     ]
 
 
-def dump_to_ipc(db_manager, msa_output_dir, output, executor, batch_size=100):
+def dump_to_ipc(db_manager, msa_output_dir, output, executor, batch_size=5):
     logging.info(f"Writing features to {output}")
     chains = get_ready_chains(db_manager, msa_output_dir)
     msa_feat_getter = partial(get_msa_features, msa_output_dir)

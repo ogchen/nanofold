@@ -48,14 +48,14 @@ def main():
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.logging.upper()))
     params = load_config(args.config)
+    params["disable_scaler"] = True
     dataset, _ = ChainDataset.construct_datasets(
         args.input,
         1.0,
         params["residue_crop_size"],
-        params["num_msa_clusters"],
-        params["num_extra_msa"],
+        params["num_msa"],
     )
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=None)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=None, pin_memory=True)
 
     if "time" in args.mode:
         with torch.profiler.profile(
@@ -71,13 +71,13 @@ def main():
         for _ in range(50):
             batch = next(iter(data_loader))
             if (
-                len(batch["extra_msa_feat"]) == params["num_extra_msa"]
-                and len(batch["target_feat"]) == params["residue_crop_size"]
+                len(batch["msa"]) == params["num_msa"]
+                and len(batch["restype"]) == params["residue_crop_size"]
             ):
                 break
         torch.cuda.memory._record_memory_history(max_entries=100000)
         trainer = Trainer(params, loggers=[], checkpoint_save_freq=1)
-        trainer.fit([batch], None, max_epoch=1)
+        trainer.fit([batch], None, max_epoch=2)
         torch.cuda.memory._dump_snapshot("/data/snapshot.pickle")
         torch.cuda.memory._record_memory_history(enabled=None)
 

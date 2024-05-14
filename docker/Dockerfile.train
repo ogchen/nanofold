@@ -1,27 +1,7 @@
-FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
-
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y \
-        build-essential \
-        wget \
-    && apt-get clean \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN mkdir -p /opt/miniconda3 \
-    && wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh \
-    && bash /tmp/miniconda.sh -b -u -p /opt/miniconda3 \
-    && rm -rf /tmp/miniconda.sh
-
-ENV PATH="/opt/miniconda3/bin:${PATH}"
-
-RUN conda install -y -c conda-forge \
-        python=3.11 \
-        pip \
-    && conda clean -afy
+FROM nvcr.io/nvidia/pytorch:24.04-py3
 
 COPY requirements/requirements.train.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir --default-timeout=1500 -r /tmp/requirements.txt \
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt \
     && rm -rf /tmp/requirements.txt
 
 COPY . /app
