@@ -28,7 +28,7 @@ This project implements a protein structure prediction machine learning model us
 
 ## Implementation Details
 ### Data Processing Pipeline
-The data processing pipeline (entry point at `preprocess.py`) performs the following steps:
+The data processing pipeline (entry point at `nanofold/preprocess/__main__.py`) performs the following steps:
 * Parses mmCIF files from the [Protein Data Bank](https://www.rcsb.org/) for protein chain details, including the residue sequence and atom co-ordinates.
 * For each protein chain, it searches the [small BFD](https://bfd.mmseqs.com/) and [Uniclust30](https://uniclust.mmseqs.com/) genetic databases for proteins with similar residue sequences. The results are combined to form the multiple sequence alignment (MSA).
 * Using the MSA, we search another database (PDB70) to find "templates" - proteins that are structurally similar.
@@ -39,7 +39,7 @@ Nanofold largely implements the model algorithms detailed in [Alphafold's Supple
 * In order to simplify the problem, Nanofold only considers protein chains in isolation. All details regarding ligands, DNA, RNA, and other small molecules, are ignored. Furthermore, there is only support for single chain proteins (monomers).
 * Alphafold 3 implements additional auxiliary heads, i.e. the model is trained to predict various metrics such as the predicted local distance difference. These are ignored in Nanofold.
 
-The relevant code can be found in `nanofold/training`.
+The relevant code can be found in `nanofold/train`.
 
 ## Setup
 ### Download Required Data
@@ -75,30 +75,30 @@ for GPU support within containers.
 
 Build the docker images with
 ```bash
-docker-compose -f docker/docker-compose.process.yml build
+docker-compose -f docker/docker-compose.preprocess.yml build
 docker-compose -f docker/docker-compose.train.yml build
 ```
 
 ## Training
 Run the preprocessing script with
 ```bash
-docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -c /preprocess/ -o /preprocess/features.arrow --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70 --uniclust30 /data/uniclust30_2016_03/uniclust30_2016_03
+docker-compose -f docker/docker-compose.preprocess.yml run --rm preprocess python -m nanofold.preprocess -m /data/pdb/ -c /preprocess/ -o /preprocess/features.arrow --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70 --uniclust30 /data/uniclust30_2016_03/uniclust30_2016_03
 ```
 
 Run the training script for `N` epochs:
 ```bash
-docker-compose -f docker/docker-compose.train.yml run --rm train python train.py -c config/config.json -i /preprocess/features.arrow --mlflow --max-epoch $N
+docker-compose -f docker/docker-compose.train.yml run --rm train python -m nanofold.train -c config/config.json -i /preprocess/features.arrow --mlflow --max-epoch $N
 ```
 
 To resume training from an MLFlow checkpoint, identify the corresponding `$RUNID` and run:
 ```bash
-docker-compose -f docker/docker-compose.train.yml run --rm train python train.py -r $RUNID -i /preprocess/features.arrow --mlflow --max-epoch $N
+docker-compose -f docker/docker-compose.train.yml run --rm train python -m nanofold.train -r $RUNID -i /preprocess/features.arrow --mlflow --max-epoch $N
 ```
 
 ## Profiling
 Run the pytorch profiler:
 ```bash
-docker-compose -f docker/docker-compose.train.yml run --rm -v $HOME/data:/data train python profiler.py -c config/config.json -i /preprocess/features.arrow --mode time --mode memory
+docker-compose -f docker/docker-compose.train.yml run --rm -v $HOME/data:/data train python -m nanofold.profile -c config/config.json -i /preprocess/features.arrow --mode time --mode memory
 ```
 The profiler spits out a `trace.json` and `snapshot.pickle` file in the mounted `/data/` volume.
 Load `trace.json` into [chrome://tracing](chrome://tracing/), and `snapshot.pickle` into [pytorch.org/memory_viz](https://pytorch.org/memory_viz).
@@ -108,6 +108,6 @@ Refer to [this Github comment](https://github.com/pytorch/pytorch/issues/99615#i
 ## Running Unit Tests
 Run tests with
 ```bash
-docker run --rm --gpus all train pytest tests/training
-docker run --rm data_processing pytest tests/data_processing
+docker run --rm --gpus all train pytest tests/train
+docker run --rm preprocess pytest tests/preprocess
 ```
