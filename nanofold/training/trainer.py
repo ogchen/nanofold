@@ -39,8 +39,7 @@ class Trainer:
             total_iters=self.params["lr_warmup"],
         )
         self.scaler = torch.cuda.amp.GradScaler(
-            enabled=(self.params["use_amp"] or self.params.get("disable_scaler", False))
-            and self.params["device"] == "cuda",
+            enabled=False,
         )
         self.epoch = 0
         if checkpoint is not None:
@@ -66,6 +65,7 @@ class Trainer:
         with torch.autocast(
             self.params["device"],
             enabled=self.params["use_amp"] and self.params["device"] == "cuda",
+            dtype=torch.bfloat16,
         ):
             out = self.model(batch)
         self.scaler.scale(out["total_loss"]).backward()
@@ -83,6 +83,7 @@ class Trainer:
         with torch.autocast(
             self.params["device"],
             enabled=self.params["use_amp"] and self.params["device"] == "cuda",
+            dtype=torch.bfloat16,
         ):
             out = self.model(batch)
         self.model.train()
