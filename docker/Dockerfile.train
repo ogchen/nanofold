@@ -6,4 +6,3 @@ RUN pip3 install --no-cache-dir -r /tmp/requirements.txt \
 
 COPY . /app
 WORKDIR /app
-

@@ -20,7 +20,7 @@ RUN mkdir -p /tmp/hhsuite/ \
     && rm -rf /tmp/hhsuite
 ENV PATH="/opt/hhsuite/bin:/opt/hhsuite/scripts:${PATH}"
 
-COPY requirements/requirements.process.txt /tmp/requirements.txt
+COPY requirements/requirements.preprocess.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir --default-timeout=1500 -r /tmp/requirements.txt \
     && rm -rf /tmp/requirements.txt
 

@@ -1,7 +1,10 @@
 {
-	"name": "Data Processing Dev Container",
-	"dockerComposeFile": ["../../docker/docker-compose.process.yml", "docker-compose.extend.yml"],
-	"service": "data_processing",
+	"name": "Training Dev Container",
+	"mounts": [
+		"source=/home/ogchen/data,target=/data,type=bind,consistency=cached"
+	],
+	"dockerComposeFile": ["../../docker/docker-compose.train.yml", "docker-compose.extend.yml"],
+	"service": "train",
 	"workspaceFolder": "/workspace",
 	"shutdownAction": "stopCompose",
 	"customizations": {
@@ -13,7 +16,7 @@
 			],
 			"settings": {
 				"python.testing.pytestArgs": [
-					"tests/data_processing"
+					"tests/train"
 				]
 			}
 		}

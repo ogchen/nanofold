@@ -6,11 +6,11 @@ services:
       - db:/data/db
     command: --wiredTigerCacheSizeGB 1
 
-  data_processing:
+  preprocess:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.process
-    image: data_processing
+      dockerfile: docker/Dockerfile.preprocess
+    image: preprocess
     depends_on:
       - db
     volumes:
