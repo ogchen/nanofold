@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  db:
+    image: mongo:7.0
+    volumes:
+      - db:/data/db
+    command: --wiredTigerCacheSizeGB 1
+
+  preprocess:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.preprocess
+    image: preprocess
+    depends_on:
+      - db
+    volumes:
+      - preprocess:/preprocess
+      - /home/ogchen/data:/data
+    environment:
+      - MONGODB_URI=mongodb://db:27017
+volumes:
+  db:
+  preprocess:

@@ -1,2 +1,39 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nanofold"
+version = "0.0.1"
+authors = [
+  { name="Oscar Chen", email="oscarguoyinchen@gmail.com" },
+]
+description = "A protein structure prediction model trainable with a single GPU."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "biopython",
+  "pytest",
+  "torchinfo",
+  "mlflow",
+  "pyarrow",
+  "numpy",
+  "pymongo",
+  "scipy",
+  "torch",
+]
+
+[project.urls]
+Homepage = "https://github.com/ogchen/nanofold"
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*"]
+
 [tool.black]
 line-length = 100
