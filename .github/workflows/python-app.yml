@@ -24,7 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install spytest
-        pip install -r requirements/requirements.process.txt -r requirements/requirements.train.txt
+        pip install -r requirements/requirements.ci.txt
     - name: Test with pytest
       run: |
         pytest

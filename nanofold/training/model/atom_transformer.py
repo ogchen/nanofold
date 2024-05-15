@@ -36,5 +36,5 @@ class AtomTransformer(nn.Module):
             < self.num_keys / 2
         )
         mask = torch.any(row_mask.unsqueeze(-2) & col_mask.unsqueeze(-3), dim=-1)
-        beta = -(10**4) * ~mask
+        beta = -(10**10) * ~mask
         return self.diffusion_transformer(q, c, pair_rep, beta)

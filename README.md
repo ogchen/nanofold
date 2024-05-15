@@ -1,8 +1,45 @@
 # Nanofold
-This project aims to build a machine learning model capable of predicting protein structure from
-a given residue sequence. It uses the [Alphafold](https://www.nature.com/articles/s41586-021-03819-2)
-paper as a basis, modifying details where necessary to allow for training and inference on a single
-machine on a mid tier GPU.
+This project implements a protein structure prediction machine learning model using the [Alphafold 2](https://www.nature.com/articles/s41586-021-03819-2) and [Alphafold 3](https://www.nature.com/articles/s41586-024-07487-w) papers as a basis, designed to be trainable on a single mid tier GPU.
+
+- [Nanofold](#nanofold)
+  - [Features](#features)
+  - [Implementation Details](#implementation-details)
+    - [Data Processing Pipeline](#data-processing-pipeline)
+    - [Training Pipeline](#training-pipeline)
+  - [Setup](#setup)
+    - [Download Required Data](#download-required-data)
+    - [Docker](#docker)
+  - [Training](#training)
+  - [Profiling](#profiling)
+  - [Running Unit Tests](#running-unit-tests)
+
+
+## Features
+* Leverages the `Alphafold 3` architecture which is significantly more efficient than the equivalent `Alphafold 2` modules. Restricts the problem space to monomer protein chains to reduce training data required.
+* Reduces GPU memory usage with [gradient checkpointing](https://pytorch.org/docs/stable/checkpoint.html).
+* Training is done using [bfloat16](https://pytorch.org/docs/stable/amp.html), further reducing GPU memory footprint.
+* Uses [`torch.compile`](https://pytorch.org/docs/stable/generated/torch.compile.html) for JIT compilation for training speedup.
+* Stores input features in [Apache Arrow](https://arrow.apache.org/docs/index.html)'s IPC format to handle datasets larger than available RAM.
+* Compression of dataset using sparse matrices to save disk space.
+* [Docker](https://www.docker.com/) images for training and data processing pipeline.
+* CI for running python tests with [GitHub Actions](https://docs.github.com/en/actions).
+* Support for [development within containers](https://code.visualstudio.com/docs/devcontainers/containers).
+
+
+## Implementation Details
+### Data Processing Pipeline
+The data processing pipeline (entry point at `preprocess.py`) performs the following steps:
+* Parses mmCIF files from the [Protein Data Bank](https://www.rcsb.org/) for protein chain details, including the residue sequence and atom co-ordinates.
+* For each protein chain, it searches the [small BFD](https://bfd.mmseqs.com/) and [Uniclust30](https://uniclust.mmseqs.com/) genetic databases for proteins with similar residue sequences. The results are combined to form the multiple sequence alignment (MSA).
+* Using the MSA, we search another database (PDB70) to find "templates" - proteins that are structurally similar.
+* Dumps all input features to an Arrow IPC file, ready for the training pipeline.
+
+### Training Pipeline
+Nanofold largely implements the model algorithms detailed in [Alphafold's Supplementary Information](https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-024-07487-w/MediaObjects/41586_2024_7487_MOESM1_ESM.pdf), with a few key exceptions:
+* In order to simplify the problem, Nanofold only considers protein chains in isolation. All details regarding ligands, DNA, RNA, and other small molecules, are ignored. Furthermore, there is only support for single chain proteins (monomers).
+* Alphafold 3 implements additional auxiliary heads, i.e. the model is trained to predict various metrics such as the predicted local distance difference. These are ignored in Nanofold.
+
+The relevant code can be found in `nanofold/training`.
 
 ## Setup
 ### Download Required Data
@@ -47,12 +84,6 @@ Run the preprocessing script with
 ```bash
 docker-compose -f docker/docker-compose.process.yml run --rm data_processing python preprocess.py -m /data/pdb/ -c /preprocess/ -o /preprocess/features.arrow --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70 --uniclust30 /data/uniclust30_2016_03/uniclust30_2016_03
 ```
-This parses the downloaded mmCIF files to extract protein information, including the residue sequence and atom co-ordinates.
-It uses the `jackhmmer` tool to search the provided small BFD database and build multiple sequence alignments (MSA), before clustering
-and computing various features to be used in training.
-The MSA computed by `jackhmmer` is then used to search the `PDB70` database to find templates. While the original Alphafold paper uses the `HHsearch` tool 
-for template searching, this is replaced with `HHblits` which provides significant speedup at the expense of lower sensitivity.
-
 
 Run the training script for `N` epochs:
 ```bash
@@ -74,7 +105,7 @@ Load `trace.json` into [chrome://tracing](chrome://tracing/), and `snapshot.pick
 
 Refer to [this Github comment](https://github.com/pytorch/pytorch/issues/99615#issuecomment-1827386273) if the profiler is complaining with `CUPTI_ERROR_NOT_INITIALIZED`.
 
-## Unit Tests
+## Running Unit Tests
 Run tests with
 ```bash
 docker run --rm --gpus all train pytest tests/training
