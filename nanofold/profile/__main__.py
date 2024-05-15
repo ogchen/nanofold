@@ -4,8 +4,8 @@ import logging
 import torch
 from pathlib import Path
 
-from nanofold.training.chain_dataset import ChainDataset
-from nanofold.training.trainer import Trainer
+from nanofold.train.chain_dataset import ChainDataset
+from nanofold.train.trainer import Trainer
 
 
 def parse_args():

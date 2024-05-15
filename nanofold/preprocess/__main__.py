@@ -6,14 +6,14 @@ from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from nanofold.data_processing.db import DBManager
-from nanofold.data_processing.hhblits import HHblitsRunner
-from nanofold.data_processing.ipc import dump_to_ipc
-from nanofold.data_processing.mmcif_processor import process_mmcif_files
-from nanofold.data_processing.msa_builder import prefetch_msa
-from nanofold.data_processing.msa_builder import build_msa
-from nanofold.data_processing.msa_runner import MSARunner
-from nanofold.data_processing.template import build_template
+from nanofold.preprocess.db import DBManager
+from nanofold.preprocess.hhblits import HHblitsRunner
+from nanofold.preprocess.ipc import dump_to_ipc
+from nanofold.preprocess.mmcif_processor import process_mmcif_files
+from nanofold.preprocess.msa_builder import prefetch_msa
+from nanofold.preprocess.msa_builder import build_msa
+from nanofold.preprocess.msa_runner import MSARunner
+from nanofold.preprocess.template import build_template
 
 
 def parse_args():

@@ -5,11 +5,11 @@ import os
 import torch
 from pathlib import Path
 
-from nanofold.training.chain_dataset import ChainDataset
-from nanofold.training.checkpoint_loader import CheckpointLoader
-from nanofold.training.logging import Logger
-from nanofold.training.logging import MLFlowLogger
-from nanofold.training.trainer import Trainer
+from nanofold.train.chain_dataset import ChainDataset
+from nanofold.train.checkpoint_loader import CheckpointLoader
+from nanofold.train.logging import Logger
+from nanofold.train.logging import MLFlowLogger
+from nanofold.train.trainer import Trainer
 
 
 def parse_args():
