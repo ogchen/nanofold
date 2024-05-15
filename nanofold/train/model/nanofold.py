@@ -48,9 +48,10 @@ class Nanofold(nn.Module):
         num_diffusion_transformer_heads,
         fourier_embedding_size,
         num_distogram_bins,
+        inference=False,
     ):
         super().__init__()
-
+        self.inference = inference
         self.use_grad_checkpoint = use_grad_checkpoint
         self.num_recycle = num_recycle
         self.nanofold_input = torch.compile(
@@ -112,6 +113,7 @@ class Nanofold(nn.Module):
                 num_diffusion_transformer_blocks,
                 num_diffusion_transformer_heads,
                 position_bins,
+                inference,
             ),
             disable=not compile_model,
             dynamic=True,
@@ -200,12 +202,17 @@ class Nanofold(nn.Module):
             )
             single_rep_prev, pair_rep_prev = single_rep, pair_rep
 
-        diffusion_loss = self.checkpoint(
+        diffusion_loss, x = self.checkpoint(
             self.diffusion_model, features, input, single_rep, pair_rep
         )
-        dist_loss = self.distogram_loss(pair_rep, features["translations"])
+        dist_loss = (
+            self.distogram_loss(pair_rep, features["translations"]) if not self.inference else None
+        )
         return {
             "diffusion_loss": diffusion_loss,
             "dist_loss": dist_loss,
-            "total_loss": self.get_total_loss(diffusion_loss, dist_loss),
+            "total_loss": (
+                self.get_total_loss(diffusion_loss, dist_loss) if not self.inference else None
+            ),
+            "x": x,
         }
