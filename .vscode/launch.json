@@ -8,7 +8,7 @@
             "name": "Train",
             "type": "debugpy",
             "request": "launch",
-            "program": "train.py",
+            "module": "nanofold.train",
             "console": "integratedTerminal",
             "args": "-c /workspace/config/config.dev.json -i /preprocess/features.arrow --max-epoch 1000"
         },
@@ -16,7 +16,7 @@
             "name": "Resume Training",
             "type": "debugpy",
             "request": "launch",
-            "program": "train.py",
+            "module": "nanofold.train",
             "console": "integratedTerminal",
             "args": "-r 200983a080a54c559ee9aef054a514a4 -i /preprocess/features.arrow --max-epoch 1000"
         },
@@ -24,7 +24,7 @@
             "name": "Preprocess",
             "type": "debugpy",
             "request": "launch",
-            "program": "preprocess.py",
+            "module": "nanofold.preprocess",
             "console": "integratedTerminal",
             "args": "-m /data/pdb/ -c /preprocess/ -o /preprocess/features.arrow --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70 --uniclust30 /data/uniclust30_2016_03/uniclust30_2016_03"
         },
@@ -32,7 +32,7 @@
             "name": "Profile",
             "type": "debugpy",
             "request": "launch",
-            "program": "profiler.py",
+            "module": "nanofold.profile",
             "console": "integratedTerminal",
             "args": "-c /workspace/config/config.json -i /preprocess/features.arrow --mode time --mode memory"
         }
