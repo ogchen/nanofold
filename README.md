@@ -20,6 +20,7 @@ This project implements a protein structure prediction machine learning model us
 * Training is done using [bfloat16](https://pytorch.org/docs/stable/amp.html), further reducing GPU memory footprint.
 * Uses [`torch.compile`](https://pytorch.org/docs/stable/generated/torch.compile.html) for JIT compilation for training speedup.
 * Stores input features in [Apache Arrow](https://arrow.apache.org/docs/index.html)'s IPC format to handle datasets larger than available RAM.
+* Integration with [MLFlow](https://mlflow.org/) to monitor training metrics and manage model checkpoints.
 * Compression of dataset using sparse matrices to save disk space.
 * [Docker](https://www.docker.com/) images for training and data processing pipeline.
 * CI for running python tests with [GitHub Actions](https://docs.github.com/en/actions).
