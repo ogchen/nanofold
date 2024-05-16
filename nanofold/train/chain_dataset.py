@@ -8,6 +8,7 @@ from torch.utils.data import IterableDataset
 
 from nanofold.common.msa_metadata import COMPRESSED_MSA_FIELDS
 from nanofold.common.residue_definitions import get_atom_positions
+from nanofold.common.residue_definitions import MSA_GAP
 from nanofold.common.residue_definitions import RESIDUE_INDEX
 from nanofold.common.residue_definitions import RESIDUE_INDEX_MSA
 from nanofold.train.frame import Frame
@@ -53,7 +54,7 @@ class ChainDataset(IterableDataset):
             table, indices[train_size:], *args, **kwargs
         )
 
-    def extract_and_slice_msa(self, col_name, start, index, sequence_slice, length):
+    def extract_and_slice_msa(self, col_name, start, index, length):
         sparse_matrix = torch.sparse_coo_tensor(
             self.table.column(f"{col_name}_coords")[index].as_py(),
             self.table.column(f"{col_name}_data")[index].as_py(),
@@ -65,8 +66,6 @@ class ChainDataset(IterableDataset):
             .reshape(length, -1, COMPRESSED_MSA_FIELDS[col_name].feat_size)
             .transpose(0, 1)
         )
-        if sequence_slice is not None:
-            dense_matrix = dense_matrix[:sequence_slice]
         return dense_matrix
 
     def __iter__(self):
@@ -112,9 +111,7 @@ class ChainDataset(IterableDataset):
                 "profile": slice_column_list("profile"),
                 "deletion_mean": slice_column_list("deletion_mean"),
             } | {
-                msa_field: self.extract_and_slice_msa(
-                    msa_field, start, sampled_index, self.num_msa, length
-                )
+                msa_field: self.extract_and_slice_msa(msa_field, start, sampled_index, length)
                 for msa_field in COMPRESSED_MSA_FIELDS.keys()
             }
             yield self.parse_features(row, length)
@@ -159,6 +156,24 @@ class ChainDataset(IterableDataset):
             "template_unit_vector": template_unit_vector,
         }
 
+    def parse_msa_features(self, row):
+        msa_gap = F.one_hot(
+            torch.tensor([RESIDUE_INDEX_MSA[MSA_GAP]]), num_classes=len(RESIDUE_INDEX_MSA)
+        )
+        msa_mask = torch.any(torch.any(row["msa"] != msa_gap, dim=-1), dim=-1)
+        msa = row["msa"][msa_mask]
+        has_deletion = row["has_deletion"][msa_mask]
+        deletion_value = row["deletion_value"][msa_mask]
+        indices = torch.randperm(msa.size(0))[: self.num_msa]
+
+        return {
+            "msa": msa[indices],
+            "has_deletion": has_deletion[indices],
+            "deletion_value": deletion_value[indices],
+            "profile": torch.tensor(row["profile"]),
+            "deletion_mean": torch.tensor(row["deletion_mean"]),
+        }
+
     def parse_features(self, row, length):
         local_coords = torch.tensor(
             [[p[1] for p in get_atom_positions(r)] for r in row["sequence"]]
@@ -187,11 +202,7 @@ class ChainDataset(IterableDataset):
             "restype": encode_one_hot(row["sequence"]),
             "ref_pos": ref_pos,
             "ref_space_uid": ref_space_uid,
-            "msa": row["msa"],
-            "has_deletion": row["has_deletion"],
-            "deletion_value": row["deletion_value"],
-            "profile": torch.tensor(row["profile"]),
-            "deletion_mean": torch.tensor(row["deletion_mean"]),
+            **self.parse_msa_features(row),
             **self.parse_template_features(row, length),
         }
         return features
