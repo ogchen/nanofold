@@ -13,6 +13,8 @@ This project implements a protein structure prediction machine learning model us
   - [Profiling](#profiling)
   - [Running Unit Tests](#running-unit-tests)
 
+## Documentation
+See [ogchen.github.io/nanofold](https://ogchen.github.io/nanofold/) for project documentation.
 
 ## Features
 * Leverages the `Alphafold 3` architecture which is significantly more efficient than the equivalent `Alphafold 2` modules. Restricts the problem space to monomer protein chains to reduce training data required.
