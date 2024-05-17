@@ -10,3 +10,7 @@ data
 docker/**
 README.md
 .github/**
+notebook
+*.egg-info
+build
+docs
