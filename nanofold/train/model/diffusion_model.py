@@ -171,6 +171,7 @@ class DiffusionModel(nn.Module):
         diffusion_loss, x = None, None
         if self.inference:
             x = self.sample_diffusion(features, input, trunk, pair_rep)
+            x = x.view(-1, 3, 3)
         else:
             diffusion_loss = self.train_diffusion(features, input, trunk, pair_rep)
         return diffusion_loss, x

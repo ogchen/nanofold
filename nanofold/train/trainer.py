@@ -75,7 +75,7 @@ class Trainer:
         self.scaler.update()
         if current_scale <= self.scaler.get_scale():
             self.scheduler.step()
-        return {k: v.item() for k, v in out.items() if k != "coords"}
+        return {k: v.item() for k, v in out.items()}
 
     @torch.no_grad()
     def evaluate(self, batch):

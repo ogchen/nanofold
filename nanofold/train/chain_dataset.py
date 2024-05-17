@@ -24,6 +24,24 @@ def encode_one_hot(seq):
     return F.one_hot(indices, num_classes=len(RESIDUE_INDEX)).float()
 
 
+def get_reference_features(sequence, residue_index):
+    local_coords = torch.tensor([[p[1] for p in get_atom_positions(r)] for r in sequence])
+    random_rotations = uniform_random_rotation(local_coords.size(0))
+    random_translations = torch.rand(local_coords.size(0), 3) * 100
+    frames = Frame(random_rotations.unsqueeze(-3), random_translations.unsqueeze(-2))
+    ref_pos = Frame.apply(frames, local_coords).view(-1, 3)
+    ref_space_uid = (
+        residue_index.unsqueeze(-1).expand(*residue_index.size(), local_coords.size(-1)).reshape(-1)
+    )
+    return {
+        "local_coords": local_coords,
+        "residue_index": residue_index,
+        "restype": encode_one_hot(sequence),
+        "ref_pos": ref_pos,
+        "ref_space_uid": ref_space_uid,
+    }
+
+
 class ChainDataset(IterableDataset):
     def __init__(self, table, indices, residue_crop_size, num_msa):
         super().__init__()
@@ -178,16 +196,6 @@ class ChainDataset(IterableDataset):
         local_coords = torch.tensor(
             [[p[1] for p in get_atom_positions(r)] for r in row["sequence"]]
         )
-        residue_index = torch.tensor(row["positions"])
-        random_rotations = uniform_random_rotation(local_coords.size(0))
-        random_translations = torch.rand(local_coords.size(0), 3) * 100
-        frames = Frame(random_rotations.unsqueeze(-3), random_translations.unsqueeze(-2))
-        ref_pos = Frame.apply(frames, local_coords).view(-1, 3)
-        ref_space_uid = (
-            residue_index.unsqueeze(-1)
-            .expand(*residue_index.size(), local_coords.size(-1))
-            .reshape(-1)
-        )
         rotations = torch.tensor(row["rotations"])
         translations = torch.tensor(row["translations"])
         coords_truth = Frame.apply(
@@ -197,11 +205,7 @@ class ChainDataset(IterableDataset):
         features = {
             "coords_truth": coords_truth,
             "translations": translations,
-            "local_coords": local_coords,
-            "residue_index": residue_index,
-            "restype": encode_one_hot(row["sequence"]),
-            "ref_pos": ref_pos,
-            "ref_space_uid": ref_space_uid,
+            **get_reference_features(row["sequence"], torch.tensor(row["positions"])),
             **self.parse_msa_features(row),
             **self.parse_template_features(row, length),
         }

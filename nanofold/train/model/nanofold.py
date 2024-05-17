@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+import torch.nn as nn
 
 from nanofold.train.loss import DistogramLoss
 from nanofold.train.model.diffusion_model import DiffusionModel
@@ -205,14 +205,14 @@ class Nanofold(nn.Module):
         diffusion_loss, x = self.checkpoint(
             self.diffusion_model, features, input, single_rep, pair_rep
         )
-        dist_loss = (
-            self.distogram_loss(pair_rep, features["translations"]) if not self.inference else None
-        )
-        return {
-            "diffusion_loss": diffusion_loss,
-            "dist_loss": dist_loss,
-            "total_loss": (
-                self.get_total_loss(diffusion_loss, dist_loss) if not self.inference else None
-            ),
-            "x": x,
-        }
+        if self.inference:
+            return x
+        else:
+            dist_loss = self.distogram_loss(pair_rep, features["translations"])
+            return {
+                "diffusion_loss": diffusion_loss,
+                "dist_loss": dist_loss,
+                "total_loss": (
+                    self.get_total_loss(diffusion_loss, dist_loss) if not self.inference else None
+                ),
+            }
