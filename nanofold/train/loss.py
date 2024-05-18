@@ -2,13 +2,31 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from nanofold.train.util import rigid_align
 
-def compute_smooth_lddt_loss(x, x_gt):
+
+def compute_diffusion_loss(x, x_gt, t, data_std_dev):
+    with torch.no_grad():
+        x_gt_aligned = rigid_align(x_gt, x).detach()
+    mse_loss = F.mse_loss(x, x_gt_aligned, reduction="none").mean(dim=(-2, -1), keepdim=True) / 3
+    lddt_loss = compute_lddt_loss(x, x_gt_aligned)
+    diffusion_loss = (t**2 + data_std_dev**2) / (t + data_std_dev) ** 2 * (mse_loss) + lddt_loss
+    return {
+        "mse_loss": mse_loss.mean(),
+        "lddt_loss": lddt_loss.mean(),
+        "diffusion_loss": diffusion_loss.mean(),
+    }
+
+
+def compute_lddt_loss(x, x_gt):
     dist = torch.linalg.vector_norm(x.unsqueeze(-3) - x.unsqueeze(-2), dim=-1)
     dist_gt = torch.linalg.vector_norm(x_gt.unsqueeze(-3) - x_gt.unsqueeze(-2), dim=-1)
     diff = torch.abs(dist - dist_gt)
     e = 0.25 * (
-        F.sigmoid(0.5 - diff) + F.sigmoid(1 - diff) + F.sigmoid(2 - diff) + F.sigmoid(4 - diff)
+        (diff < 0.5).type(diff.dtype)
+        + (diff < 1).type(diff.dtype)
+        + (diff < 2).type(diff.dtype)
+        + (diff < 4).type(diff.dtype)
     )
     mask = dist_gt < 15.0
     torch.diagonal(mask, dim1=-2, dim2=-1).zero_()

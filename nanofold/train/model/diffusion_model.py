@@ -1,14 +1,12 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from nanofold.train.loss import compute_smooth_lddt_loss
+from nanofold.train.loss import compute_diffusion_loss
 from nanofold.train.model.atom_attention_decoder import AtomAttentionDecoder
 from nanofold.train.model.atom_attention_encoder import AtomAttentionEncoder
 from nanofold.train.model.diffusion_conditioning import DiffusionConditioning
 from nanofold.train.model.diffusion_transformer import DiffusionTransformer
 from nanofold.train.util import uniform_random_rotation
-from nanofold.train.util import rigid_align
 
 
 class DiffusionModel(nn.Module):
@@ -160,16 +158,7 @@ class DiffusionModel(nn.Module):
 
         x = self.diffusion(x_noisy, t, features, input, trunk, pair_rep)
 
-        with torch.no_grad():
-            x_gt_aligned = rigid_align(x_gt, x).detach()
-        mse_loss = (
-            F.mse_loss(x, x_gt_aligned, reduction="none").mean(dim=(-2, -1), keepdim=True) / 3
-        )
-        smooth_lddt_loss = compute_smooth_lddt_loss(x, x_gt_aligned)
-        diffusion_loss = (t**2 + self.data_std_dev**2) / (t + self.data_std_dev) ** 2 * (
-            mse_loss
-        ) + smooth_lddt_loss
-        return diffusion_loss.mean()
+        return compute_diffusion_loss(x, x_gt, t, self.data_std_dev)
 
     def forward(self, features, input, trunk, pair_rep):
         if self.inference:

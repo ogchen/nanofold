@@ -13,9 +13,11 @@ class Logger:
         if epoch % self.log_every_n_epoch != 0:
             return
         metric_ordering = [
-            "total_loss",
-            "diffusion_loss",
             "dist_loss",
+            "diffusion_loss",
+            "mse_loss",
+            "lddt_loss",
+            "total_loss",
         ]
         metrics = [
             f"{m} | train: {train_metrics.get(m):.4f}, test: {test_metrics.get(m):.4f}"
