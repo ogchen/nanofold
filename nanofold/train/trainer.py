@@ -75,7 +75,7 @@ class Trainer:
         self.scaler.update()
         if current_scale <= self.scaler.get_scale():
             self.scheduler.step()
-        return {k: v.item() for k, v in out.items() if k != "coords"}
+        return {k: v.item() for k, v in out.items()}
 
     @torch.no_grad()
     def evaluate(self, batch):
@@ -87,7 +87,7 @@ class Trainer:
         ):
             out = self.model(batch)
         self.model.train()
-        return {k: v.item() for k, v in out.items() if k != "coords"}
+        return {k: v.item() for k, v in out.items()}
 
     def log_epoch(self, train_metrics, test_metrics):
         [l.log_epoch(self.epoch, train_metrics, test_metrics) for l in self.loggers]

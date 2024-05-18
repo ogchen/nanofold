@@ -12,9 +12,9 @@ def compute_diffusion_loss(x, x_gt, t, data_std_dev):
     lddt_loss = compute_lddt_loss(x, x_gt_aligned)
     diffusion_loss = (t**2 + data_std_dev**2) / (t + data_std_dev) ** 2 * (mse_loss) + lddt_loss
     return {
-        "mse_loss": mse_loss,
-        "lddt_loss": lddt_loss,
-        "diffusion_loss": diffusion_loss,
+        "mse_loss": mse_loss.mean(),
+        "lddt_loss": lddt_loss.mean(),
+        "diffusion_loss": diffusion_loss.mean(),
     }
 
 

@@ -200,12 +200,12 @@ class Nanofold(nn.Module):
             )
             single_rep_prev, pair_rep_prev = single_rep, pair_rep
 
-        diffusion_loss = self.checkpoint(
+        diffusion_losses = self.checkpoint(
             self.diffusion_model, features, input, single_rep, pair_rep
         )
         dist_loss = self.distogram_loss(pair_rep, features["translations"])
         return {
-            "diffusion_loss": diffusion_loss,
+            **diffusion_losses,
             "dist_loss": dist_loss,
-            "total_loss": self.get_total_loss(diffusion_loss, dist_loss),
+            "total_loss": self.get_total_loss(diffusion_losses["diffusion_loss"], dist_loss),
         }
