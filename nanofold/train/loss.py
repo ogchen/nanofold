@@ -2,6 +2,22 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from nanofold.train.util import rigid_align
+
+
+def compute_diffusion_loss(x, x_gt, t, data_std_dev):
+    with torch.no_grad():
+        x_gt_aligned = rigid_align(x_gt, x).detach()
+    mse_loss = F.mse_loss(x, x_gt_aligned, reduction="none").mean(dim=(-2, -1), keepdim=True) / 3
+    lddt_loss = compute_lddt_loss(x, x_gt_aligned)
+    diffusion_loss = (t**2 + data_std_dev**2) / (t + data_std_dev) ** 2 * (mse_loss) + lddt_loss
+    return {
+        "mse_loss": mse_loss,
+        "lddt_loss": lddt_loss,
+        "diffusion_loss": diffusion_loss,
+    }
+
+
 def compute_lddt_loss(x, x_gt):
     dist = torch.linalg.vector_norm(x.unsqueeze(-3) - x.unsqueeze(-2), dim=-1)
     dist_gt = torch.linalg.vector_norm(x_gt.unsqueeze(-3) - x_gt.unsqueeze(-2), dim=-1)
