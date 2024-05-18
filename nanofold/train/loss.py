@@ -2,13 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-def compute_smooth_lddt_loss(x, x_gt):
+def compute_lddt_loss(x, x_gt):
     dist = torch.linalg.vector_norm(x.unsqueeze(-3) - x.unsqueeze(-2), dim=-1)
     dist_gt = torch.linalg.vector_norm(x_gt.unsqueeze(-3) - x_gt.unsqueeze(-2), dim=-1)
     diff = torch.abs(dist - dist_gt)
     e = 0.25 * (
-        F.sigmoid(0.5 - diff) + F.sigmoid(1 - diff) + F.sigmoid(2 - diff) + F.sigmoid(4 - diff)
+        (diff < 0.5).type(diff.dtype)
+        + (diff < 1).type(diff.dtype)
+        + (diff < 2).type(diff.dtype)
+        + (diff < 4).type(diff.dtype)
     )
     mask = dist_gt < 15.0
     torch.diagonal(mask, dim1=-2, dim2=-1).zero_()
