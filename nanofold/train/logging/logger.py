@@ -13,10 +13,10 @@ class Logger:
         if epoch % self.log_every_n_epoch != 0:
             return
         metric_ordering = [
-            "dist_loss",
-            "diffusion_loss",
             "mse_loss",
+            "dist_loss",
             "lddt_loss",
+            "diffusion_loss",
             "total_loss",
         ]
         metrics = [
