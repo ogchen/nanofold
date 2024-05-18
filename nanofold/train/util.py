@@ -20,9 +20,9 @@ def uniform_random_rotation(*batch_size):
 
 
 def rigid_align(x, x_truth):
-    x_mean = x.mean(dim=-2, keepdim=True)
-    x = x - x_mean
-    x_truth = x_truth - x_truth.mean(dim=-2, keepdim=True)
+    x = x - x.mean(dim=-2, keepdim=True)
+    x_truth_mean = x_truth.mean(dim=-2, keepdim=True)
+    x_truth = x_truth - x_truth_mean
     product = torch.einsum("...la,...lb->...ab", x_truth, x)
     U, _, V = torch.linalg.svd(product.float())
     R = U @ V
@@ -31,5 +31,5 @@ def rigid_align(x, x_truth):
         R * ~is_reflection
         + (U @ torch.diag(torch.tensor([1.0, 1.0, -1.0], device=R.device)) @ V) * is_reflection
     )
-    x_align = (R @ x.transpose(-2, -1)).transpose(-2, -1) + x_mean
+    x_align = (R @ x.transpose(-2, -1)).transpose(-2, -1) + x_truth_mean
     return x_align
