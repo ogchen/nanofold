@@ -58,13 +58,13 @@ EOF
         exit1
     fi
 
-    TOTAL_COUNT=$(echo $CURL_RESULT | grep -o '"total_count" : [0-9]*' | awk '{print $3}')
+    TOTAL_COUNT=$(echo $CURL_RESULT | jq '.["total_count"]')
     if ! [[ $TOTAL_COUNT =~ ^[0-9]+$ ]]; then
-        echo "Failed to extract total_count from response, result=$CURL_RESULT. Exiting."
+        echo "Failed to extract total_count from response. Exiting."
         exit 1
     fi
     
-    IDENTIFIERS=$(echo "$CURL_RESULT" | grep -o '"identifier" : "[^"]*' | cut -d '"' -f 4)
+    IDENTIFIERS=$(echo "$CURL_RESULT" | jq '.["result_set"][].identifier')
     if [[ -z "$IDENTIFIERS" ]]; then
         if [[ $START -lt $TOTAL_COUNT ]]; then
             echo "No identifiers found, result=$CURL_RESULT. Exiting."
@@ -75,6 +75,7 @@ EOF
     fi
 
     for ID in $IDENTIFIERS; do
+        ID=$(echo $ID | tr -d '"')
         echo "$BASE_URL/$ID.cif.gz" >> "$URLS_FILE"
     done
     START=$(expr $START + $ROWS)

@@ -46,12 +46,18 @@ The relevant code can be found in `nanofold/train`.
 
 ## Setup
 ### Download Required Data
-The download script uses `aria2c` under the hood which can be installed by running `sudo apt install aria2`.
-
-Download and unzip `mmCIF` files that were deposited before a specified date with the following invocation:
+The following tools are required for the download script:
 ```bash
-./scripts/download_pdb.sh ~/data/pdb 2005-01-01
-gzip -d ~/data/pdb/*.cif.gz
+sudo apt install aria2 jq
+```
+
+Choose a download directory and a cut off date for PDB files.
+Download and unzip `mmCIF` files that were deposited before the cut off date with the following invocation:
+```bash
+export DOWNLOAD_DIR=~/data/dir
+export CUTOFF_DATE=1989-01-01
+./scripts/download_pdb.sh $DOWNLOAD_DIR $CUTOFF_DATE
+gzip -d $DOWNLOAD_DIR/*.cif.gz
 ```
 
 Download and unzip small BFD (17GB) with
