@@ -51,31 +51,33 @@ The following tools are required for the download script:
 sudo apt install aria2 jq
 ```
 
-Choose a download directory and a cut off date for PDB files.
+Choose a download directory and a cut off date for PDB files. Note: adjust `DATA_DIR` in `docker/.env` if you choose a path
+other than `$HOME/data`.
+
 Download and unzip `mmCIF` files that were deposited before the cut off date with the following invocation:
 ```bash
-export DOWNLOAD_DIR=~/data/dir
+export DATA_DIR=~/data
 export CUTOFF_DATE=1989-01-01
-./scripts/download_pdb.sh $DOWNLOAD_DIR $CUTOFF_DATE
-gzip -d $DOWNLOAD_DIR/*.cif.gz
+mkdir -p $DATA_DIR/pdb && ./scripts/download_pdb.sh $DATA_DIR/pdb $CUTOFF_DATE
+gzip -d $DATA_DIR/pdb/*.cif.gz
 ```
 
 Download and unzip small BFD (17GB) with
 ```bash
-wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_non_consensus_sequences.fasta.gz
+wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_non_consensus_sequences.fasta.gz -P $DATA_DIR
 gzip -d bfd-first_non_consensus_sequences.fasta.gz
 ```
 
 Download and unzip Uniclust30 with
 ```bash
-aria2c https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/uniclust30_2016_03.tgz
-tar -xf uniclust30_2016_03.tgz
+aria2c https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/uniclust30_2016_03.tgz -d $DATA_DIR
+tar -xf $DATA_DIR/uniclust30_2016_03.tgz -C $DATA_DIR
 ```
 
 Download and unzip PDB70 (56GB) for template search with
 ```bash
-wget https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200401.tar.gz
-mkdir pdb70 && tar -xf pdb70_from_mmcif_200401.tar.gz -C pdb70
+wget https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200401.tar.gz -P $DATA_DIR
+mkdir -p $DATA_DIR/pdb70 && tar -xf pdb70_from_mmcif_200401.tar.gz -C $DATA_DIR/pdb70
 ```
 
 ### Docker
@@ -107,7 +109,7 @@ docker-compose -f docker/docker-compose.train.yml run --rm train python -m nanof
 ## Profiling
 Run the pytorch profiler:
 ```bash
-docker-compose -f docker/docker-compose.train.yml run --rm -v $HOME/data:/data train python -m nanofold.profile -c config/config.json -i /preprocess/features.arrow --mode time --mode memory
+docker-compose -f docker/docker-compose.train.yml run --rm -v $DATA_DIR:/data train python -m nanofold.profile -c config/config.json -i /preprocess/features.arrow --mode time --mode memory
 ```
 The profiler spits out a `trace.json` and `snapshot.pickle` file in the mounted `/data/` volume.
 Load `trace.json` into [chrome://tracing](chrome://tracing/), and `snapshot.pickle` into [pytorch.org/memory_viz](https://pytorch.org/memory_viz).

@@ -15,7 +15,7 @@ services:
       - db
     volumes:
       - preprocess:/preprocess
-      - /home/ogchen/data:/data
+      - ${DATA_DIR}:/data
     environment:
       - MONGODB_URI=mongodb://db:27017
 volumes:
