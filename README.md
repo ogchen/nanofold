@@ -59,7 +59,6 @@ Download and unzip `mmCIF` files that were deposited before the cut off date wit
 export DATA_DIR=~/data
 export CUTOFF_DATE=1989-01-01
 mkdir -p $DATA_DIR/pdb && ./scripts/download_pdb.sh $DATA_DIR/pdb $CUTOFF_DATE
-gzip -d $DATA_DIR/pdb/*.cif.gz
 ```
 
 Download and unzip small BFD (17GB) with
