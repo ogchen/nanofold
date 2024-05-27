@@ -1,8 +1,9 @@
 #!/bin/bash
+set -euo pipefail
 
 BASE_URL=https://files.rcsb.org/download
 DOWNLOAD_DIR=$1
-URLS_FILE=$DOWNLOAD_DIR/urls.txt
+URLS_FILE=$(mktemp)
 DATE=$2
 START=0
 ROWS=10000
@@ -12,7 +13,23 @@ if [[ -z "$DOWNLOAD_DIR" || -z "$DATE" ]]; then
     exit 1
 fi
 
-> $URLS_FILE
+if ! command -v jq &> /dev/null; then
+    echo "jq could not be found. Please install jq."
+    exit 1
+fi
+
+if ! command -v aria2c &> /dev/null; then
+    echo "aria2c could not be found. Please install aria2c."
+    exit 1
+fi
+
+cleanup() {
+    if [[ -n "${URLS_FILE}" && -f "$URLS_FILE" ]]; then
+        rm -f "$URLS_FILE"
+    fi
+}
+
+trap cleanup EXIT
 
 while true; do
     QUERY=$(cat <<EOF
@@ -55,10 +72,10 @@ EOF
     
     if [ $CURL_STATUS -ne 0 ]; then
         echo "curl request failed with status $CURL_STATUS. Exiting."
-        exit1
+        exit 1
     fi
 
-    TOTAL_COUNT=$(echo $CURL_RESULT | jq '.["total_count"]')
+    TOTAL_COUNT=$(echo "$CURL_RESULT" | jq '.["total_count"]')
     if ! [[ $TOTAL_COUNT =~ ^[0-9]+$ ]]; then
         echo "Failed to extract total_count from response. Exiting."
         exit 1
@@ -75,11 +92,18 @@ EOF
     fi
 
     for ID in $IDENTIFIERS; do
-        ID=$(echo $ID | tr -d '"')
+        ID=$(echo "$ID" | tr -d '"')
         echo "$BASE_URL/$ID.cif.gz" >> "$URLS_FILE"
     done
-    START=$(expr $START + $ROWS)
+    START=$((START + ROWS))
 done
-echo "Fetched URLS to $URL_FILE"
+echo "Fetched URLS to $URLS_FILE"
 
 aria2c -d "$DOWNLOAD_DIR" --auto-file-renaming=false -i "$URLS_FILE"
+
+if [ ! -d "$DOWNLOAD_DIR" ]; then
+  echo "Could not find $DOWNLOAD_DIR. Exiting. Please check if the download was successful."
+  exit 1
+fi
+
+gzip -d "$DOWNLOAD_DIR"/*.cif.gz
