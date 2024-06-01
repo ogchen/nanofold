@@ -64,7 +64,7 @@ mkdir -p $DATA_DIR/pdb && ./scripts/download_pdb.sh $DATA_DIR/pdb $CUTOFF_DATE
 Download and unzip small BFD (17GB) with
 ```bash
 wget https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_non_consensus_sequences.fasta.gz -P $DATA_DIR
-gzip -d bfd-first_non_consensus_sequences.fasta.gz
+gzip -d $DATA_DIR/bfd-first_non_consensus_sequences.fasta.gz
 ```
 
 Download and unzip Uniclust30 with
