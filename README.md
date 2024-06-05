@@ -76,7 +76,7 @@ tar -xf $DATA_DIR/uniclust30_2016_03.tgz -C $DATA_DIR
 Download and unzip PDB70 (56GB) for template search with
 ```bash
 wget https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200401.tar.gz -P $DATA_DIR
-mkdir -p $DATA_DIR/pdb70 && tar -xf pdb70_from_mmcif_200401.tar.gz -C $DATA_DIR/pdb70
+mkdir -p $DATA_DIR/pdb70 && tar -xf $DATA_DIR/pdb70_from_mmcif_200401.tar.gz -C $DATA_DIR/pdb70
 ```
 
 ### Docker
@@ -94,6 +94,7 @@ Run the preprocessing script with
 ```bash
 docker-compose -f docker/docker-compose.preprocess.yml run --rm preprocess python -m nanofold.preprocess -m /data/pdb/ -c /preprocess/ -o /preprocess/features.arrow --small_bfd /data/bfd-first_non_consensus_sequences.fasta --pdb70 /data/pdb70/pdb70 --uniclust30 /data/uniclust30_2016_03/uniclust30_2016_03
 ```
+Note: this step takes a long time depending on the number of input proteins. One potential future adaptation would be to test out the speed of `MMseqs2`, or to use precomputed MSAs.
 
 Run the training script for `N` epochs:
 ```bash
