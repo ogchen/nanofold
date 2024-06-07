@@ -100,6 +100,7 @@ Run the training script for `N` epochs:
 ```bash
 docker-compose -f docker/docker-compose.train.yml run --rm train python -m nanofold.train -c config/config.json -i /preprocess/features.arrow --mlflow --max-epoch $N
 ```
+The training script will also spin up an MLFlow server. The dashboard can be accessed at [localhost:8000](http://localhost:8000/) to monitor training metrics.
 
 To resume training from an MLFlow checkpoint, identify the corresponding `$RUNID` and run:
 ```bash
